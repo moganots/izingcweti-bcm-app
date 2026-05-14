@@ -1,0 +1,78 @@
+.DS_Store
+node_modules
+/dist
+
+
+# local env files
+.env.local
+.env.*.local
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editor directories and files
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+.DS_Store
+.thumbs.db
+node_modules
+
+CLAUDE*
+
+# Quasar core related directories
+.quasar
+/dist
+/quasar.config.*.temporary.compiled*
+
+# Cordova related directories and files
+/src-cordova/node_modules
+/src-cordova/platforms
+/src-cordova/plugins
+/src-cordova/www
+
+# Capacitor related directories and files
+/src-capacitor/www
+/src-capacitor/node_modules
+
+# Android build files
+*.apk
+/src-capacitor/android/*.keystore
+/src-capacitor/android/app/build/
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Editor directories and files
+.idea
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+
+# local .env files
+.env.local*
+.env
+.env.development
+.env.qa
+.claudeignore
+.claude/
+
+# Docker-related files
+.dockerignore
+
+# Lock files
+yarn.lock
+package-lock.json
+/src-capacitor/yarn.lock
+/src-capacitor/package-lock.json

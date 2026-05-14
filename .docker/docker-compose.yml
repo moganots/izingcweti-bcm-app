@@ -1,0 +1,11 @@
+services:
+  vue-capacitor:
+    build: .
+    container_name: vue-capacitor-env
+    volumes:
+      - .:/app
+    working_dir: /app
+    ports:
+      - "9002:9000" # Quasar Dev Server
+    stdin_open: true
+    tty: true

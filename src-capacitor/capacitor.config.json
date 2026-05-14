@@ -1,0 +1,12 @@
+{
+  "appId": "com.izingcweti.bcm.mobile",
+  "appName": "Izingcweti BCM Mobile App",
+  "webDir": "www",
+  "backgroundColor": "#00000000",
+  "plugins": {
+    "CameraPreview": {
+      "storeToFile": false,
+      "enableHighResolution": true
+    }
+  }
+}

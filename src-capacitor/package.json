@@ -1,0 +1,20 @@
+{
+  "name": "izingcweti-bcm-app",
+  "version": "25.0514.1",
+  "description": "Izingcweti BCM Mobile App",
+  "author": "BCM Support <support.bcm@izingcweti.co.za>",
+  "private": true,
+  "dependencies": {
+    "@capacitor-community/camera-preview": "^6.0.1",
+    "@capacitor/android": "^6.0.0",
+    "@capacitor/app": "^6.0.0",
+    "@capacitor/camera": "^6.1.2",
+    "@capacitor/cli": "^6.0.0",
+    "@capacitor/core": "^6.0.0",
+    "@capacitor/filesystem": "^6.0.1",
+    "@capacitor/geolocation": "^6.0.1",
+    "@capacitor/network": "^6.0.0",
+    "@capacitor/status-bar": "^6.0.2",
+    "@capacitor/storage": "^6.0.0"
+  }
+}

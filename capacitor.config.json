@@ -1,0 +1,41 @@
+import { CapacitorConfig } from '@capacitor/cli';
+
+const config: CapacitorConfig = {
+  appId: 'com.izingcweti.bcm.mobile',
+  appName: 'Izingcweti BCM Mobile App',
+  webDir: 'dist/spa',
+  server: {
+    androidScheme: 'https',
+    iosScheme: 'https',
+    cleartext: true,
+  },
+  plugins: {
+    SplashScreen: {
+      launchShowDuration: 2000,
+      launchAutoHide: true,
+      backgroundColor: '#1a73e8',
+      androidSplashResourceName: 'splash',
+      androidScaleType: 'CENTER_CROP',
+      showSpinner: true,
+      spinnerColor: '#ffffff',
+    },
+    PushNotifications: {
+      presentationOptions: ['badge', 'sound', 'alert'],
+    },
+    Keyboard: {
+      resize: 'body',
+      style: 'dark',
+    },
+  },
+  android: {
+    allowMixedContent: true,
+    captureInput: true,
+    webContentsDebuggingEnabled: true,
+  },
+  ios: {
+    contentInset: 'automatic',
+    allowsLinkPreview: false,
+  },
+};
+
+export default config;
