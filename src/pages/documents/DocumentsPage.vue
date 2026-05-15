@@ -1,42 +1,34 @@
-<!-- src/pages/documents/DocumentsPage.vue -->
 <template>
   <q-page padding>
-    <!-- Header -->
-    <div class="page-header q-mb-lg">
-      <div class="row items-center justify-between">
-        <div>
-          <h4 class="text-h5 q-mb-xs">Documents</h4>
-          <p class="text-grey-7 q-mb-none">Manage BCM documents and files</p>
-        </div>
+    <PageHeader
+      title="Documents"
+      subtitle="Manage BCM documents and files"
+      show-refresh
+      @refresh="loadDocuments"
+    >
+      <template #actions>
         <q-btn color="primary" icon="upload" label="Upload" unelevated @click="triggerUpload" />
         <input
-          ref="fileInput"
+          ref="fileInputRef"
           type="file"
           style="display: none"
-          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.png"
+          accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.jpg,.jpeg,.png,.gif,.zip,.json"
+          multiple
           @change="handleFileSelected"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Search & Filters -->
     <q-card class="q-mb-md" flat bordered>
       <q-card-section>
         <div class="row q-col-gutter-md">
           <div class="col-12 col-md-5">
-            <q-input
+            <SearchBar
               v-model="filters.search"
-              outlined
-              dense
               placeholder="Search documents..."
-              clearable
-              debounce="300"
-              @update:model-value="loadDocuments"
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" />
-              </template>
-            </q-input>
+              @search="loadDocuments"
+            />
           </div>
           <div class="col-12 col-md-3">
             <q-select
@@ -78,8 +70,7 @@
 
     <!-- Loading -->
     <div v-if="isLoading" class="text-center q-pa-xl">
-      <q-spinner-dots size="50px" color="primary" />
-      <p class="text-grey-7 q-mt-md">Loading documents...</p>
+      <LoadingSpinner message="Loading documents..." />
     </div>
 
     <!-- Empty State -->
@@ -94,95 +85,14 @@
     <!-- Document Grid -->
     <div v-else class="row q-col-gutter-md">
       <div v-for="doc in documents" :key="doc.uuid" class="col-12 col-md-6 col-lg-4">
-        <q-card class="document-card" flat bordered>
-          <q-card-section>
-            <!-- Document Type Icon -->
-            <div class="row items-center q-mb-sm">
-              <q-icon
-                :name="getDocumentIcon(doc.file_type)"
-                size="40px"
-                :color="getDocumentColor(doc.document_type)"
-              />
-              <div class="q-ml-md col">
-                <div class="text-h6 text-weight-medium ellipsis">{{ doc.title }}</div>
-                <div class="text-caption text-grey-7">
-                  {{ formatFileSize(doc.file_size) }} | v{{ doc.version_number }}
-                </div>
-              </div>
-              <q-btn flat round size="sm" icon="more_vert">
-                <q-menu>
-                  <q-list dense>
-                    <q-item clickable v-close-popup @click="downloadDocument(doc)">
-                      <q-item-section avatar><q-icon name="download" /></q-item-section>
-                      <q-item-section>Download</q-item-section>
-                    </q-item>
-                    <q-item clickable v-close-popup @click="viewDocument(doc)">
-                      <q-item-section avatar><q-icon name="visibility" /></q-item-section>
-                      <q-item-section>View</q-item-section>
-                    </q-item>
-                    <q-separator />
-                    <q-item clickable v-close-popup @click="editDocument(doc)">
-                      <q-item-section avatar><q-icon name="edit" /></q-item-section>
-                      <q-item-section>Edit</q-item-section>
-                    </q-item>
-                    <q-item
-                      v-if="doc.status === 'UNDER_REVIEW'"
-                      clickable
-                      v-close-popup
-                      @click="approveDocument(doc)"
-                    >
-                      <q-item-section avatar><q-icon name="check" color="green" /></q-item-section>
-                      <q-item-section>Approve</q-item-section>
-                    </q-item>
-                    <q-separator />
-                    <q-item clickable v-close-popup @click="deleteDocument(doc)">
-                      <q-item-section avatar
-                        ><q-icon name="delete" color="negative"
-                      /></q-item-section>
-                      <q-item-section class="text-negative">Delete</q-item-section>
-                    </q-item>
-                  </q-list>
-                </q-menu>
-              </q-btn>
-            </div>
-
-            <p v-if="doc.description" class="text-grey-7 text-body2 q-mb-sm ellipsis-2-lines">
-              {{ doc.description }}
-            </p>
-
-            <q-separator class="q-mb-sm" />
-
-            <!-- Meta Information -->
-            <div class="row q-col-gutter-sm">
-              <div class="col-6">
-                <q-badge :color="getStatusColor(doc.status)" :label="doc.status" class="q-px-sm" />
-              </div>
-              <div class="col-6 text-right">
-                <span class="text-caption text-grey-7">
-                  <q-icon name="download" size="14px" />
-                  {{ doc.download_count }}
-                </span>
-              </div>
-            </div>
-
-            <!-- Tags -->
-            <div v-if="doc.tags?.length" class="q-mt-sm">
-              <q-badge
-                v-for="tag in doc.tags.slice(0, 3)"
-                :key="tag"
-                outline
-                color="primary"
-                :label="tag"
-                class="q-mr-xs"
-              />
-            </div>
-
-            <!-- Upload Info -->
-            <div class="text-caption text-grey-6 q-mt-sm">
-              {{ formatDate(doc.created_at) }}
-            </div>
-          </q-card-section>
-        </q-card>
+        <DocumentCard
+          :document="doc"
+          @click="$router.push(`/documents/${doc.uuid}`)"
+          @download="downloadDocument(doc)"
+          @preview="viewDocument(doc)"
+          @edit="editDocument(doc)"
+          @delete="confirmDelete(doc)"
+        />
       </div>
     </div>
 
@@ -205,85 +115,56 @@
           <div class="text-h6">Upload Document</div>
         </q-card-section>
         <q-card-section>
-          <q-form @submit.prevent="uploadDocument" class="q-gutter-md">
-            <div
-              class="upload-area q-pa-lg text-center rounded-borders cursor-pointer"
-              @click="triggerUpload"
-            >
-              <q-icon name="cloud_upload" size="50px" color="primary" />
-              <p class="q-mt-sm q-mb-none">{{ selectedFile?.name || 'Click to select file' }}</p>
-              <p class="text-caption text-grey-7">PDF, DOC, XLS, PPT, TXT, Images (Max 50MB)</p>
-            </div>
-
-            <q-input
-              v-model="uploadForm.title"
-              label="Document Title"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
-            <q-input
-              v-model="uploadForm.description"
-              label="Description"
-              outlined
-              dense
-              type="textarea"
-              rows="2"
-            />
-            <q-select
-              v-model="uploadForm.document_type"
-              :options="documentTypeOptions"
-              label="Document Type"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
-            <q-select
-              v-model="uploadForm.access_level"
-              :options="accessLevelOptions"
-              label="Access Level"
-              outlined
-              dense
-            />
-            <q-select
-              v-model="uploadForm.tags"
-              :options="tagOptions"
-              label="Tags"
-              outlined
-              dense
-              multiple
-              use-chips
-            />
-          </q-form>
+          <DocumentUploader
+            :submitting="isUploading"
+            @submit="handleUploadSubmit"
+            @cancel="showUploadDialog = false"
+          />
         </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" v-close-popup />
-          <q-btn color="primary" label="Upload" :loading="isUploading" @click="uploadDocument" />
-        </q-card-actions>
       </q-card>
+    </q-dialog>
+
+    <!-- Preview Dialog -->
+    <q-dialog v-model="showPreviewDialog" maximized>
+      <DocumentPreview
+        :document="previewDoc"
+        :preview-url="previewUrl"
+        @download="downloadDocument(previewDoc)"
+        @close="showPreviewDialog = false"
+      />
     </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { DocumentService } from '../../services/api/DocumentService'
-import { Filesystem, Directory } from '@capacitor/filesystem'
-import EmptyState from '../../components/common/EmptyState.vue'
-import { formatDate } from '../../utils/formatters'
+import { documentService } from '../../services/api/DocumentService'
+import PageHeader from '../../components/.common/PageHeader.vue'
+import SearchBar from '../../components/.common/SearchBar.vue'
+import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
+import EmptyState from '../../components/.common/EmptyState.vue'
+import DocumentCard from '../../components/documents/DocumentCard.vue'
+import DocumentUploader from '../../components/documents/DocumentUploader.vue'
+import DocumentPreview from '../../components/documents/DocumentPreview.vue'
 
+const router = useRouter()
 const $q = useQuasar()
 
+// State
 const documents = ref<any[]>([])
 const isLoading = ref(false)
 const isUploading = ref(false)
 const currentPage = ref(1)
 const totalPages = ref(1)
 const showUploadDialog = ref(false)
-const fileInput = ref<HTMLInputElement>()
-const selectedFile = ref<File | null>(null)
+const showPreviewDialog = ref(false)
+const fileInputRef = ref<HTMLInputElement>()
+const previewDoc = ref<any>(null)
+const previewUrl = ref('')
 
+// Filters
 const filters = reactive({
   search: '',
   document_type: null,
@@ -291,14 +172,7 @@ const filters = reactive({
   sortBy: 'created_at',
 })
 
-const uploadForm = reactive({
-  title: '',
-  description: '',
-  document_type: '',
-  access_level: 'INTERNAL',
-  tags: [] as string[],
-})
-
+// Options
 const documentTypeOptions = [
   'BCM_POLICY',
   'RISK_ASSESSMENT',
@@ -324,8 +198,6 @@ const statusOptions = [
   'REJECTED',
   'EXPIRED',
 ]
-const accessLevelOptions = ['PUBLIC', 'INTERNAL', 'CONFIDENTIAL', 'RESTRICTED']
-const tagOptions = ['BCM', 'Policy', 'BIA', 'BCP', 'Risk', 'Compliance', 'Training', 'Audit']
 const sortOptions = [
   { label: 'Newest', value: 'created_at' },
   { label: 'Name', value: 'title' },
@@ -333,18 +205,18 @@ const sortOptions = [
   { label: 'Size', value: 'file_size' },
 ]
 
-const requiredRule = (val: any) => !!val || 'Required'
-
+// Lifecycle
 onMounted(() => loadDocuments())
 
+// Methods
 async function loadDocuments(): Promise<void> {
   isLoading.value = true
   try {
-    const response = await DocumentService.getDocuments({
+    const response = await documentService.getDocuments({
       ...filters,
       page: currentPage.value,
       limit: 12,
-    })
+    } as any)
     documents.value = response.data || []
     totalPages.value = response.totalPages || 1
   } catch (error) {
@@ -356,38 +228,24 @@ async function loadDocuments(): Promise<void> {
 }
 
 function triggerUpload(): void {
-  fileInput.value?.click()
+  fileInputRef.value?.click()
 }
 
 function handleFileSelected(event: Event): void {
   const input = event.target as HTMLInputElement
-  if (input.files?.[0]) {
-    selectedFile.value = input.files[0]
-    uploadForm.title = input.files[0].name.replace(/\.[^/.]+$/, '')
+  if (input.files && input.files.length > 0) {
     showUploadDialog.value = true
+    // Reset file input so the same file can be selected again
+    input.value = ''
   }
 }
 
-async function uploadDocument(): Promise<void> {
-  if (!selectedFile.value || !uploadForm.title || !uploadForm.document_type) {
-    $q.notify({ type: 'negative', message: 'Please fill all required fields' })
-    return
-  }
-
+async function handleUploadSubmit(document: any): Promise<void> {
   isUploading.value = true
   try {
-    const formData = new FormData()
-    formData.append('file', selectedFile.value)
-    formData.append('title', uploadForm.title)
-    formData.append('description', uploadForm.description)
-    formData.append('document_type', uploadForm.document_type)
-    formData.append('access_level', uploadForm.access_level)
-    uploadForm.tags.forEach((tag) => formData.append('tags[]', tag))
-
-    await DocumentService.uploadDocument(formData)
+    await documentService.uploadDocument(document)
     $q.notify({ type: 'positive', message: 'Document uploaded successfully' })
     showUploadDialog.value = false
-    selectedFile.value = null
     await loadDocuments()
   } catch (error) {
     $q.notify({ type: 'negative', message: 'Failed to upload document' })
@@ -398,52 +256,37 @@ async function uploadDocument(): Promise<void> {
 
 async function downloadDocument(doc: any): Promise<void> {
   try {
-    const response = await DocumentService.downloadDocument(doc.uuid)
-    const blob = new Blob([response.data], { type: doc.file_type })
-    const url = URL.createObjectURL(blob)
-    window.open(url, '_blank')
-    URL.revokeObjectURL(url)
+    await documentService.downloadDocument(doc.uuid, doc.file_name)
+    $q.notify({ type: 'info', message: 'Downloading...', timeout: 1500 })
   } catch (error) {
     $q.notify({ type: 'negative', message: 'Failed to download document' })
   }
 }
 
 function viewDocument(doc: any): void {
-  if (doc.file_type === 'application/pdf' || doc.file_type.startsWith('image/')) {
-    window.open(doc.file_path, '_blank')
+  if (doc.file_type === 'application/pdf' || doc.file_type?.startsWith('image/')) {
+    previewDoc.value = doc
+    previewUrl.value = doc.file_path || ''
+    showPreviewDialog.value = true
   } else {
     downloadDocument(doc)
   }
 }
 
 function editDocument(doc: any): void {
-  uploadForm.title = doc.title
-  uploadForm.description = doc.description
-  uploadForm.document_type = doc.document_type
-  uploadForm.access_level = doc.access_level
-  uploadForm.tags = doc.tags || []
-  showUploadDialog.value = true
+  // Navigate to detail page for editing
+  router.push(`/documents/${doc.uuid}`)
 }
 
-async function approveDocument(doc: any): Promise<void> {
-  try {
-    await DocumentService.approveDocument(doc.uuid)
-    $q.notify({ type: 'positive', message: 'Document approved' })
-    await loadDocuments()
-  } catch (error) {
-    $q.notify({ type: 'negative', message: 'Failed to approve document' })
-  }
-}
-
-function deleteDocument(doc: any): void {
+function confirmDelete(doc: any): void {
   $q.dialog({
     title: 'Delete Document',
-    message: `Are you sure you want to delete "${doc.title}"?`,
+    message: `Are you sure you want to delete "${doc.title}"? This action cannot be undone.`,
     cancel: true,
     ok: { color: 'negative', label: 'Delete' },
   }).onOk(async () => {
     try {
-      await DocumentService.deleteDocument(doc.uuid)
+      await documentService.deleteDocument(doc.uuid)
       $q.notify({ type: 'positive', message: 'Document deleted' })
       await loadDocuments()
     } catch (error) {
@@ -451,71 +294,4 @@ function deleteDocument(doc: any): void {
     }
   })
 }
-
-function getDocumentIcon(fileType: string): string {
-  if (fileType?.includes('pdf')) return 'picture_as_pdf'
-  if (fileType?.includes('word') || fileType?.includes('doc')) return 'description'
-  if (fileType?.includes('excel') || fileType?.includes('sheet')) return 'table_chart'
-  if (fileType?.includes('powerpoint') || fileType?.includes('presentation')) return 'slideshow'
-  if (fileType?.includes('image')) return 'image'
-  return 'insert_drive_file'
-}
-
-function getDocumentColor(type: string): string {
-  const colors: Record<string, string> = {
-    BCM_POLICY: 'red',
-    RISK_ASSESSMENT: 'orange',
-    BIA_REPORT: 'blue',
-    BCP_DOCUMENT: 'green',
-    COMPLIANCE_EVIDENCE: 'purple',
-    TRAINING_MATERIAL: 'teal',
-    AUDIT_REPORT: 'brown',
-    INCIDENT_REPORT: 'deep-orange',
-  }
-  return colors[type] || 'grey'
-}
-
-function getStatusColor(status: string): string {
-  const colors: Record<string, string> = {
-    DRAFT: 'grey',
-    PUBLISHED: 'green',
-    ARCHIVED: 'orange',
-    UNDER_REVIEW: 'blue',
-    APPROVED: 'green',
-    REJECTED: 'red',
-    EXPIRED: 'brown',
-  }
-  return colors[status] || 'grey'
-}
-
-function formatFileSize(bytes: number): string {
-  if (!bytes) return '0 B'
-  const sizes = ['B', 'KB', 'MB', 'GB']
-  const i = Math.floor(Math.log(bytes) / Math.log(1024))
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
-}
 </script>
-
-<style lang="scss" scoped>
-.document-card {
-  transition: transform 0.2s;
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-
-.upload-area {
-  border: 2px dashed var(--q-primary);
-  background: var(--q-primary-light, #e3f2fd);
-  &:hover {
-    background: var(--q-primary-light-2, #bbdefb);
-  }
-}
-
-.ellipsis-2-lines {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-</style>

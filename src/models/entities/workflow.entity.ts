@@ -44,7 +44,6 @@ export enum WorkflowPriority {
 
 /**
  * Workflow Entity (Flat version for IndexedDB)
- * Only contains primitive values and IDs - no nested entity relationships
  */
 export interface Workflow {
   uuid: string
@@ -54,7 +53,9 @@ export interface Workflow {
   title: string
   description?: string | null
   initiated_by: string
+  initiator_name?: string | null
   assigned_to?: string | null
+  assignee_name?: string | null
   entity_id?: string | null
   entity_type?: string | null
   workflow_data?: Record<string, unknown> | null
@@ -78,19 +79,12 @@ export interface Workflow {
  * Approval Step in a workflow's approval chain
  */
 export interface ApprovalStep {
-  /** Order of this step in the chain */
   order: number
-  /** User ID of the approver */
   approver_id: string
-  /** Name of the approver (denormalized for display) */
   approver_name?: string
-  /** Status of this approval step */
   status: 'pending' | 'approved' | 'rejected' | 'skipped'
-  /** When this step was actioned */
   timestamp?: string
-  /** Comments from the approver */
   comments?: string
-  /** Role required for this step */
   required_role?: string
 }
 
@@ -98,17 +92,11 @@ export interface ApprovalStep {
  * Comment on a workflow
  */
 export interface WorkflowComment {
-  /** User ID who made the comment */
   user_id: string
-  /** User name (denormalized for display) */
   user_name?: string
-  /** The comment text */
   comment: string
-  /** When the comment was made */
   timestamp: string
-  /** The action associated with this comment */
   action: 'COMMENT' | 'SUBMIT' | 'APPROVE' | 'REJECT' | 'ESCALATE' | 'REASSIGN' | 'CANCEL'
-  /** Rejection reason if action was REJECT */
   rejection_reason?: string
 }
 
@@ -116,73 +104,24 @@ export interface WorkflowComment {
  * Workflow Statistics
  */
 export interface WorkflowStats {
-  /** Total number of workflows */
   total: number
-  /** Number of workflows in pending state */
   pending: number
-  /** Number of workflows in submitted state */
   submitted: number
-  /** Number of workflows in review state */
   inReview: number
-  /** Number of approved workflows */
   approved: number
-  /** Number of rejected workflows */
   rejected: number
-  /** Number of completed workflows */
   completed: number
-  /** Number of archived workflows */
   archived: number
-  /** Number of cancelled workflows */
   cancelled: number
-  /** Number of expired workflows */
   expired: number
-  /** Number of overdue workflows */
   overdue: number
-  /** Number of escalated workflows */
   escalated: number
-  /** Average completion time in hours */
   averageCompletionTime: number
-  /** Workflows grouped by type */
   byType: Record<string, number>
-  /** Workflows grouped by state */
   byState: Record<string, number>
-  /** Workflows grouped by priority */
   byPriority: Record<string, number>
-  /** Workflows due this week */
   dueThisWeek: number
-  /** Workflows overdue by more than 7 days */
   severelyOverdue: number
-}
-
-/**
- * Workflow Activity (for timeline display)
- */
-export interface WorkflowActivity {
-  /** Activity ID */
-  id: string
-  /** Workflow ID */
-  workflow_id: string
-  /** Type of activity */
-  activity_type:
-    | 'created'
-    | 'submitted'
-    | 'approved'
-    | 'rejected'
-    | 'commented'
-    | 'escalated'
-    | 'reassigned'
-    | 'completed'
-    | 'cancelled'
-  /** User who performed the action */
-  user_id: string
-  /** User name */
-  user_name?: string
-  /** Description of the activity */
-  description: string
-  /** Additional data */
-  metadata?: Record<string, unknown>
-  /** When the activity occurred */
-  timestamp: string
 }
 
 /**
@@ -263,45 +202,27 @@ export interface AddCommentRequest {
  * Workflow Filter Parameters
  */
 export interface WorkflowFilterParams {
-  /** Search term */
   search?: string
-  /** Filter by workflow type */
   workflow_type?: string
-  /** Filter by workflow state */
   workflow_state?: string
-  /** Filter by priority */
   priority?: number
-  /** Filter by assignee */
   assigned_to?: string
-  /** Filter by initiator */
   initiated_by?: string
-  /** Filter by entity type */
   entity_type?: string
-  /** Filter by entity ID */
   entity_id?: string
-  /** Filter workflows due before date */
   due_before?: string
-  /** Filter workflows due after date */
   due_after?: string
-  /** Show only my workflows */
   my_workflows?: boolean
-  /** Show only pending approvals */
   pending_approvals?: boolean
-  /** Show only overdue workflows */
   overdue_only?: boolean
-  /** Page number */
   page?: number
-  /** Items per page */
   limit?: number
-  /** Sort field */
   sortBy?: string
-  /** Sort direction */
   sortOrder?: 'ASC' | 'DESC'
 }
 
 /**
  * Workflow State Transition Map
- * Defines valid transitions from each state
  */
 export const VALID_WORKFLOW_TRANSITIONS: Record<string, string[]> = {
   Draft: ['Submitted'],
