@@ -13,6 +13,8 @@
             outlined
             dense
             clearable
+            emit-value
+            map-options
           />
           <q-input
             v-model="form.start_date"
@@ -56,7 +58,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { computed, reactive } from 'vue'
 
 const props = withDefaults(
   defineProps<{
@@ -81,10 +83,10 @@ const dialogVisible = computed({
 })
 
 const form = reactive({
-  audit_category: null,
+  audit_category: null as string | null,
   start_date: '',
   end_date: '',
-  format: 'csv',
+  format: 'csv' as string,
 })
 
 const categoryOptions = [
@@ -98,12 +100,31 @@ const categoryOptions = [
   'SYNC',
   'CONFIGURATION',
 ]
+
 const formatOptions = [
   { label: 'CSV', value: 'csv' },
   { label: 'JSON', value: 'json' },
 ]
 
 function handleExport(): void {
-  emit('export', { ...form })
+  // Filter out null/undefined/empty optional values
+  const data: Record<string, any> = {
+    format: form.format,
+  }
+
+  if (form.audit_category) {
+    data.audit_category = form.audit_category
+  }
+  if (form.start_date) {
+    data.start_date = form.start_date
+  }
+  if (form.end_date) {
+    data.end_date = form.end_date
+  }
+
+  emit(
+    'export',
+    data as { audit_category?: string; start_date?: string; end_date?: string; format: string }
+  )
 }
 </script>
