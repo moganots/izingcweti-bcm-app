@@ -4,17 +4,17 @@ import { defineConfig } from '#q-app/wrappers'
 export default defineConfig(() => {
   return {
     boot: [
+      'pinia', // Pinia store setup (FIRST - stores need to be available)
       'quasar', // Quasar plugins configuration
-      'pinia', // Pinia store setup
       'i18n', // Internationalization
       'axios', // HTTP client
+      'dexie', // Local database (IndexedDB)
       'capacitor', // Native platform features
-      'dexie', // Local database
-      'auth', // Authentication
-      'sync', // Sync engine
-      'guards', // Route guards
-      'permissions', // Permission checks
-      'errorHandler', // Global error handler
+      'auth', // Authentication (depends on stores)
+      'sync', // Sync engine (depends on auth & dexie)
+      'guards', // Route guards (depends on auth)
+      'permissions', // Permission checks (depends on auth)
+      'errorHandler', // Global error handler (LAST - should catch all errors)
     ],
     css: ['app.scss'],
     extras: ['roboto-font', 'material-icons'],

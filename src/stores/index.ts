@@ -14,3 +14,12 @@ export { useUserStore } from './user.store'
 export { useCacheStore } from './cache.store'
 export { useDocumentStore } from './document.store'
 export { useSettingsStore } from './settings.store'
+
+// Default export for Quasar compatibility
+import { createPinia } from 'pinia'
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate'
+
+const pinia = createPinia()
+pinia.use(piniaPluginPersistedstate)
+
+export default pinia
