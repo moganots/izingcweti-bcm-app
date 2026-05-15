@@ -30,7 +30,7 @@ export default defineConfig(() => {
     },
     devServer: {
       open: false,
-      port: 8080,
+      port: 9811,
     },
     framework: {
       config: {
