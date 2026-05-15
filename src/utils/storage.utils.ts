@@ -1,16 +1,16 @@
 // src/utils/storage.utils.ts
 
-import { Preferences } from '@capacitor/preferences'
-import { STORAGE_KEYS } from './constants'
+import { Preferences } from '@capacitor/preferences';
+import { STORAGE_KEYS } from './constants';
 
 /**
  * Auth token interface
  */
 interface AuthTokens {
-  access_token: string
-  refresh_token: string
-  expires_in?: number
-  token_type?: string
+  access_token: string;
+  refresh_token: string;
+  expires_in?: number;
+  token_type?: string;
 }
 
 // ============================================
@@ -22,10 +22,10 @@ interface AuthTokens {
  */
 export async function setStorageItem(key: string, value: string): Promise<void> {
   try {
-    await Preferences.set({ key, value })
+    await Preferences.set({ key, value });
   } catch (error) {
-    console.warn('Capacitor storage failed, falling back to localStorage:', error)
-    localStorage.setItem(key, value)
+    console.warn('Capacitor storage failed, falling back to localStorage:', error);
+    localStorage.setItem(key, value);
   }
 }
 
@@ -34,11 +34,11 @@ export async function setStorageItem(key: string, value: string): Promise<void> 
  */
 export async function getStorageItem(key: string): Promise<string | null> {
   try {
-    const { value } = await Preferences.get({ key })
-    return value || null
+    const { value } = await Preferences.get({ key });
+    return value || null;
   } catch (error) {
-    console.warn('Capacitor storage failed, falling back to localStorage:', error)
-    return localStorage.getItem(key)
+    console.warn('Capacitor storage failed, falling back to localStorage:', error);
+    return localStorage.getItem(key);
   }
 }
 
@@ -47,10 +47,10 @@ export async function getStorageItem(key: string): Promise<string | null> {
  */
 export async function removeStorageItem(key: string): Promise<void> {
   try {
-    await Preferences.remove({ key })
+    await Preferences.remove({ key });
   } catch (error) {
-    console.warn('Capacitor storage failed, falling back to localStorage:', error)
-    localStorage.removeItem(key)
+    console.warn('Capacitor storage failed, falling back to localStorage:', error);
+    localStorage.removeItem(key);
   }
 }
 
@@ -59,10 +59,10 @@ export async function removeStorageItem(key: string): Promise<void> {
  */
 export async function clearStorage(): Promise<void> {
   try {
-    await Preferences.clear()
+    await Preferences.clear();
   } catch (error) {
-    console.warn('Capacitor storage failed, falling back to localStorage:', error)
-    localStorage.clear()
+    console.warn('Capacitor storage failed, falling back to localStorage:', error);
+    localStorage.clear();
   }
 }
 
@@ -71,11 +71,11 @@ export async function clearStorage(): Promise<void> {
  */
 export async function getStorageKeys(): Promise<string[]> {
   try {
-    const { keys } = await Preferences.keys()
-    return keys
+    const { keys } = await Preferences.keys();
+    return keys;
   } catch (error) {
-    console.warn('Capacitor storage failed:', error)
-    return Object.keys(localStorage)
+    console.warn('Capacitor storage failed:', error);
+    return Object.keys(localStorage);
   }
 }
 
@@ -88,10 +88,10 @@ export async function getStorageKeys(): Promise<string[]> {
  */
 export async function setJSONItem(key: string, value: any): Promise<void> {
   try {
-    const jsonString = JSON.stringify(value)
-    await setStorageItem(key, jsonString)
+    const jsonString = JSON.stringify(value);
+    await setStorageItem(key, jsonString);
   } catch (error) {
-    console.error('Failed to store JSON:', error)
+    console.error('Failed to store JSON:', error);
   }
 }
 
@@ -100,12 +100,12 @@ export async function setJSONItem(key: string, value: any): Promise<void> {
  */
 export async function getJSONItem<T = any>(key: string): Promise<T | null> {
   try {
-    const value = await getStorageItem(key)
-    if (!value) return null
-    return JSON.parse(value) as T
+    const value = await getStorageItem(key);
+    if (!value) return null;
+    return JSON.parse(value) as T;
   } catch (error) {
-    console.error('Failed to parse stored JSON:', error)
-    return null
+    console.error('Failed to parse stored JSON:', error);
+    return null;
   }
 }
 
@@ -113,41 +113,26 @@ export async function getJSONItem<T = any>(key: string): Promise<T | null> {
 // Auth-Specific Storage (Async)
 // ============================================
 
-/**
- * Save authentication tokens (async)
- */
 export async function saveTokensAsync(tokens: AuthTokens): Promise<void> {
-  await setJSONItem(STORAGE_KEYS.AUTH_TOKEN, tokens)
+  await setJSONItem(STORAGE_KEYS.AUTH_TOKEN, tokens);
 }
 
-/**
- * Get authentication tokens (async)
- */
 export async function getTokensAsync(): Promise<AuthTokens | null> {
-  return getJSONItem<AuthTokens>(STORAGE_KEYS.AUTH_TOKEN)
+  return getJSONItem<AuthTokens>(STORAGE_KEYS.AUTH_TOKEN);
 }
 
-/**
- * Clear authentication tokens (async)
- */
 export async function clearTokensAsync(): Promise<void> {
-  await removeStorageItem(STORAGE_KEYS.AUTH_TOKEN)
-  await removeStorageItem(STORAGE_KEYS.REFRESH_TOKEN)
-  await removeStorageItem(STORAGE_KEYS.USER_DATA)
+  await removeStorageItem(STORAGE_KEYS.AUTH_TOKEN);
+  await removeStorageItem(STORAGE_KEYS.REFRESH_TOKEN);
+  await removeStorageItem(STORAGE_KEYS.USER_DATA);
 }
 
-/**
- * Save user data (async)
- */
 export async function saveUserDataAsync(userData: any): Promise<void> {
-  await setJSONItem(STORAGE_KEYS.USER_DATA, userData)
+  await setJSONItem(STORAGE_KEYS.USER_DATA, userData);
 }
 
-/**
- * Get user data (async)
- */
 export async function getUserDataAsync<T = any>(): Promise<T | null> {
-  return getJSONItem<T>(STORAGE_KEYS.USER_DATA)
+  return getJSONItem<T>(STORAGE_KEYS.USER_DATA);
 }
 
 // ============================================
@@ -155,12 +140,12 @@ export async function getUserDataAsync<T = any>(): Promise<T | null> {
 // ============================================
 
 interface AppSettings {
-  theme: 'light' | 'dark' | 'system'
-  language: string
-  notifications: boolean
-  biometricEnabled: boolean
-  syncInterval: number
-  cacheEnabled: boolean
+  theme: 'light' | 'dark' | 'system';
+  language: string;
+  notifications: boolean;
+  biometricEnabled: boolean;
+  syncInterval: number;
+  cacheEnabled: boolean;
 }
 
 const DEFAULT_SETTINGS: AppSettings = {
@@ -170,59 +155,89 @@ const DEFAULT_SETTINGS: AppSettings = {
   biometricEnabled: false,
   syncInterval: 5,
   cacheEnabled: true,
-}
+};
 
 export async function saveSettings(settings: Partial<AppSettings>): Promise<void> {
-  const current = await getSettings()
-  const updated = { ...current, ...settings }
-  await setJSONItem(STORAGE_KEYS.SETTINGS, updated)
+  const current = await getSettings();
+  const updated = { ...current, ...settings };
+  await setJSONItem(STORAGE_KEYS.SETTINGS, updated);
 }
 
 export async function getSettings(): Promise<AppSettings> {
-  const stored = await getJSONItem<Partial<AppSettings>>(STORAGE_KEYS.SETTINGS)
-  return { ...DEFAULT_SETTINGS, ...stored }
+  const stored = await getJSONItem<Partial<AppSettings>>(STORAGE_KEYS.SETTINGS);
+  return { ...DEFAULT_SETTINGS, ...stored };
 }
 
 // ============================================
-// Cache Helpers (Async)
+// Cache Helpers
 // ============================================
 
 interface CacheItem<T> {
-  data: T
-  timestamp: number
-  ttl: number
+  data: T;
+  timestamp: number;
+  ttl: number;
 }
 
-export async function setCacheItem<T>(
+/**
+ * Set cache item with TTL (Time To Live in seconds) - Async
+ */
+export async function setCacheItemAsync<T>(
   key: string,
   data: T,
-  ttlSeconds: number = 3600
+  ttlSeconds: number = 3600,
 ): Promise<void> {
   const item: CacheItem<T> = {
     data,
     timestamp: Date.now(),
     ttl: ttlSeconds * 1000,
-  }
-  await setJSONItem(`cache_${key}`, item)
+  };
+  await setJSONItem(`cache_${key}`, item);
 }
 
-export async function getCacheItem<T>(key: string): Promise<T | null> {
-  const item = await getJSONItem<CacheItem<T>>(`cache_${key}`)
-  if (!item) return null
+/**
+ * Get cache item if not expired - Async
+ */
+export async function getCacheItemAsync<T>(key: string): Promise<T | null> {
+  const item = await getJSONItem<CacheItem<T>>(`cache_${key}`);
+  if (!item) return null;
 
-  const isExpired = Date.now() - item.timestamp > item.ttl
+  const isExpired = Date.now() - item.timestamp > item.ttl;
   if (isExpired) {
-    await removeStorageItem(`cache_${key}`)
-    return null
+    await removeStorageItem(`cache_${key}`);
+    return null;
   }
-  return item.data
+  return item.data;
 }
 
-export async function clearCache(): Promise<void> {
-  const keys = await getStorageKeys()
-  const cacheKeys = keys.filter((k) => k.startsWith('cache_'))
+/**
+ * Remove a specific cache item - Async
+ */
+export async function removeCacheItemAsync(key: string): Promise<void> {
+  await removeStorageItem(`cache_${key}`);
+}
+
+/**
+ * Check if cache item exists and is not expired - Async
+ */
+export async function hasCacheItemAsync(key: string): Promise<boolean> {
+  const item = await getJSONItem<CacheItem<any>>(`cache_${key}`);
+  if (!item) return false;
+  const isExpired = Date.now() - item.timestamp > item.ttl;
+  if (isExpired) {
+    await removeStorageItem(`cache_${key}`);
+    return false;
+  }
+  return true;
+}
+
+/**
+ * Clear all cache items - Async
+ */
+export async function clearCacheAsync(): Promise<void> {
+  const keys = await getStorageKeys();
+  const cacheKeys = keys.filter((k) => k.startsWith('cache_'));
   for (const key of cacheKeys) {
-    await removeStorageItem(key)
+    await removeStorageItem(key);
   }
 }
 
@@ -231,12 +246,12 @@ export async function clearCache(): Promise<void> {
 // ============================================
 
 export async function getStorageVersion(): Promise<number> {
-  const version = await getStorageItem('storage_version')
-  return version ? parseInt(version, 10) : 1
+  const version = await getStorageItem('storage_version');
+  return version ? parseInt(version, 10) : 1;
 }
 
 export async function setStorageVersion(version: number): Promise<void> {
-  await setStorageItem('storage_version', version.toString())
+  await setStorageItem('storage_version', version.toString());
 }
 
 // ============================================
@@ -247,43 +262,61 @@ export async function setStorageVersion(version: number): Promise<void> {
 export const StorageUtils = {
   // ==========================================
   // Synchronous localStorage methods
-  // Use for non-critical operations or when async is not needed
   // ==========================================
 
   /** Set a string value synchronously */
   set: (key: string, value: string): void => {
-    localStorage.setItem(key, value)
+    localStorage.setItem(key, value);
   },
 
   /** Get a string value synchronously */
   get: (key: string): string | null => {
-    return localStorage.getItem(key)
+    return localStorage.getItem(key);
   },
 
   /** Remove a value synchronously */
   remove: (key: string): void => {
-    localStorage.removeItem(key)
+    localStorage.removeItem(key);
   },
 
   /** Clear all localStorage synchronously */
   clear: (): void => {
-    localStorage.clear()
+    localStorage.clear();
   },
 
   /** Set a JSON value synchronously */
   setJSON: (key: string, value: any): void => {
-    localStorage.setItem(key, JSON.stringify(value))
+    localStorage.setItem(key, JSON.stringify(value));
   },
 
   /** Get a JSON value synchronously */
   getJSON: <T = any>(key: string): T | null => {
-    const value = localStorage.getItem(key)
-    if (!value) return null
+    const value = localStorage.getItem(key);
+    if (!value) return null;
     try {
-      return JSON.parse(value) as T
+      return JSON.parse(value) as T;
     } catch {
-      return null
+      return null;
     }
+  },
+
+  // ==========================================
+  // Synchronous Storage Helpers
+  // ==========================================
+
+  /**
+   * Remove a value from storage (synchronous)
+   * Uses localStorage directly for immediate removal
+   */
+  removeStorageItem: (key: string): void => {
+    localStorage.removeItem(key);
+  },
+
+  /**
+   * Get all storage keys (synchronous)
+   */
+  getStorageKeys: (): string[] => {
+    return Object.keys(localStorage);
   },
 
   // ==========================================
@@ -292,59 +325,123 @@ export const StorageUtils = {
 
   /** Save auth tokens synchronously */
   saveTokens: (tokens: AuthTokens): void => {
-    StorageUtils.setJSON(STORAGE_KEYS.AUTH_TOKEN, tokens)
+    StorageUtils.setJSON(STORAGE_KEYS.AUTH_TOKEN, tokens);
   },
 
   /** Get auth tokens synchronously */
   getTokens: (): AuthTokens | null => {
-    return StorageUtils.getJSON<AuthTokens>(STORAGE_KEYS.AUTH_TOKEN)
+    return StorageUtils.getJSON<AuthTokens>(STORAGE_KEYS.AUTH_TOKEN);
   },
 
   /** Clear auth tokens synchronously */
   clearTokens: (): void => {
-    StorageUtils.remove(STORAGE_KEYS.AUTH_TOKEN)
-    StorageUtils.remove(STORAGE_KEYS.REFRESH_TOKEN)
-    StorageUtils.remove(STORAGE_KEYS.USER_DATA)
+    StorageUtils.remove(STORAGE_KEYS.AUTH_TOKEN);
+    StorageUtils.remove(STORAGE_KEYS.REFRESH_TOKEN);
+    StorageUtils.remove(STORAGE_KEYS.USER_DATA);
   },
 
   /** Save user data synchronously */
   saveUserData: (userData: any): void => {
-    StorageUtils.setJSON(STORAGE_KEYS.USER_DATA, userData)
+    StorageUtils.setJSON(STORAGE_KEYS.USER_DATA, userData);
   },
 
   /** Get user data synchronously */
   getUserData: <T = any>(): T | null => {
-    return StorageUtils.getJSON<T>(STORAGE_KEYS.USER_DATA)
+    return StorageUtils.getJSON<T>(STORAGE_KEYS.USER_DATA);
+  },
+
+  // ==========================================
+  // Synchronous Cache Helpers
+  // ==========================================
+
+  /**
+   * Set cache item with TTL (Time To Live in seconds) - Synchronous
+   */
+  setCacheItem: <T>(key: string, data: T, ttlSeconds: number = 3600): void => {
+    const item: CacheItem<T> = {
+      data,
+      timestamp: Date.now(),
+      ttl: ttlSeconds * 1000,
+    };
+    StorageUtils.setJSON(`cache_${key}`, item);
+  },
+
+  /**
+   * Get cache item if not expired - Synchronous
+   */
+  getCacheItem: <T>(key: string): T | null => {
+    const item = StorageUtils.getJSON<CacheItem<T>>(`cache_${key}`);
+    if (!item) return null;
+
+    const isExpired = Date.now() - item.timestamp > item.ttl;
+    if (isExpired) {
+      StorageUtils.remove(`cache_${key}`);
+      return null;
+    }
+    return item.data;
+  },
+
+  /**
+   * Remove a specific cache item - Synchronous
+   * Uses localStorage.removeItem directly
+   */
+  removeCacheItem: (key: string): void => {
+    StorageUtils.removeStorageItem(`cache_${key}`);
+  },
+
+  /**
+   * Check if cache item exists and is not expired - Synchronous
+   */
+  hasCacheItem: (key: string): boolean => {
+    const item = StorageUtils.getJSON<CacheItem<any>>(`cache_${key}`);
+    if (!item) return false;
+    const isExpired = Date.now() - item.timestamp > item.ttl;
+    if (isExpired) {
+      StorageUtils.remove(`cache_${key}`);
+      return false;
+    }
+    return true;
+  },
+
+  /**
+   * Clear all cache items - Synchronous
+   * Iterates through all localStorage keys and removes those prefixed with 'cache_'
+   */
+  clearCache: (): void => {
+    const keys = StorageUtils.getStorageKeys();
+    const cacheKeys = keys.filter((k) => k.startsWith('cache_'));
+    for (const key of cacheKeys) {
+      StorageUtils.removeStorageItem(key);
+    }
   },
 
   // ==========================================
   // Asynchronous Capacitor Preferences methods
-  // Use for critical data that needs reliable persistence
   // ==========================================
 
-  /** Save auth tokens asynchronously (Capacitor with localStorage fallback) */
+  /** Save auth tokens asynchronously */
   saveTokensAsync: async (tokens: AuthTokens): Promise<void> => {
-    await saveTokensAsync(tokens)
+    await saveTokensAsync(tokens);
   },
 
-  /** Get auth tokens asynchronously (Capacitor with localStorage fallback) */
+  /** Get auth tokens asynchronously */
   getTokensAsync: async (): Promise<AuthTokens | null> => {
-    return getTokensAsync()
+    return getTokensAsync();
   },
 
-  /** Clear auth tokens asynchronously (Capacitor with localStorage fallback) */
+  /** Clear auth tokens asynchronously */
   clearTokensAsync: async (): Promise<void> => {
-    await clearTokensAsync()
+    await clearTokensAsync();
   },
 
-  /** Save user data asynchronously (Capacitor with localStorage fallback) */
+  /** Save user data asynchronously */
   saveUserDataAsync: async (userData: any): Promise<void> => {
-    await saveUserDataAsync(userData)
+    await saveUserDataAsync(userData);
   },
 
-  /** Get user data asynchronously (Capacitor with localStorage fallback) */
+  /** Get user data asynchronously */
   getUserDataAsync: async <T = any>(): Promise<T | null> => {
-    return getUserDataAsync<T>()
+    return getUserDataAsync<T>();
   },
 
   // ==========================================
@@ -353,11 +450,44 @@ export const StorageUtils = {
 
   /** Save app settings */
   saveSettings: async (settings: Partial<AppSettings>): Promise<void> => {
-    await saveSettings(settings)
+    await saveSettings(settings);
   },
 
   /** Get app settings */
   getSettings: async (): Promise<AppSettings> => {
-    return getSettings()
+    return getSettings();
   },
-}
+
+  // ==========================================
+  // Async Cache Helpers
+  // ==========================================
+
+  /** Set cache item asynchronously */
+  setCacheItemAsync: async <T>(
+    key: string,
+    data: T,
+    ttlSeconds?: number,
+  ): Promise<void> => {
+    await setCacheItemAsync(key, data, ttlSeconds);
+  },
+
+  /** Get cache item asynchronously */
+  getCacheItemAsync: async <T>(key: string): Promise<T | null> => {
+    return getCacheItemAsync<T>(key);
+  },
+
+  /** Remove cache item asynchronously */
+  removeCacheItemAsync: async (key: string): Promise<void> => {
+    await removeCacheItemAsync(key);
+  },
+
+  /** Check if cache item exists asynchronously */
+  hasCacheItemAsync: async (key: string): Promise<boolean> => {
+    return hasCacheItemAsync(key);
+  },
+
+  /** Clear all cache items asynchronously */
+  clearCacheAsync: async (): Promise<void> => {
+    await clearCacheAsync();
+  },
+};
