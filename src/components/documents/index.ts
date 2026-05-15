@@ -1,0 +1,6 @@
+export { default as DocumentCard } from './DocumentCard.vue'
+export { default as DocumentUploader } from './DocumentUploader.vue'
+export { default as DocumentPreview } from './DocumentPreview.vue'
+export { default as DocumentVersionHistory } from './DocumentVersionHistory.vue'
+export { default as DocumentApprovalActions } from './DocumentApprovalActions.vue'
+export { default as DocumentStatsOverview } from './DocumentStatsOverview.vue'

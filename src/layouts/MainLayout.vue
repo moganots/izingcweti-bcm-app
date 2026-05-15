@@ -1,224 +1,178 @@
-<!-- src/layouts/MainLayout.vue -->
 <template>
   <q-layout view="lHh Lpr lFf">
     <!-- Header -->
-    <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
-        <q-btn
-          flat
-          dense
-          round
-          icon="menu"
-          aria-label="Menu"
-          @click="uiStore.toggleDrawer()"
-        />
+    <AppHeader :title="pageTitle" @toggle-drawer="toggleDrawer" />
 
-        <q-toolbar-title>
-          {{ route.meta.title || 'BCM Mobile' }}
-        </q-toolbar-title>
-
-        <q-btn
-          v-if="syncStore.hasPendingChanges"
-          flat
-          dense
-          round
-          icon="sync"
-          :color="syncStore.isSyncing ? 'orange' : 'white'"
-          @click="handleSync"
-        >
-          <q-badge
-            v-if="syncStore.pendingCount > 0"
-            floating
-            color="red"
-          >
-            {{ syncStore.pendingCount }}
-          </q-badge>
-          <q-tooltip>
-            {{ syncStore.isSyncing ? 'Syncing...' : 'Sync changes' }}
-          </q-tooltip>
-        </q-btn>
-
-        <q-btn
-          flat
-          dense
-          round
-          icon="notifications"
-          @click="$router.push('/notifications')"
-        >
-          <q-badge
-            v-if="notificationStore.unreadCount > 0"
-            floating
-            color="red"
-          >
-            {{ notificationStore.unreadCount }}
-          </q-badge>
-        </q-btn>
-
-        <q-btn
-          flat
-          dense
-          round
-          icon="person"
-          @click="$router.push('/profile')"
-        />
-      </q-toolbar>
-    </q-header>
-
-    <!-- Drawer -->
-    <q-drawer
-      v-model="uiStore.isDrawerOpen"
-      show-if-above
-      :width="280"
-      :breakpoint="500"
-      bordered
-    >
-      <q-scroll-area class="fit">
-        <q-list padding>
-          <q-item-label header>
-            BCM System
-          </q-item-label>
-
-          <q-separator spaced />
-
-          <q-expansion-item
-            v-for="group in menuGroups"
-            :key="group.label"
-            :icon="group.icon"
-            :label="group.label"
-            :default-opened="isGroupActive(group)"
-          >
-            <q-item
-              v-for="item in group.items"
-              :key="item.name"
-              :to="{ name: item.name }"
-              :active="route.name === item.name"
-              clickable
-              v-ripple
-              exact
-            >
-              <q-item-section avatar>
-                <q-icon :name="item.icon" />
-              </q-item-section>
-              <q-item-section>
-                {{ item.label }}
-              </q-item-section>
-            </q-item>
-          </q-expansion-item>
-        </q-list>
-      </q-scroll-area>
-
-      <div class="absolute-bottom">
-        <q-separator />
-        <q-list>
-          <q-item
-            clickable
-            v-ripple
-            @click="$router.push('/settings')"
-          >
-            <q-item-section avatar>
-              <q-icon name="settings" />
-            </q-item-section>
-            <q-item-section>Settings</q-item-section>
-          </q-item>
-          <q-item
-            clickable
-            v-ripple
-            @click="handleLogout"
-          >
-            <q-item-section avatar>
-              <q-icon name="logout" />
-            </q-item-section>
-            <q-item-section>Logout</q-item-section>
-          </q-item>
-        </q-list>
-      </div>
-    </q-drawer>
+    <!-- Navigation Drawer -->
+    <AppDrawer v-model="drawerOpen" />
 
     <!-- Page Content -->
     <q-page-container>
+      <!-- Offline Banner -->
       <OfflineBanner v-if="uiStore.isOffline" />
-      <router-view v-slot="{ Component }">
-        <transition
-          name="fade"
-          mode="out-in"
-        >
-          <component :is="Component" />
+
+      <!-- Main Content -->
+      <router-view v-slot="{ Component, route }">
+        <transition :name="transitionName" mode="out-in" :duration="200">
+          <keep-alive :include="cachedViews">
+            <component :is="Component" :key="route.fullPath" />
+          </keep-alive>
         </transition>
       </router-view>
     </q-page-container>
+
+    <!-- Optional Footer -->
+    <q-footer v-if="showFooter" class="bg-white text-primary" bordered>
+      <q-tabs
+        v-model="activeTab"
+        active-color="primary"
+        indicator-color="primary"
+        class="text-grey-7"
+        dense
+      >
+        <q-tab
+          name="dashboard"
+          icon="dashboard"
+          label="Dashboard"
+          @click="$router.push('/dashboard')"
+        />
+        <q-tab
+          name="bcm"
+          icon="business"
+          label="BCM"
+          @click="$router.push('/bcm/critical-functions')"
+        />
+        <q-tab
+          name="incidents"
+          icon="report"
+          label="Incidents"
+          @click="$router.push('/incidents')"
+        />
+        <q-tab
+          name="workflows"
+          icon="account_tree"
+          label="Workflows"
+          @click="$router.push('/workflows')"
+        />
+        <q-tab name="more" icon="more_horiz" label="More" @click="toggleDrawer" />
+      </q-tabs>
+    </q-footer>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { useUiStore } from '../stores/ui.store';
-import { useSyncStore } from '../stores/sync.store';
-import { useNotificationStore } from '../stores/notification.store';
-import { useAuthStore } from '../stores/auth.store';
-import OfflineBanner from '../components/common/OfflineBanner.vue';
+import { ref, computed, watch } from 'vue'
+import { useRoute } from 'vue-router'
+import { useUiStore } from '../stores/ui.store'
+import AppHeader from '../components/.common/AppHeader.vue'
+import AppDrawer from '../components/.common/AppDrawer.vue'
+import OfflineBanner from '../components/.common/OfflineBanner.vue'
 
-const route = useRoute();
-const router = useRouter();
-const uiStore = useUiStore();
-const syncStore = useSyncStore();
-const notificationStore = useNotificationStore();
-const authStore = useAuthStore();
+const route = useRoute()
+const uiStore = useUiStore()
 
-const menuGroups = [
-  {
-    label: 'BCM',
-    icon: 'business',
-    items: [
-      { name: 'CriticalFunctions', label: 'Critical Functions', icon: 'functions' },
-      { name: 'BIA', label: 'BIA', icon: 'assessment' },
-      { name: 'BCP', label: 'BCP', icon: 'description' },
-      { name: 'RecoveryStrategies', label: 'Recovery Strategies', icon: 'restore' },
-      { name: 'ExerciseTests', label: 'Exercise Tests', icon: 'playlist_add_check' },
-    ],
-  },
-  {
-    label: 'Risk & Compliance',
-    icon: 'shield',
-    items: [
-      { name: 'Risks', label: 'Risks', icon: 'warning' },
-      { name: 'Incidents', label: 'Incidents', icon: 'report' },
-    ],
-  },
-  {
-    label: 'Workflow',
-    icon: 'account_tree',
-    items: [
-      { name: 'Workflows', label: 'Workflows', icon: 'account_tree' },
-    ],
-  },
-];
+// State
+const drawerOpen = ref(false)
+const transitionName = ref('fade')
+const activeTab = ref('dashboard')
 
-function isGroupActive(group: any): boolean {
-  return group.items.some((item: any) => route.name === item.name);
-}
+// Computed
+const pageTitle = computed(() => {
+  return (route.meta?.title as string) || 'Izingcweti BCM'
+})
 
-async function handleSync(): Promise<void> {
-  try {
-    await syncStore.fullSync();
-    $q.notify({
-      type: 'positive',
-      message: 'Sync completed successfully',
-    });
-  } catch (error: any) {
-    $q.notify({
-      type: 'negative',
-      message: `Sync failed: ${error.message}`,
-    });
+const showFooter = computed(() => {
+  // Show footer on main pages, hide on detail/form pages
+  const hideFooterRoutes = [
+    'Login',
+    'ForgotPassword',
+    'IncidentDetail',
+    'BcpDetail',
+    'BiaDetail',
+    'RiskDetail',
+    'WorkflowDetail',
+  ]
+  return !hideFooterRoutes.includes(route.name as string)
+})
+
+// Pages to keep alive in cache
+const cachedViews = computed(() => [
+  'Dashboard',
+  'CriticalFunctions',
+  'BIA',
+  'BCP',
+  'Incidents',
+  'Risks',
+  'Workflows',
+])
+
+// Watch route to update transition direction
+watch(
+  () => route.fullPath,
+  (to, from) => {
+    if (!from) {
+      transitionName.value = 'fade'
+      return
+    }
+    // Determine transition direction based on route depth
+    const toDepth = to.split('/').length
+    const fromDepth = from.split('/').length
+    transitionName.value = toDepth > fromDepth ? 'slide-left' : 'slide-right'
   }
-}
+)
 
-async function handleLogout(): Promise<void> {
-  try {
-    await authStore.logout();
-    router.push('/auth/login');
-  } catch (error) {
-    console.error('Logout failed:', error);
-  }
+// Watch route to update active tab
+watch(
+  () => route.path,
+  (path) => {
+    if (path.includes('/dashboard')) activeTab.value = 'dashboard'
+    else if (path.includes('/bcm')) activeTab.value = 'bcm'
+    else if (path.includes('/incidents')) activeTab.value = 'incidents'
+    else if (path.includes('/workflows')) activeTab.value = 'workflows'
+    else activeTab.value = 'more'
+  },
+  { immediate: true }
+)
+
+// Methods
+function toggleDrawer(): void {
+  drawerOpen.value = !drawerOpen.value
 }
 </script>
+
+<style lang="scss" scoped>
+/* Page transition animations */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.slide-left-enter-active,
+.slide-left-leave-active,
+.slide-right-enter-active,
+.slide-right-leave-active {
+  transition: transform 0.25s ease, opacity 0.25s ease;
+}
+
+.slide-left-enter-from {
+  transform: translateX(30px);
+  opacity: 0;
+}
+.slide-left-leave-to {
+  transform: translateX(-30px);
+  opacity: 0;
+}
+
+.slide-right-enter-from {
+  transform: translateX(-30px);
+  opacity: 0;
+}
+.slide-right-leave-to {
+  transform: translateX(30px);
+  opacity: 0;
+}
+</style>

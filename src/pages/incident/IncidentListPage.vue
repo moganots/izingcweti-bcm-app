@@ -1,13 +1,12 @@
-<!-- src/pages/incident/IncidentListPage.vue -->
 <template>
   <q-page padding>
-    <!-- Header -->
-    <div class="page-header q-mb-lg">
-      <div class="row items-center justify-between">
-        <div>
-          <h4 class="text-h5 q-mb-xs">Incident Management</h4>
-          <p class="text-grey-7 q-mb-none">Track and manage incidents</p>
-        </div>
+    <PageHeader
+      title="Incident Management"
+      subtitle="Track and manage incidents"
+      show-refresh
+      @refresh="loadIncidents"
+    >
+      <template #actions>
         <q-btn
           color="negative"
           icon="add"
@@ -15,68 +14,42 @@
           unelevated
           @click="showCreateDialog = true"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <!-- Stats -->
-    <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-4 col-md-2" v-for="stat in incidentStats" :key="stat.label">
-        <q-card flat bordered :class="'bg-' + stat.color + '-1'">
-          <q-card-section class="text-center">
-            <div class="text-h4" :class="'text-' + stat.color">{{ stat.count }}</div>
-            <div class="text-caption text-grey-7">{{ stat.label }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
+    <!-- Stats Overview -->
+    <IncidentStatsCards :incidents="incidents" class="q-mb-lg" />
 
     <!-- Filters -->
     <q-card class="q-mb-md" flat bordered>
       <q-card-section>
         <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-3">
-            <q-input
+          <div class="col-12 col-md-4">
+            <SearchBar
               v-model="filters.search"
-              outlined
-              dense
-              placeholder="Search..."
-              clearable
-              @update:model-value="loadIncidents"
-            >
-              <template v-slot:prepend><q-icon name="search" /></template>
-            </q-input>
+              placeholder="Search incidents..."
+              @search="loadIncidents"
+            />
           </div>
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-4">
             <q-select
               v-model="filters.severity"
+              :options="severityOptions"
               outlined
               dense
-              :options="severityOptions"
               label="Severity"
               clearable
               @update:model-value="loadIncidents"
             />
           </div>
-          <div class="col-12 col-md-3">
+          <div class="col-12 col-md-4">
             <q-select
               v-model="filters.status"
+              :options="statusOptions"
               outlined
               dense
-              :options="statusFilterOptions"
               label="Status"
               clearable
-              @update:model-value="loadIncidents"
-            />
-          </div>
-          <div class="col-12 col-md-3">
-            <q-select
-              v-model="filters.sortBy"
-              outlined
-              dense
-              :options="sortOptions"
-              label="Sort"
-              emit-value
-              map-options
               @update:model-value="loadIncidents"
             />
           </div>
@@ -84,112 +57,74 @@
       </q-card-section>
     </q-card>
 
+    <!-- Loading -->
     <div v-if="isLoading" class="text-center q-pa-xl">
-      <q-spinner-dots size="50px" color="primary" />
+      <LoadingSpinner message="Loading incidents..." />
     </div>
 
+    <!-- Empty State -->
     <EmptyState
       v-else-if="incidents.length === 0"
       icon="report"
       title="No Incidents"
-      description="No incidents reported yet."
+      description="No incidents reported yet. Report your first incident to get started."
       :action="{ label: 'Report Incident', handler: () => (showCreateDialog = true) }"
     />
 
+    <!-- Incident List -->
     <div v-else class="row q-col-gutter-md">
       <div v-for="incident in incidents" :key="incident.uuid" class="col-12 col-md-6">
-        <q-card
-          class="incident-card cursor-pointer"
-          flat
-          bordered
-          :class="'border-left-' + getSeverityColor(incident.incident_severity)"
+        <IncidentCard
+          :incident="incident"
           @click="$router.push(`/incidents/${incident.uuid}`)"
-        >
-          <q-card-section>
-            <div class="row items-center justify-between q-mb-sm">
-              <q-badge
-                :color="getSeverityColor(incident.incident_severity)"
-                :label="incident.incident_severity"
-                class="q-px-sm q-py-xs"
-              />
-              <span class="text-caption text-grey-7">{{ formatDate(incident.declared_at) }}</span>
-            </div>
-
-            <div class="text-h6 q-mb-xs">{{ incident.root_cause }}</div>
-            <div class="text-grey-7 text-body2 q-mb-md">
-              Recovery Time: {{ incident.recovery_actual_time || 'In Progress' }}
-            </div>
-
-            <q-separator class="q-mb-sm" />
-
-            <div class="row items-center justify-between">
-              <q-badge
-                :color="incident.closed_at ? 'green' : 'orange'"
-                :label="incident.closed_at ? 'Closed' : 'Active'"
-              />
-              <q-btn
-                v-if="!incident.closed_at"
-                flat
-                color="green"
-                icon="check"
-                label="Close"
-                size="sm"
-                @click.stop="closeIncident(incident)"
-              />
-            </div>
-          </q-card-section>
-        </q-card>
+          @close="handleClose(incident)"
+          @escalate="handleEscalate(incident)"
+        />
       </div>
     </div>
 
-    <!-- Create Dialog -->
+    <!-- Pagination -->
+    <div v-if="totalPages > 1" class="flex justify-center q-mt-lg">
+      <q-pagination
+        v-model="currentPage"
+        :max="totalPages"
+        :max-pages="6"
+        direction-links
+        color="primary"
+        @update:model-value="loadIncidents"
+      />
+    </div>
+
+    <!-- Create Incident Dialog -->
     <q-dialog v-model="showCreateDialog" persistent>
       <q-card style="width: 500px; max-width: 90vw">
-        <q-card-section><div class="text-h6">Report New Incident</div></q-card-section>
         <q-card-section>
-          <q-form @submit.prevent="saveIncident" class="q-gutter-md">
-            <q-select
-              v-model="form.severity"
-              :options="severityOptions"
-              label="Severity"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
-            <q-input
-              v-model="form.root_cause"
-              label="Root Cause"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
-            <q-select
-              v-model="form.bcp_id"
-              :options="bcpOptions"
-              label="Activated BCP"
-              outlined
-              dense
-              emit-value
-              map-options
-            />
-            <q-input
-              v-model="form.recovery_time"
-              label="Recovery Actual Time"
-              outlined
-              dense
-              placeholder="e.g., 3 hours"
-            />
-          </q-form>
+          <div class="text-h6">Report New Incident</div>
         </q-card-section>
-        <q-card-actions align="right">
-          <q-btn flat label="Cancel" color="grey" v-close-popup />
-          <q-btn
-            color="negative"
-            label="Report Incident"
-            :loading="isSaving"
-            @click="saveIncident"
+        <q-card-section>
+          <IncidentReportForm
+            :submitting="saving"
+            :bcps="bcps"
+            @submit="handleCreateIncident"
+            @cancel="showCreateDialog = false"
           />
-        </q-card-actions>
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+
+    <!-- Close Incident Dialog -->
+    <q-dialog v-model="showCloseDialog" persistent>
+      <q-card style="width: 500px; max-width: 90vw">
+        <q-card-section>
+          <div class="text-h6">Close Incident</div>
+        </q-card-section>
+        <q-card-section>
+          <IncidentResolutionForm
+            :submitting="saving"
+            @submit="handleCloseIncident"
+            @cancel="showCloseDialog = false"
+          />
+        </q-card-section>
       </q-card>
     </q-dialog>
   </q-page>
@@ -198,150 +133,109 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { IncidentService } from '../../services/api/IncidentService'
-import { BcmService } from '../../services/api/BcmService'
-import EmptyState from '../../components/common/EmptyState.vue'
-import { formatDate } from '../../utils/formatters'
+import { useIncidentStore } from '../../stores/incident.store'
+import { useBcmStore } from '../../stores/bcm.store'
+import PageHeader from '../../components/.common/PageHeader.vue'
+import SearchBar from '../../components/.common/SearchBar.vue'
+import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
+import EmptyState from '../../components/.common/EmptyState.vue'
+import IncidentCard from '../../components/incident/IncidentCard.vue'
+import IncidentStatsCards from '../../components/incident/IncidentStatsCards.vue'
+import IncidentReportForm from '../../components/incident/IncidentReportForm.vue'
+import IncidentResolutionForm from '../../components/incident/IncidentResolutionForm.vue'
+import { IncidentSeverity } from 'src/models/entities'
 
 const $q = useQuasar()
+const incidentStore = useIncidentStore()
+const bcmStore = useBcmStore()
 
-const incidents = ref<any[]>([])
-const bcps = ref<any[]>([])
-const isLoading = ref(false)
-const isSaving = ref(false)
+const incidents = computed(() => incidentStore.incidents)
+const isLoading = computed(() => incidentStore.isLoading)
+const totalPages = computed(() => incidentStore.totalPages)
+const currentPage = ref(1)
+const saving = ref(false)
 const showCreateDialog = ref(false)
+const showCloseDialog = ref(false)
+const closingIncident = ref<any>(null)
 
 const filters = reactive({
   search: '',
   severity: null,
   status: null,
-  sortBy: 'declared_at',
 })
 
-const form = reactive({
-  severity: '',
-  root_cause: '',
-  bcp_id: '',
-  recovery_time: '',
-})
+const bcps = computed(() => bcmStore.activeBCPs || [])
 
 const severityOptions = ['Critical', 'High', 'Medium', 'Low', 'Informational']
-const statusFilterOptions = ['Active', 'Closed']
-const sortOptions = [
-  { label: 'Date Declared', value: 'declared_at' },
-  { label: 'Severity', value: 'incident_severity' },
-  { label: 'Status', value: 'closed_at' },
+const statusOptions = [
+  { label: 'Active', value: 'active' },
+  { label: 'Closed', value: 'closed' },
 ]
 
-const incidentStats = computed(() => [
-  { label: 'Total', color: 'primary', count: incidents.value.length },
-  {
-    label: 'Critical',
-    color: 'red',
-    count: incidents.value.filter((i) => i.incident_severity === 'Critical' && !i.closed_at).length,
-  },
-  { label: 'Active', color: 'orange', count: incidents.value.filter((i) => !i.closed_at).length },
-  { label: 'Closed', color: 'green', count: incidents.value.filter((i) => i.closed_at).length },
-])
-
-const bcpOptions = computed(() =>
-  bcps.value.map((b: any) => ({ label: b.critical_function?.name || 'Unknown', value: b.uuid }))
-)
-const requiredRule = (val: any) => !!val || 'Required'
-
 onMounted(async () => {
-  await Promise.all([loadIncidents(), loadBCPs()])
+  await Promise.all([loadIncidents(), bcmStore.loadBCPs()])
 })
 
 async function loadIncidents(): Promise<void> {
-  isLoading.value = true
-  try {
-    const response = await IncidentService.getIncidents(filters)
-    incidents.value = response.data || []
-  } catch (error) {
-    console.error('Failed to load incidents:', error)
-  } finally {
-    isLoading.value = false
-  }
+  await incidentStore.loadIncidents({
+    search: filters.search,
+    incident_severity: (filters.severity || 'Critical') as IncidentSeverity,
+    active_only:
+      filters.status === 'active' ? true : filters.status === 'closed' ? false : undefined,
+    page: currentPage.value,
+  } as any)
 }
 
-async function loadBCPs(): Promise<void> {
+async function handleCreateIncident(data: any): Promise<void> {
+  saving.value = true
   try {
-    const response = await BcmService.getBCPs()
-    bcps.value = response.data || []
-  } catch (error) {
-    console.error('Failed to load BCPs:', error)
-  }
-}
-
-async function saveIncident(): Promise<void> {
-  isSaving.value = true
-  try {
-    await IncidentService.createIncident({
-      incident_severity: form.severity,
-      root_cause: form.root_cause,
-      business_continuity_plan_id_activated: form.bcp_id,
-      recovery_actual_time: form.recovery_time,
+    await incidentStore.createIncident({
+      organisation_id: 'org-1', // Replace with actual org ID
+      incident_severity: data.incident_severity,
+      root_cause: data.root_cause,
+      business_continuity_plan_id_activated: data.bcp_id,
+      recovery_actual_time: data.recovery_actual_time,
     })
-    $q.notify({ type: 'positive', message: 'Incident reported' })
+    $q.notify({ type: 'positive', message: 'Incident reported successfully' })
     showCreateDialog.value = false
     await loadIncidents()
-  } catch (error) {
-    $q.notify({ type: 'negative', message: 'Failed to report incident' })
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to report incident' })
   } finally {
-    isSaving.value = false
+    saving.value = false
   }
 }
 
-async function closeIncident(incident: any): Promise<void> {
-  $q.dialog({
-    title: 'Close Incident',
-    message: 'Are you sure you want to close this incident?',
-    cancel: true,
-  }).onOk(async () => {
-    try {
-      await IncidentService.closeIncident(incident.uuid, { closed_at: new Date().toISOString() })
-      $q.notify({ type: 'positive', message: 'Incident closed' })
-      await loadIncidents()
-    } catch (error) {
-      $q.notify({ type: 'negative', message: 'Failed to close incident' })
-    }
-  })
+function handleClose(incident: any): void {
+  closingIncident.value = incident
+  showCloseDialog.value = true
 }
 
-function getSeverityColor(severity: string): string {
-  const colors: Record<string, string> = {
-    Critical: 'red',
-    High: 'orange',
-    Medium: 'yellow',
-    Low: 'green',
-    Informational: 'blue',
+async function handleCloseIncident(data: any): Promise<void> {
+  if (!closingIncident.value) return
+  saving.value = true
+  try {
+    await incidentStore.closeIncident(closingIncident.value.uuid, {
+      closed_at: data.closed_at,
+    })
+    $q.notify({ type: 'positive', message: 'Incident closed successfully' })
+    showCloseDialog.value = false
+    closingIncident.value = null
+    await loadIncidents()
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to close incident' })
+  } finally {
+    saving.value = false
   }
-  return colors[severity] || 'grey'
+}
+
+async function handleEscalate(incident: any): Promise<void> {
+  try {
+    await incidentStore.escalateIncident(incident.uuid)
+    $q.notify({ type: 'positive', message: 'Incident escalated' })
+    await loadIncidents()
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to escalate' })
+  }
 }
 </script>
-
-<style lang="scss" scoped>
-.incident-card {
-  transition: transform 0.2s;
-  border-left: 4px solid transparent;
-  &:hover {
-    transform: translateY(-2px);
-  }
-}
-.border-left-red {
-  border-left-color: var(--q-negative) !important;
-}
-.border-left-orange {
-  border-left-color: var(--q-warning) !important;
-}
-.border-left-yellow {
-  border-left-color: #fbc02d !important;
-}
-.border-left-green {
-  border-left-color: var(--q-positive) !important;
-}
-.border-left-blue {
-  border-left-color: var(--q-info) !important;
-}
-</style>

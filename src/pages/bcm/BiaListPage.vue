@@ -1,15 +1,12 @@
-<!-- src/pages/bcm/BiaListPage.vue -->
 <template>
   <q-page padding>
-    <!-- Header -->
-    <div class="page-header q-mb-lg">
-      <div class="row items-center justify-between">
-        <div>
-          <h4 class="text-h5 q-mb-xs">Business Impact Analysis</h4>
-          <p class="text-grey-7 q-mb-none">
-            Assess and manage business impact for critical functions
-          </p>
-        </div>
+    <PageHeader
+      title="Business Impact Analysis"
+      subtitle="Assess and manage business impact"
+      show-refresh
+      @refresh="loadBIAs"
+    >
+      <template #actions>
         <q-btn
           color="primary"
           icon="add"
@@ -17,113 +14,32 @@
           unelevated
           @click="$router.push('/bcm/bia/create')"
         />
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
-    <!-- Stats Cards -->
     <div class="row q-col-gutter-md q-mb-lg">
-      <div class="col-6 col-md-3">
-        <q-card flat bordered class="bg-primary text-white">
-          <q-card-section>
-            <div class="text-caption text-white-70">Total BIAs</div>
-            <div class="text-h4 q-mt-sm">{{ stats.total }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-6 col-md-3">
-        <q-card flat bordered class="bg-green text-white">
-          <q-card-section>
-            <div class="text-caption text-white-70">Completed</div>
-            <div class="text-h4 q-mt-sm">{{ stats.completed }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-6 col-md-3">
-        <q-card flat bordered class="bg-orange text-white">
-          <q-card-section>
-            <div class="text-caption text-white-70">In Progress</div>
-            <div class="text-h4 q-mt-sm">{{ stats.inProgress }}</div>
-          </q-card-section>
-        </q-card>
-      </div>
-      <div class="col-6 col-md-3">
-        <q-card flat bordered class="bg-red text-white">
-          <q-card-section>
-            <div class="text-caption text-white-70">Critical Impact</div>
-            <div class="text-h4 q-mt-sm">{{ stats.critical }}</div>
-          </q-card-section>
-        </q-card>
+      <div class="col-6 col-md-3" v-for="stat in stats" :key="stat.label">
+        <q-card flat bordered :class="'bg-' + stat.color + '-1'"
+          ><q-card-section class="text-center"
+            ><div class="text-h4" :class="'text-' + stat.color">{{ stat.value }}</div>
+            <div class="text-caption text-grey-7">{{ stat.label }}</div></q-card-section
+          ></q-card
+        >
       </div>
     </div>
 
-    <!-- Filters -->
-    <q-card class="q-mb-md" flat bordered>
-      <q-card-section>
-        <div class="row q-col-gutter-md">
-          <div class="col-12 col-md-4">
-            <q-input
-              v-model="filters.search"
-              outlined
-              dense
-              placeholder="Search BIAs..."
-              clearable
-              @update:model-value="loadBIAs"
-            >
-              <template v-slot:prepend>
-                <q-icon name="search" />
-              </template>
-            </q-input>
-          </div>
-          <div class="col-12 col-md-4">
-            <q-select
-              v-model="filters.impact"
-              outlined
-              dense
-              :options="impactOptions"
-              label="Impact Level"
-              clearable
-              @update:model-value="loadBIAs"
-            />
-          </div>
-          <div class="col-12 col-md-4">
-            <q-select
-              v-model="filters.sortBy"
-              outlined
-              dense
-              :options="sortOptions"
-              label="Sort By"
-              emit-value
-              map-options
-              @update:model-value="loadBIAs"
-            />
-          </div>
-        </div>
-      </q-card-section>
-    </q-card>
-
-    <!-- Loading -->
-    <div v-if="isLoading" class="text-center q-pa-xl">
-      <q-spinner-dots size="50px" color="primary" />
-    </div>
-
-    <!-- Empty State -->
+    <div v-if="isLoading" class="text-center q-pa-xl"><LoadingSpinner /></div>
     <EmptyState
       v-else-if="bias.length === 0"
       icon="assessment"
       title="No BIAs Found"
-      description="Start assessing business impact for your critical functions."
+      description="Start assessing business impact."
       :action="{ label: 'Create BIA', handler: () => $router.push('/bcm/bia/create') }"
     />
 
-    <!-- BIA List -->
     <div v-else class="row q-col-gutter-md">
       <div v-for="bia in bias" :key="bia.uuid" class="col-12 col-md-6">
-        <q-card
-          class="bia-card cursor-pointer"
-          flat
-          bordered
-          @click="$router.push(`/bcm/bia/${bia.uuid}`)"
-        >
+        <q-card class="cursor-pointer" flat bordered @click="$router.push(`/bcm/bia/${bia.uuid}`)">
           <q-card-section>
             <div class="row items-center justify-between q-mb-sm">
               <q-badge
@@ -131,148 +47,67 @@
                 :label="bia.reputational_impact + ' Impact'"
                 class="q-px-sm q-py-xs"
               />
-              <span class="text-caption text-grey-7">
-                {{ formatDate(bia.assessed_date) }}
-              </span>
+              <span class="text-caption text-grey-7">{{ formatDate(bia.assessed_date) }}</span>
             </div>
-
-            <div class="text-h6 q-mb-xs">
-              {{ bia.critical_function?.name || 'Unknown Function' }}
-            </div>
-            <p class="text-grey-7 text-body2 q-mb-md">
-              {{ bia.critical_function?.department?.name || 'No department' }}
-            </p>
-
+            <div class="text-h6 q-mb-xs">{{ bia.critical_function?.name || 'Unknown' }}</div>
             <q-separator class="q-mb-sm" />
-
             <div class="row q-col-gutter-sm text-center">
               <div class="col-4">
-                <div class="text-caption text-grey-6">Financial Impact</div>
+                <div class="text-caption text-grey-6">Financial</div>
                 <div class="text-body2 text-weight-bold text-primary">
-                  {{ formatCurrency(bia.financial_impact_per_day) }}
+                  {{ formatCurrency(bia.financial_impact_per_day) }}/day
                 </div>
-                <div class="text-caption text-grey-6">per day</div>
               </div>
               <div class="col-4">
                 <div class="text-caption text-grey-6">Operational</div>
-                <div class="text-body2 text-weight-bold">
-                  {{ truncateText(bia.operational_impact, 30) }}
-                </div>
+                <div class="text-body2">{{ truncateText(bia.operational_impact, 20) }}</div>
               </div>
               <div class="col-4">
                 <div class="text-caption text-grey-6">Regulatory</div>
-                <div class="text-body2 text-weight-bold">
-                  {{ truncateText(bia.regulatory_impact, 30) }}
-                </div>
+                <div class="text-body2">{{ truncateText(bia.regulatory_impact, 20) }}</div>
               </div>
             </div>
           </q-card-section>
         </q-card>
       </div>
     </div>
-
-    <!-- Pagination -->
-    <div v-if="totalPages > 1" class="flex justify-center q-mt-lg">
-      <q-pagination
-        v-model="currentPage"
-        :max="totalPages"
-        :max-pages="6"
-        direction-links
-        color="primary"
-        @update:model-value="loadBIAs"
-      />
-    </div>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
-import { BcmService } from '../../services/api/BcmService'
-import EmptyState from '../../components/common/EmptyState.vue'
-import { formatDate, formatCurrency } from '../../utils/formatters'
+import { ref, computed, onMounted } from 'vue'
+import { useBcmStore } from '../../stores/bcm.store'
+import { formatDate } from '../../utils/date.utils'
+import { formatCurrency, truncateText } from '../../utils/formatters'
+import PageHeader from '../../components/.common/PageHeader.vue'
+import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
+import EmptyState from '../../components/.common/EmptyState.vue'
 
-// State
-const bias = ref<any[]>([])
-const isLoading = ref(false)
-const currentPage = ref(1)
-const totalPages = ref(1)
+const bcmStore = useBcmStore()
+const bias = computed(() => bcmStore.bias)
+const isLoading = computed(() => bcmStore.isLoadingBIA)
 
-const filters = reactive({
-  search: '',
-  impact: null,
-  sortBy: 'assessed_date',
-})
+const stats = ref([
+  { label: 'Total', value: 0, color: 'primary' },
+  { label: 'Completed', value: 0, color: 'green' },
+  { label: 'In Progress', value: 0, color: 'orange' },
+  { label: 'Critical', value: 0, color: 'red' },
+])
 
-const stats = reactive({
-  total: 0,
-  completed: 0,
-  inProgress: 0,
-  critical: 0,
-})
+onMounted(() => loadBIAs())
 
-const impactOptions = ['Low', 'Med', 'High']
-const sortOptions = [
-  { label: 'Assessment Date', value: 'assessed_date' },
-  { label: 'Financial Impact', value: 'financial_impact_per_day' },
-  { label: 'Function Name', value: 'function_name' },
-]
-
-// Lifecycle
-onMounted(async () => {
-  await loadBIAs()
-  await loadStats()
-})
-
-// Methods
 async function loadBIAs(): Promise<void> {
-  isLoading.value = true
-  try {
-    const response = await BcmService.getBIAs({
-      ...filters,
-      page: currentPage.value,
-      limit: 10,
-    })
-    bias.value = response.data || []
-    totalPages.value = response.totalPages || 1
-    stats.total = response.total || 0
-  } catch (error) {
-    console.error('Failed to load BIAs:', error)
-  } finally {
-    isLoading.value = false
+  await bcmStore.loadBIAs()
+  updateStats()
+}
+function updateStats(): void {
+  const d = bias.value
+  if (stats && stats.value) {
+    stats.value[0]!.value = d.length
+    stats.value[3]!.value = d.filter((b: any) => b.reputational_impact === 'High').length
   }
 }
-
-async function loadStats(): Promise<void> {
-  try {
-    const response = await BcmService.getBIAStats()
-    Object.assign(stats, response.data)
-  } catch (error) {
-    console.error('Failed to load stats:', error)
-  }
-}
-
 function getImpactColor(impact: string): string {
-  const colors: Record<string, string> = {
-    Low: 'green',
-    Med: 'orange',
-    High: 'red',
-  }
-  return colors[impact] || 'grey'
-}
-
-function truncateText(text: string, maxLength: number): string {
-  if (!text) return ''
-  return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
+  return { Low: 'green', Med: 'orange', High: 'red' }[impact] || 'grey'
 }
 </script>
-
-<style lang="scss" scoped>
-.bia-card {
-  transition: transform 0.2s, box-shadow 0.2s;
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  }
-}
-</style>

@@ -83,7 +83,7 @@ export interface PaginationState {
  * Common query parameters
  */
 export interface QueryParams {
-  query?: string
+  search?: string
   page?: number
   limit?: number
   sortBy?: string

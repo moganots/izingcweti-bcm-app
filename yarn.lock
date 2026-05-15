@@ -85,9 +85,9 @@
   integrity sha512-T6no3ebi79XJCk91U3Jp/liJUwgBdvHR+s6vhvPkPxSuch7z3zx5Rv1bdWM6sWruNx+pViuEGqZvbfCdyBvcHQ==
 
 "@capacitor/push-notifications@^8.0.4":
-  version "8.0.4"
-  resolved "https://registry.yarnpkg.com/@capacitor/push-notifications/-/push-notifications-8.0.4.tgz#cceb0ba9c531996cba33f249871c4bf5382e9826"
-  integrity sha512-14ZWKik9ExTu65AZ9+o7+k05uEOaTstuYv6lLq1Bobip+SC5AOwciSICYLALgTTKN2jEDTRoigFAEixmVEJp/w==
+  version "8.1.1"
+  resolved "https://registry.yarnpkg.com/@capacitor/push-notifications/-/push-notifications-8.1.1.tgz#ee910f95350395b9a0362d5b5a7bd3d5ca8ef095"
+  integrity sha512-WqzjPKIbYbARMN+GC0XMAJcxJpUUzqgzS/Ny8RODLrro38pQhm3GXYwX2Mwd+LZlLY39rGImkCkrKyQSNfuikA==
 
 "@capacitor/splash-screen@^5.0.8":
   version "5.0.8"

@@ -1,31 +1,28 @@
-<!-- src/pages/incident/IncidentDetailPage.vue -->
 <template>
   <q-page padding>
+    <!-- Loading -->
     <div v-if="isLoading" class="text-center q-pa-xl">
-      <q-spinner-dots size="50px" color="primary" />
+      <LoadingSpinner message="Loading incident..." />
     </div>
 
-    <div v-else-if="incident" class="incident-detail">
+    <!-- Content -->
+    <div v-else-if="incident">
+      <!-- Back Button -->
       <q-btn
         flat
         color="primary"
         icon="arrow_back"
-        label="Back"
+        label="Back to Incidents"
         class="q-mb-md"
         @click="$router.push('/incidents')"
       />
 
-      <!-- Header -->
+      <!-- Header Card -->
       <q-card class="q-mb-lg" flat bordered>
         <q-card-section>
           <div class="row items-center justify-between">
             <div>
-              <q-badge
-                :color="getSeverityColor(incident.incident_severity)"
-                :label="incident.incident_severity"
-                class="q-px-lg q-py-sm q-mb-sm"
-                style="font-size: 16px"
-              />
+              <IncidentSeverityBadge :severity="incident.incident_severity" class="q-mb-sm" />
               <h5 class="text-h5 q-mb-xs">{{ incident.root_cause }}</h5>
               <p class="text-grey-7 q-mb-none">
                 Declared: {{ formatDateTime(incident.declared_at) }}
@@ -34,11 +31,7 @@
                 >
               </p>
             </div>
-            <q-icon
-              :name="incident.closed_at ? 'check_circle' : 'warning'"
-              :color="incident.closed_at ? 'green' : 'orange'"
-              size="40px"
-            />
+            <IncidentStatusBadge :incident="incident" />
           </div>
         </q-card-section>
       </q-card>
@@ -68,7 +61,7 @@
             <q-card-section class="text-center">
               <q-icon name="description" size="30px" color="secondary" class="q-mb-sm" />
               <div class="text-caption text-grey-7">BCP Activated</div>
-              <div class="text-body2">{{ incident.bcp?.critical_function?.name || 'None' }}</div>
+              <div class="text-body2">{{ bcpName || 'None' }}</div>
             </q-card-section>
           </q-card>
         </div>
@@ -91,36 +84,7 @@
       <!-- Timeline -->
       <q-card class="q-mb-lg" flat bordered>
         <q-card-section>
-          <div class="text-h6 q-mb-md">Incident Timeline</div>
-          <q-timeline color="primary">
-            <q-timeline-entry
-              icon="report"
-              title="Incident Declared"
-              :subtitle="formatDateTime(incident.declared_at)"
-              color="red"
-            >
-              <div>Severity: {{ incident.incident_severity }}</div>
-              <div>Root Cause: {{ incident.root_cause }}</div>
-            </q-timeline-entry>
-            <q-timeline-entry
-              v-if="incident.bcp"
-              icon="description"
-              title="BCP Activated"
-              :subtitle="formatDateTime(incident.declared_at)"
-              color="primary"
-            >
-              <div>{{ incident.bcp.critical_function?.name }}</div>
-            </q-timeline-entry>
-            <q-timeline-entry
-              v-if="incident.closed_at"
-              icon="check_circle"
-              title="Incident Closed"
-              :subtitle="formatDateTime(incident.closed_at)"
-              color="green"
-            >
-              <div>Recovery Time: {{ incident.recovery_actual_time }}</div>
-            </q-timeline-entry>
-          </q-timeline>
+          <IncidentTimeline :entries="timelineEntries" />
         </q-card-section>
       </q-card>
 
@@ -134,7 +98,7 @@
             label="Close Incident"
             class="full-width"
             unelevated
-            @click="closeIncident"
+            @click="showCloseDialog = true"
           />
           <q-btn
             v-else
@@ -143,15 +107,24 @@
             label="Reopen Incident"
             class="full-width"
             outline
-            @click="reopenIncident"
+            @click="handleReopen"
           />
         </div>
         <div class="col-12 col-md-6">
           <q-btn
+            v-if="!incident.closed_at"
+            color="orange"
+            icon="arrow_upward"
+            label="Escalate"
+            class="full-width"
+            outline
+            @click="handleEscalate"
+          />
+          <q-btn
             color="primary"
             icon="edit"
             label="Edit"
-            class="full-width"
+            class="full-width q-mt-sm"
             outline
             @click="editIncident"
           />
@@ -159,26 +132,54 @@
       </div>
     </div>
 
+    <!-- Not Found -->
     <div v-else class="text-center q-pa-xl">
       <q-icon name="error_outline" size="80px" color="grey" />
       <h5 class="text-grey-7 q-mt-md">Incident Not Found</h5>
       <q-btn color="primary" label="Back to Incidents" @click="$router.push('/incidents')" />
     </div>
+
+    <!-- Close Dialog -->
+    <q-dialog v-model="showCloseDialog" persistent>
+      <q-card style="width: 500px; max-width: 90vw">
+        <q-card-section>
+          <div class="text-h6">Close Incident</div>
+        </q-card-section>
+        <q-card-section>
+          <IncidentResolutionForm
+            :submitting="saving"
+            @submit="handleClose"
+            @cancel="showCloseDialog = false"
+          />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { IncidentService } from '../../services/api/IncidentService'
-import { formatDate, formatDateTime } from '../../utils/formatters'
+import { useIncidentStore } from '../../stores/incident.store'
+import { formatDateTime } from '../../utils/date.utils'
+import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
+import IncidentSeverityBadge from '../../components/incident/IncidentSeverityBadge.vue'
+import IncidentStatusBadge from '../../components/incident/IncidentStatusBadge.vue'
+import IncidentTimeline from '../../components/incident/IncidentTimeline.vue'
+import IncidentResolutionForm from '../../components/incident/IncidentResolutionForm.vue'
 
 const route = useRoute()
+const router = useRouter()
 const $q = useQuasar()
+const incidentStore = useIncidentStore()
 
-const incident = ref<any>(null)
+const incident = computed(() => incidentStore.selectedIncident)
 const isLoading = ref(true)
+const saving = ref(false)
+const showCloseDialog = ref(false)
+
+const bcpName = computed(() => 'BCP Placeholder')
 
 const incidentDuration = computed(() => {
   if (!incident.value) return 'N/A'
@@ -190,69 +191,97 @@ const incidentDuration = computed(() => {
   return `${hours}h ${minutes}m`
 })
 
-onMounted(async () => {
-  const id = route.params.id as string
-  if (id) await loadIncident(id)
+const timelineEntries = computed(() => {
+  if (!incident.value) return []
+  const entries: any[] = [
+    {
+      icon: 'report',
+      color: 'red',
+      title: 'Incident Declared',
+      subtitle: formatDateTime(incident.value.declared_at),
+      details: {
+        Severity: incident.value.incident_severity,
+        'Root Cause': incident.value.root_cause,
+      },
+      badge: incident.value.incident_severity,
+      badgeColor: incident.value.incident_severity === 'Critical' ? 'red' : 'orange',
+    },
+  ]
+
+  if (incident.value.business_continuity_plan_id_activated) {
+    entries.push({
+      icon: 'description',
+      color: 'primary',
+      title: 'BCP Activated',
+      subtitle: formatDateTime(incident.value.declared_at),
+    })
+  }
+
+  if (incident.value.closed_at) {
+    entries.push({
+      icon: 'check_circle',
+      color: 'green',
+      title: 'Incident Closed',
+      subtitle: formatDateTime(incident.value.closed_at),
+      description: `Recovery Time: ${incident.value.recovery_actual_time || 'N/A'}`,
+    })
+  }
+
+  return entries
 })
 
-async function loadIncident(id: string): Promise<void> {
-  isLoading.value = true
-  try {
-    const response = await IncidentService.getIncident(id)
-    incident.value = response.data
-  } catch (error) {
-    console.error('Failed to load incident:', error)
-  } finally {
+onMounted(async () => {
+  const id = route.params.id as string
+  if (id) {
+    await incidentStore.loadIncident(id)
     isLoading.value = false
+  }
+})
+
+async function handleClose(data: any): Promise<void> {
+  if (!incident.value) return
+  saving.value = true
+  try {
+    await incidentStore.closeIncident(incident?.value?.uuid!, { closed_at: data.closed_at })
+    $q.notify({ type: 'positive', message: 'Incident closed' })
+    showCloseDialog.value = false
+    await incidentStore.loadIncident(incident?.value?.uuid!)
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to close' })
+  } finally {
+    saving.value = false
   }
 }
 
-async function closeIncident(): Promise<void> {
-  $q.dialog({
-    title: 'Close Incident',
-    message: 'Are you sure? This will mark the incident as resolved.',
-    cancel: true,
-  }).onOk(async () => {
-    try {
-      await IncidentService.closeIncident(incident.value.uuid, {
-        closed_at: new Date().toISOString(),
-      })
-      $q.notify({ type: 'positive', message: 'Incident closed' })
-      await loadIncident(incident.value.uuid)
-    } catch (error) {
-      $q.notify({ type: 'negative', message: 'Failed to close incident' })
-    }
-  })
-}
-
-async function reopenIncident(): Promise<void> {
+async function handleReopen(): Promise<void> {
+  if (!incident.value) return
   $q.dialog({
     title: 'Reopen Incident',
     message: 'Are you sure you want to reopen this incident?',
     cancel: true,
   }).onOk(async () => {
     try {
-      await IncidentService.reopenIncident(incident.value.uuid)
+      await incidentStore.reopenIncident(incident?.value?.uuid!)
       $q.notify({ type: 'positive', message: 'Incident reopened' })
-      await loadIncident(incident.value.uuid)
-    } catch (error) {
-      $q.notify({ type: 'negative', message: 'Failed to reopen incident' })
+      await incidentStore.loadIncident(incident?.value?.uuid!)
+    } catch (err: any) {
+      $q.notify({ type: 'negative', message: err.message || 'Failed to reopen' })
     }
   })
 }
 
-function editIncident(): void {
-  console.log('Edit incident:', incident.value?.uuid)
+async function handleEscalate(): Promise<void> {
+  if (!incident.value) return
+  try {
+    await incidentStore.escalateIncident(incident?.value?.uuid!)
+    $q.notify({ type: 'positive', message: 'Incident escalated' })
+    await incidentStore.loadIncident(incident?.value?.uuid!)
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to escalate' })
+  }
 }
 
-function getSeverityColor(severity: string): string {
-  const colors: Record<string, string> = {
-    Critical: 'red',
-    High: 'orange',
-    Medium: 'yellow',
-    Low: 'green',
-    Informational: 'blue',
-  }
-  return colors[severity] || 'grey'
+function editIncident(): void {
+  console.log('Edit incident:', incident.value?.uuid)
 }
 </script>

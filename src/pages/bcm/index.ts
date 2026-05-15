@@ -1,0 +1,7 @@
+export { default as CriticalFunctionsPage } from './CriticalFunctionsPage.vue'
+export { default as BiaListPage } from './BiaListPage.vue'
+export { default as BiaDetailPage } from './BiaDetailPage.vue'
+export { default as BcpListPage } from './BcpListPage.vue'
+export { default as BcpDetailPage } from './BcpDetailPage.vue'
+export { default as RecoveryStrategiesPage } from './RecoveryStrategiesPage.vue'
+export { default as ExerciseTestsPage } from './ExerciseTestsPage.vue'
