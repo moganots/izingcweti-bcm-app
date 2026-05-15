@@ -64,7 +64,16 @@ yarn-error.log*
 .env.local*
 .env
 .env.development
+.env.dev
+.env.uat
+.env.staging
+.env.stg
+.env.sit
+.env.dr
+.env.production
+.env.prod
 .env.qa
+.env.dr
 .claudeignore
 .claude/
 
