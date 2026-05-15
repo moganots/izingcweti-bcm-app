@@ -2,20 +2,15 @@ import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { SyncEngine } from '../services/sync/SyncEngine'
 import { db } from '../services/db/Database'
-import { networkMonitor } from '../services/sync/NetworkMonitor'
-import type { PendingChange, SyncConflict } from '../models/entities/sync.entity'
 import { useUiStore } from './ui.store'
 import { useAuthStore } from './auth.store'
+import type { OperationType, PendingChange, SyncConflict } from '../models/entities/sync.entity'
 
 export const useSyncStore = defineStore('sync', () => {
   // ============================================
-  // Services
-  // ============================================
-  const syncEngine = new SyncEngine()
-
-  // ============================================
   // State
   // ============================================
+  const syncEngine = ref<SyncEngine | null>(null)
   const status = ref<'idle' | 'syncing' | 'error' | 'offline'>('idle')
   const pendingChanges = ref<PendingChange[]>([])
   const conflicts = ref<SyncConflict[]>([])
@@ -55,13 +50,13 @@ export const useSyncStore = defineStore('sync', () => {
   const syncStatusColor = computed(() => {
     switch (status.value) {
       case 'syncing':
-        return 'orange'
+        return 'warning'
       case 'error':
-        return 'red'
+        return 'negative'
       case 'offline':
         return 'grey'
       default:
-        return hasPendingChanges.value ? 'orange' : 'green'
+        return hasPendingChanges.value ? 'warning' : 'positive'
     }
   })
   const lastSyncTimeAgo = computed(() => {
@@ -80,7 +75,7 @@ export const useSyncStore = defineStore('sync', () => {
   // ============================================
 
   /**
-   * Initialize sync engine
+   * Initialize sync engine - called by boot/sync.ts
    */
   async function initialize(): Promise<void> {
     if (isInitialized.value) return
@@ -91,20 +86,13 @@ export const useSyncStore = defineStore('sync', () => {
         await db.initialize()
       }
 
-      await syncEngine.initialize()
+      // Create sync engine instance
+      syncEngine.value = new SyncEngine()
+      await syncEngine.value.initialize()
+
       await loadPendingChanges()
       await loadConflicts()
       await loadSyncMetadata()
-
-      // Listen for network changes
-      networkMonitor.addListener((networkStatus) => {
-        if (networkStatus.isOnline && hasPendingChanges.value) {
-          // Auto-sync when coming back online
-          fullSync().catch(console.error)
-        } else if (!networkStatus.isOnline) {
-          status.value = 'offline'
-        }
-      })
 
       isInitialized.value = true
 
@@ -124,8 +112,9 @@ export const useSyncStore = defineStore('sync', () => {
    * Load pending changes from sync engine
    */
   async function loadPendingChanges(): Promise<void> {
+    if (!syncEngine.value) return
     try {
-      pendingChanges.value = await syncEngine.getPendingChanges()
+      pendingChanges.value = await syncEngine.value.getPendingChanges()
     } catch (err: any) {
       console.error('Failed to load pending changes:', err)
     }
@@ -135,8 +124,9 @@ export const useSyncStore = defineStore('sync', () => {
    * Load conflicts from sync engine
    */
   async function loadConflicts(): Promise<void> {
+    if (!syncEngine.value) return
     try {
-      conflicts.value = await syncEngine.getConflicts()
+      conflicts.value = await syncEngine.value.getConflicts()
     } catch (err: any) {
       console.error('Failed to load conflicts:', err)
     }
@@ -146,8 +136,9 @@ export const useSyncStore = defineStore('sync', () => {
    * Load sync metadata
    */
   async function loadSyncMetadata(): Promise<void> {
+    if (!syncEngine.value) return
     try {
-      const metadata = await syncEngine.getSyncMetadata()
+      const metadata = await syncEngine.value.getSyncMetadata()
       if (metadata) {
         syncToken.value = metadata.value
         lastSyncAt.value = metadata.updated_at || null
@@ -163,23 +154,27 @@ export const useSyncStore = defineStore('sync', () => {
   async function addPendingChange(change: {
     entityType: string
     entityId: string
-    operationType: string
+    operationType: 'CREATE' | 'UPDATE' | 'DELETE'
     data: Record<string, unknown>
     priority?: number
   }): Promise<void> {
+    if (!syncEngine.value) {
+      throw new Error('Sync engine not initialized')
+    }
+
     try {
-      await syncEngine.addPendingChange({
+      await syncEngine.value.addPendingChange({
         entityType: change.entityType,
         entityId: change.entityId,
-        operationType: change.operationType as any,
+        operationType: change.operationType as OperationType,
         data: change.data,
-        priority: change.priority,
-      } as any)
+        priority: change.priority || 3,
+      })
       await loadPendingChanges()
 
-      // Auto-sync if online
+      // Auto-sync if online and changes are high priority
       const uiStore = useUiStore()
-      if (!uiStore.isOffline) {
+      if (!uiStore.isOffline && (change.priority || 3) <= 2) {
         pushChanges().catch(console.error)
       }
     } catch (err: any) {
@@ -192,7 +187,7 @@ export const useSyncStore = defineStore('sync', () => {
    * Push local changes to server
    */
   async function pushChanges(): Promise<void> {
-    if (status.value === 'syncing') return
+    if (status.value === 'syncing' || !syncEngine.value) return
 
     const uiStore = useUiStore()
     if (uiStore.isOffline) {
@@ -212,7 +207,7 @@ export const useSyncStore = defineStore('sync', () => {
     progress.value = 0
 
     try {
-      const result = await syncEngine.pushChanges()
+      const result = await syncEngine.value.pushChanges()
       totalPushed.value += result.appliedChanges
       await loadPendingChanges()
       await loadConflicts()
@@ -222,6 +217,7 @@ export const useSyncStore = defineStore('sync', () => {
     } catch (err: any) {
       status.value = 'error'
       error.value = err.message || 'Push sync failed'
+      throw err
     }
   }
 
@@ -229,7 +225,7 @@ export const useSyncStore = defineStore('sync', () => {
    * Pull changes from server
    */
   async function pullChanges(): Promise<void> {
-    if (status.value === 'syncing') return
+    if (status.value === 'syncing' || !syncEngine.value) return
 
     const uiStore = useUiStore()
     if (uiStore.isOffline) {
@@ -247,7 +243,7 @@ export const useSyncStore = defineStore('sync', () => {
     error.value = null
 
     try {
-      const response = await syncEngine.pullChanges(syncToken.value)
+      const response = await syncEngine.value.pullChanges(syncToken.value)
 
       if (response.changes) {
         totalPulled.value += response.changes.length
@@ -262,6 +258,7 @@ export const useSyncStore = defineStore('sync', () => {
     } catch (err: any) {
       status.value = 'error'
       error.value = err.message || 'Pull sync failed'
+      throw err
     }
   }
 
@@ -274,17 +271,29 @@ export const useSyncStore = defineStore('sync', () => {
   }
 
   /**
+   * Initialize sync (called by boot/sync.ts)
+   * Alias for initialize() for compatibility
+   */
+  async function initializeSync(): Promise<void> {
+    return initialize()
+  }
+
+  /**
    * Resolve a sync conflict
    */
   async function resolveConflict(
     conflictId: string,
     resolution: {
-      strategy: string
+      strategy: 'server-wins' | 'client-wins' | 'merge'
       resolvedData?: Record<string, unknown>
     }
   ): Promise<void> {
+    if (!syncEngine.value) {
+      throw new Error('Sync engine not initialized')
+    }
+
     try {
-      await syncEngine.resolveConflict(conflictId, resolution)
+      await syncEngine.value.resolveConflict(conflictId, resolution)
       await loadConflicts()
     } catch (err: any) {
       console.error('Failed to resolve conflict:', err)
@@ -339,8 +348,11 @@ export const useSyncStore = defineStore('sync', () => {
    */
   async function cleanup(): Promise<void> {
     stopPeriodicSync()
-    await syncEngine.cleanup()
+    if (syncEngine.value) {
+      await syncEngine.value.cleanup()
+    }
     isInitialized.value = false
+    syncEngine.value = null
   }
 
   return {
@@ -368,6 +380,7 @@ export const useSyncStore = defineStore('sync', () => {
     lastSyncTimeAgo,
     // Actions
     initialize,
+    initializeSync, // Alias for boot/sync.ts
     loadPendingChanges,
     loadConflicts,
     addPendingChange,

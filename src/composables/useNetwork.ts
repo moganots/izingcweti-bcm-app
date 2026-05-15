@@ -1,131 +1,52 @@
-import { ref, onMounted, onUnmounted } from 'vue';
-import { Network } from '@capacitor/network';
-import { useUiStore } from '../stores/ui.store';
+import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { Capacitor } from '@capacitor/core'
+import { Network } from '@capacitor/network'
 
-/**
- * Composable for monitoring network connectivity
- */
 export function useNetwork() {
-  const isOnline = ref(true);
-  const connectionType = ref<string>('unknown');
-  const isMetered = ref(false);
-  const signalStrength = ref(0);
-  const lastChecked = ref<string | null>(null);
+  const isOnline = ref(navigator.onLine)
+  const connectionType = ref<string | null>(null)
 
-  const uiStore = useUiStore();
-  let capacitorListener: any = null;
-
-  /**
-   * Check current network status
-   */
-  async function checkStatus(): Promise<void> {
-    try {
-      const status = await Network.getStatus();
-      updateStatus(status.connected, status.connectionType);
-    } catch (error) {
-      console.error('Network check failed:', error);
-      isOnline.value = navigator.onLine;
-    }
+  const handleOnline = () => {
+    isOnline.value = true
+    console.log('Network: online')
   }
 
-  /**
-   * Update network status
-   */
-  function updateStatus(connected: boolean, type: string): void {
-    isOnline.value = connected;
-    connectionType.value = connected ? type : 'none';
-    lastChecked.value = new Date().toISOString();
-
-    // Check if connection is metered
-    if ('connection' in navigator) {
-      const conn = (navigator as any).connection;
-      if (conn) {
-        isMetered.value = conn.saveData || false;
-        signalStrength.value = conn.downlink || 0;
-      }
-    }
-
-    // Update UI store
-    if (connected) {
-      uiStore.setOnline(type);
-    } else {
-      uiStore.setOffline();
-    }
+  const handleOffline = () => {
+    isOnline.value = false
+    console.log('Network: offline')
   }
 
-  /**
-   * Start monitoring network changes
-   */
-  async function startMonitoring(): Promise<void> {
-    await checkStatus();
+  const setupNativeNetworkListener = async () => {
+    if (!Capacitor.isNativePlatform()) return
 
     try {
-      capacitorListener = await Network.addListener('networkStatusChange', (status) => {
-        updateStatus(status.connected, status.connectionType);
-      });
+      const status = await Network.getStatus()
+      isOnline.value = status.connected
+      connectionType.value = status.connectionType
+
+      Network.addListener('networkStatusChange', (status) => {
+        isOnline.value = status.connected
+        connectionType.value = status.connectionType
+      })
     } catch (error) {
-      console.warn('Capacitor network listener failed:', error);
+      console.error('Failed to setup network listener:', error)
     }
-
-    // Browser fallback
-    window.addEventListener('online', () => updateStatus(true, connectionType.value));
-    window.addEventListener('offline', () => updateStatus(false, 'none'));
-  }
-
-  /**
-   * Stop monitoring network changes
-   */
-  function stopMonitoring(): void {
-    if (capacitorListener) {
-      capacitorListener.remove();
-      capacitorListener = null;
-    }
-    window.removeEventListener('online', () => updateStatus(true, connectionType.value));
-    window.removeEventListener('offline', () => updateStatus(false, 'none'));
-  }
-
-  /**
-   * Check if connection is suitable for sync
-   */
-  function isSyncSafe(): boolean {
-    if (!isOnline.value) return false;
-    if (isMetered.value) return false;
-    return true;
-  }
-
-  /**
-   * Check if connection is WiFi
-   */
-  function isWiFi(): boolean {
-    return connectionType.value === 'wifi';
-  }
-
-  /**
-   * Check if connection is cellular
-   */
-  function isCellular(): boolean {
-    return connectionType.value === 'cellular';
   }
 
   onMounted(() => {
-    startMonitoring();
-  });
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    setupNativeNetworkListener()
+  })
 
   onUnmounted(() => {
-    stopMonitoring();
-  });
+    window.removeEventListener('online', handleOnline)
+    window.removeEventListener('offline', handleOffline)
+  })
 
   return {
     isOnline,
     connectionType,
-    isMetered,
-    signalStrength,
-    lastChecked,
-    checkStatus,
-    startMonitoring,
-    stopMonitoring,
-    isSyncSafe,
-    isWiFi,
-    isCellular,
-  };
+    isOffline: computed(() => !isOnline.value),
+  }
 }
