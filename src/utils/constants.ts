@@ -18,15 +18,6 @@ export const API_ENDPOINTS = {
     LOGOUT: '/auth/logout',
   },
 
-  // Users
-  USERS: {
-    BASE: '/users',
-    BY_ID: (id: string) => `/users/${id}`,
-    DEACTIVATE: (id: string) => `/users/${id}/deactivate`,
-    ACTIVATE: (id: string) => `/users/${id}/activate`,
-    CHANGE_PASSWORD: (id: string) => `/users/${id}/change-password`,
-  },
-
   // Organisations
   ORGANISATIONS: {
     BASE: '/organisations',
@@ -114,15 +105,6 @@ export const API_ENDPOINTS = {
     ESCALATE: (id: string) => `/incidents/${id}/escalate`,
   },
 
-  // Compliance
-  COMPLIANCE: {
-    BASE: '/compliance-records',
-    BY_ID: (id: string) => `/compliance-records/${id}`,
-    OVERDUE: '/compliance-records/overdue',
-    UPCOMING: '/compliance-records/upcoming',
-    BY_STANDARD: (std: string) => `/compliance-records/standard/${std}`,
-  },
-
   // Workflows
   WORKFLOWS: {
     BASE: '/workflows',
@@ -162,9 +144,14 @@ export const API_ENDPOINTS = {
   // Audit
   AUDIT: {
     BASE: '/audit',
+    BY_ID: (id: string) => `/audit/${id}`,
     STATS: '/audit/stats',
     ENTITY_HISTORY: (type: string, id: string) => `/audit/entity/${type}/${id}`,
     EXPORT: '/audit/export',
+    CLEANUP: '/audit/cleanup',
+    RETENTION_POLICIES: '/audit/retention-policies',
+    APPLY_RETENTION: '/audit/apply-retention',
+    MY_ACTIVITY: '/audit/my-activity',
   },
 
   // Sync
@@ -183,6 +170,7 @@ export const API_ENDPOINTS = {
     ACTIVE: '/rules/active',
     TEST: '/rules/test',
     EXECUTE: (id: string) => `/rules/${id}/execute`,
+    STATS: '/rules/stats',
   },
 
   // Dashboard
@@ -197,11 +185,41 @@ export const API_ENDPOINTS = {
     INCIDENT_TRENDS: '/dashboard/incident-trends',
   },
 
+  // Compliance
+  COMPLIANCE: {
+    BASE: '/compliance-records',
+    BY_ID: (id: string) => `/compliance-records/${id}`,
+    OVERDUE: '/compliance-records/overdue',
+    UPCOMING: '/compliance-records/upcoming',
+    BY_STANDARD: (standard: string) => `/compliance-records/standard/${standard}`,
+    STATS: '/compliance-records/stats',
+    GAP_ANALYSIS: '/compliance-records/gap-analysis',
+    EXPORT: '/compliance-records/export',
+  },
+
+  // Users
+  USERS: {
+    BASE: '/users',
+    BY_ID: (id: string) => `/users/${id}`,
+    DEACTIVATE: (id: string) => `/users/${id}/deactivate`,
+    ACTIVATE: (id: string) => `/users/${id}/activate`,
+    CHANGE_PASSWORD: (id: string) => `/users/${id}/change-password`,
+    STATS: '/users/stats',
+    EXPORT: '/users/export',
+    BULK_IMPORT: '/users/bulk-import',
+  },
+
   // Cache
   CACHE: {
+    BASE: '/cache',
+    BY_KEY: (key: string) => `/cache/${encodeURIComponent(key)}`,
     STATS: '/cache/stats',
     CLEAN_EXPIRED: '/cache/clean-expired',
-    BY_KEY: (key: string) => `/cache/${key}`,
+    CLEAR_ALL: '/cache/clear-all',
+    TAGS: (tags: string) => `/cache/tags/${encodeURIComponent(tags)}`,
+    PATTERN: '/cache/pattern',
+    BULK: '/cache/bulk',
+    SIZE: '/cache/size',
   },
 } as const
 

@@ -1,5 +1,3 @@
-// src/stores/sync.store.ts
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { SyncEngine } from '../services/sync/SyncEngine'

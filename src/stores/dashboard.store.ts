@@ -1,5 +1,3 @@
-// src/stores/dashboard.store.ts
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { dashboardService } from '../services/api/DashboardService'

@@ -86,9 +86,21 @@ export class AuthService extends BaseService {
   }
 
   /**
+   * Verify password reset token validity
+   */
+  async verifyResetToken(token: string): Promise<{ email: string }> {
+    const response = await this.get<{ email: string }>(`/auth/verify-reset-token/${token}`)
+    return this.extractData(response)
+  }
+
+  /**
    * Reset password with token
    */
-  async resetPassword(data: ResetPasswordRequest): Promise<void> {
+  async resetPassword(data: {
+    token: string
+    new_password: string
+    confirm_password: string
+  }): Promise<void> {
     const response = await this.post('/auth/reset-password', data)
     this.extractData(response)
   }

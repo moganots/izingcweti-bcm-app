@@ -1,5 +1,3 @@
-// src/stores/settings.store.ts (add language methods)
-
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { setLanguage, getCurrentLanguage } from '../boot/i18n'

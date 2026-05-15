@@ -1,5 +1,3 @@
-// src/stores/auth.store.ts
-
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import type { User, LoginCredentials } from '../models/entities/user.entity'
@@ -182,7 +180,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout(): Promise<void> {
     try {
-      await authService.logout().catch(() => {})
+      await authService.logout().catch(() => { })
     } finally {
       user.value = null
       tokens.value = null
