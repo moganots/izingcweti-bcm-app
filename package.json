@@ -22,7 +22,8 @@
     "build-release-apk": "npx tsx build-apk.ts release",
     "build-release-apk-qa": "npx tsx build-apk.ts release qa",
     "build-release-apk-prod": "npx tsx build-apk.ts release prod",
-    "clean:build": "yarn clean && yarn && yarn build"
+    "clean:build": "yarn clean && yarn && yarn build",
+    "run:local": "cp -f .env_files/.env.local .env && yarn build && quasar dev -m capacitor -T android"
   },
   "dependencies": {
     "@capacitor/android": "^5.7.8",

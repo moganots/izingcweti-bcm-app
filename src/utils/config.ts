@@ -11,6 +11,8 @@ export const AppConfig = {
   // Environment
   envName: import.meta.env.VITE_ENV_NAME || 'Local',
   nodeEnv: import.meta.env.VITE_NODE_ENV || 'development',
+  port: import.meta.env.VITE_PORT,
+  capacitorPort: import.meta.env.VITE_CAPACITOR_PORT,
 
   // API
   api: {

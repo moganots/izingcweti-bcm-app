@@ -9,6 +9,8 @@ interface ImportMetaEnv {
   // Environment
   readonly VITE_ENV_NAME: 'Local' | 'Development' | 'Staging' | 'SIT' | 'UAT' | 'Production' | 'DR'
   readonly VITE_NODE_ENV: 'development' | 'staging' | 'sit' | 'uat' | 'production' | 'dr'
+  readonly VITE_PORT: number
+  readonly VITE_CAPACITOR_PORT: number
 
   // API Configuration
   readonly VITE_API_BASE_URL: string
