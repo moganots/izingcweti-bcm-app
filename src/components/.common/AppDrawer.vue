@@ -1,3 +1,4 @@
+<!-- src/components/ui/AppDrawer.vue -->
 <template>
   <q-drawer
     v-model="drawerOpen"
@@ -172,6 +173,26 @@ import { useSyncStore } from '../../stores/sync.store'
 import { useNotificationStore } from '../../stores/notification.store'
 import { useUiStore } from '../../stores/ui.store'
 
+// ============================================
+// Types
+// ============================================
+interface MenuItem {
+  name: string
+  label: string
+  icon: string
+  badge?: string | number
+  badgeColor?: string
+}
+
+interface MenuGroup {
+  label: string
+  icon: string
+  items: MenuItem[]
+}
+
+// ============================================
+// Stores & Router
+// ============================================
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
@@ -180,6 +201,9 @@ const syncStore = useSyncStore()
 const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
 
+// ============================================
+// Props & Emits
+// ============================================
 const props = withDefaults(defineProps<{ modelValue?: boolean }>(), { modelValue: false })
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
@@ -188,83 +212,47 @@ const drawerOpen = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
+// ============================================
+// Computed
+// ============================================
 const userRole = computed(() => authStore.userRole)
 const isDarkMode = computed(() => uiStore.isDarkMode)
 
-const menuGroups = [
+// ============================================
+// Menu Groups - FIXED: Added proper typing
+// ============================================
+const menuGroups: MenuGroup[] = [
   {
     label: 'BCM Core',
     icon: 'business',
     items: [
-      {
-        name: 'CriticalFunctions',
-        label: 'Critical Functions',
-        icon: 'functions',
-        badge: '3',
-        badgeColor: 'red',
-      },
-      {
-        name: 'BIA',
-        label: 'Business Impact Analysis',
-        icon: 'assessment',
-        badge: '2',
-        badgeColor: 'orange',
-      },
-      {
-        name: 'BCP',
-        label: 'Continuity Plans',
-        icon: 'description',
-        badge: '1',
-        badgeColor: 'orange',
-      },
-      {
-        name: 'RecoveryStrategies',
-        label: 'Recovery Strategies',
-        icon: 'restore',
-        badge: '1',
-        badgeColor: 'orange',
-      },
-      {
-        name: 'ExerciseTests',
-        label: 'Exercise Tests',
-        icon: 'playlist_add_check',
-        badge: '0',
-        badgeColor: 'green',
-      },
+      { name: 'CriticalFunctions', label: 'Critical Functions', icon: 'functions' },
+      { name: 'BIA', label: 'Business Impact Analysis', icon: 'assessment' },
+      { name: 'BCP', label: 'Continuity Plans', icon: 'description' },
+      { name: 'RecoveryStrategies', label: 'Recovery Strategies', icon: 'restore' },
+      { name: 'ExerciseTests', label: 'Exercise Tests', icon: 'playlist_add_check' },
     ],
   },
   {
     label: 'Risk & Compliance',
     icon: 'shield',
     items: [
-      { name: 'Risks', label: 'Risk Management', icon: 'warning', badge: '5', badgeColor: 'red' },
-      {
-        name: 'Compliance',
-        label: 'Compliance',
-        icon: 'verified_user',
-        badge: '2',
-        badgeColor: 'orange',
-      },
-      { name: 'Incidents', label: 'Incidents', icon: 'report', badge: '1', badgeColor: 'orange' },
+      { name: 'Risks', label: 'Risk Management', icon: 'warning' },
+      { name: 'Incidents', label: 'Incidents', icon: 'report' },
     ],
   },
   {
     label: 'Workflow',
     icon: 'account_tree',
-    items: [
-      {
-        name: 'Workflows',
-        label: 'Workflows',
-        icon: 'account_tree',
-        badge: '0',
-        badgeColor: 'green',
-      },
-    ],
+    items: [{ name: 'Workflows', label: 'Workflows', icon: 'account_tree' }],
   },
 ]
 
-function isGroupActive(group: any): boolean {
-  return group.items.some((item: any) => route.name === item.name)
+// ============================================
+// Methods
+// ============================================
+function isGroupActive(group: MenuGroup): boolean {
+  return group.items.some((item) => route.name === item.name)
 }
 
 async function handleSync(): Promise<void> {
