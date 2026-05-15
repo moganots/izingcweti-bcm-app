@@ -1,5 +1,3 @@
-// src/utils/date.utils.ts
-
 import {
   format,
   formatDistanceToNow,

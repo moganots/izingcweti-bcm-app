@@ -1,5 +1,3 @@
-// src/utils/constants.ts
-
 /**
  * Application Constants
  * Centralized constants for the BCM Mobile application

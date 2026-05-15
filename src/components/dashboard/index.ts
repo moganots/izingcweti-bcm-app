@@ -1,0 +1,8 @@
+export { default as StatsCard } from './StatsCard.vue'
+export { default as RiskHeatMap } from './RiskHeatMap.vue'
+export { default as ComplianceChart } from './ComplianceChart.vue'
+export { default as IncidentTrendChart } from './IncidentTrendChart.vue'
+export { default as MaturityGauge } from './MaturityGauge.vue'
+export { default as RecentActivityList } from './RecentActivityList.vue'
+export { default as KpiOverview } from './KpiOverview.vue'
+export { default as PendingWorkflowsWidget } from './PendingWorkflowsWidget.vue'

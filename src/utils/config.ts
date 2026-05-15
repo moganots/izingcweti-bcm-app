@@ -1,5 +1,3 @@
-// src/utils/config.ts
-
 /**
  * Application configuration helper
  * Provides typed access to environment variables with defaults
