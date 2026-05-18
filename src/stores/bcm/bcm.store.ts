@@ -7,7 +7,7 @@ import type {
   RecoveryStrategy,
   ExerciseTest,
 } from './../../models/entities'
-import { bcmService } from './../../services'
+import { bcmService } from './../../services/api'
 
 export const useBcmStore = defineStore('bcm', () => {
   // ============================================

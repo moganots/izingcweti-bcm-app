@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { db } from './../../services'
+import { db } from './../../services/db'
 import type { CacheEntry, CacheStats } from './../../models/entities'
 import { cacheService } from './../../services/api'
 import { CacheRepository } from './../../services/db/repositories'
