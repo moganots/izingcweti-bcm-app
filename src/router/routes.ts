@@ -10,7 +10,7 @@ const routes: RouteRecordRaw[] = [
   // ============================================
   {
     path: '/auth',
-    component: () => import('layouts/AuthLayout.vue'),
+    component: () => import('layouts/auth/AuthLayout.vue'),
     meta: { requiresGuest: false },
     children: [
       {

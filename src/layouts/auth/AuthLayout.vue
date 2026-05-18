@@ -6,18 +6,16 @@
         <div class="auth-card col-12 col-sm-10 col-md-8 col-lg-6 col-xl-4">
           <div class="text-center q-mb-lg">
             <q-img
-              src="/logo.svg"
-              :width="80"
-              :height="80"
+              src="/izingcweti-logo-icon-no-bg.png"
+              width="80px"
+              height="80px"
               class="q-mb-md"
               fallback-src="/fallback-logo.png"
             />
             <div class="text-h4 text-primary q-mb-xs">
               {{ appName }}
             </div>
-            <div class="text-subtitle2 text-grey-6">
-              Business Continuity Management System
-            </div>
+            <div class="text-subtitle2 text-grey-6">Business Continuity Management System</div>
           </div>
 
           <q-card flat bordered class="auth-card-content">

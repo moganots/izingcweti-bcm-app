@@ -1,1 +1,2 @@
-export { db, MIGRATIONS } from '..'
+export { db } from './Database'
+export { MIGRATIONS } from './migrations'
