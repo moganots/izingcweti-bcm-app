@@ -1,4 +1,4 @@
-# Izingcweti BCM Mobile App
+# Izingcweti (BCM)
 ## A Quasar Project for Business Continuity Management in the field.
 
 https://img.shields.io/badge/TypeScript-5.3-blue.svg
@@ -31,7 +31,7 @@ https://img.shields.io/badge/License-Private-red.svg
 
 # 📖 Introduction
 
-The Izingcweti BCM Mobile App is a comprehensive Business Continuity Management mobile application built with Quasar Framework, Vue 3, and Capacitor. It provides offline-first capabilities for field operations, enabling business continuity professionals to manage critical functions, conduct business impact analyses, maintain continuity plans, track risks, manage incidents, and handle compliance requirements from any mobile device.
+The Izingcweti (BCM) is a comprehensive Business Continuity Management mobile application built with Quasar Framework, Vue 3, and Capacitor. It provides offline-first capabilities for field operations, enabling business continuity professionals to manage critical functions, conduct business impact analyses, maintain continuity plans, track risks, manage incidents, and handle compliance requirements from any mobile device.
 
 # Purpose
 
@@ -626,7 +626,7 @@ Copy .env.example to .env and configure:
 
 ```bash
 # Application
-VITE_APP_NAME="Izingcweti BCM Mobile App"
+VITE_APP_NAME="Izingcweti (BCM)"
 VITE_APP_VERSION=25.0514.1
 VITE_APP_DESCRIPTION="Business Continuity Management Mobile Application"
 

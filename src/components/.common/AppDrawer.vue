@@ -168,10 +168,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../../stores/auth.store'
+import { useAuthStore } from '../../stores/auth/auth.store'
 import { useSyncStore } from '../../stores/sync.store'
-import { useNotificationStore } from '../../stores/notification.store'
-import { useUiStore } from '../../stores/ui.store'
+import { useNotificationStore } from '../../stores/notification/notification.store'
+import { useUiStore } from '../../stores/ui/ui.store'
 
 // ============================================
 // Types

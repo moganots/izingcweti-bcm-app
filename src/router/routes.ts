@@ -10,36 +10,37 @@ const routes: RouteRecordRaw[] = [
   // ============================================
   {
     path: '/auth',
-    component: () => import('../layouts/AuthLayout.vue'),
-    meta: { requiresGuest: true },
+    component: () => import('layouts/AuthLayout.vue'),
+    meta: { requiresGuest: false },
     children: [
       {
         path: 'login',
         name: 'Login',
-        component: () => import('../pages/auth/LoginPage.vue'),
-        meta: { title: 'Sign In', requiresGuest: true },
+        component: () => import('pages/auth/LoginPage.vue'),
+        meta: { title: 'Sign In', requiresGuest: false },
       },
       {
         path: 'forgot-password',
         name: 'ForgotPassword',
-        component: () => import('../pages/auth/ForgotPasswordPage.vue'),
-        meta: { title: 'Forgot Password', requiresGuest: true },
+        component: () => import('pages/auth/ForgotPasswordPage.vue'),
+        meta: { title: 'Forgot Password', requiresGuest: false },
       },
       {
         path: 'reset-password/:token',
         name: 'ResetPassword',
-        component: () => import('../pages/auth/ResetPasswordPage.vue'),
-        meta: { title: 'Reset Password', requiresGuest: true },
+        component: () => import('pages/auth/ResetPasswordPage.vue'),
+        meta: { title: 'Reset Password', requiresGuest: false },
       },
     ],
   },
 
+  /*
   // ============================================
   // Main Application Routes (Authenticated)
   // ============================================
   {
     path: '/',
-    component: () => import('../layouts/MainLayout.vue'),
+    component: () => import('layouts/MainLayout.vue'),
     meta: { requiresAuth: true },
     children: [
       // ==========================================
@@ -52,13 +53,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'dashboard',
         name: 'Dashboard',
-        component: () => import('../pages/dashboard/DashboardPage.vue'),
+        component: () => import('pages/dashboard/DashboardPage.vue'),
         meta: { title: 'Dashboard', icon: 'dashboard', showInMenu: true },
       },
       {
         path: 'dashboard/widgets',
         name: 'DashboardWidgets',
-        component: () => import('../pages/dashboard/DashboardWidgetsPage.vue'),
+        component: () => import('pages/dashboard/DashboardWidgetsPage.vue'),
         meta: { title: 'Dashboard Widgets', icon: 'widgets' },
       },
 
@@ -72,61 +73,61 @@ const routes: RouteRecordRaw[] = [
           {
             path: 'critical-functions',
             name: 'CriticalFunctions',
-            component: () => import('../pages/bcm/CriticalFunctionsPage.vue'),
+            component: () => import('pages/bcm/CriticalFunctionsPage.vue'),
             meta: { title: 'Critical Functions', icon: 'functions', showInMenu: true },
           },
           {
             path: 'critical-functions/:id',
             name: 'CriticalFunctionDetail',
-            component: () => import('../pages/bcm/CriticalFunctionDetailPage.vue'),
+            component: () => import('pages/bcm/CriticalFunctionDetailPage.vue'),
             meta: { title: 'Critical Function Detail' },
           },
           {
             path: 'bia',
             name: 'BIA',
-            component: () => import('../pages/bcm/BiaListPage.vue'),
+            component: () => import('pages/bcm/BiaListPage.vue'),
             meta: { title: 'Business Impact Analysis', icon: 'assessment', showInMenu: true },
           },
           {
             path: 'bia/create',
             name: 'BIACreate',
-            component: () => import('../pages/bcm/BiaCreatePage.vue'),
+            component: () => import('pages/bcm/BiaCreatePage.vue'),
             meta: { title: 'Create BIA' },
           },
           {
             path: 'bia/:id',
             name: 'BIADetail',
-            component: () => import('../pages/bcm/BiaDetailPage.vue'),
+            component: () => import('pages/bcm/BiaDetailPage.vue'),
             meta: { title: 'BIA Detail' },
           },
           {
             path: 'bcp',
             name: 'BCP',
-            component: () => import('../pages/bcm/BcpListPage.vue'),
+            component: () => import('pages/bcm/BcpListPage.vue'),
             meta: { title: 'Business Continuity Plans', icon: 'description', showInMenu: true },
           },
           {
             path: 'bcp/create',
             name: 'BCPCreate',
-            component: () => import('../pages/bcm/BcpCreatePage.vue'),
+            component: () => import('pages/bcm/BcpCreatePage.vue'),
             meta: { title: 'Create BCP' },
           },
           {
             path: 'bcp/:id',
             name: 'BCPDetail',
-            component: () => import('../pages/bcm/BcpDetailPage.vue'),
+            component: () => import('pages/bcm/BcpDetailPage.vue'),
             meta: { title: 'BCP Detail' },
           },
           {
             path: 'recovery-strategies',
             name: 'RecoveryStrategies',
-            component: () => import('../pages/bcm/RecoveryStrategiesPage.vue'),
+            component: () => import('pages/bcm/RecoveryStrategiesPage.vue'),
             meta: { title: 'Recovery Strategies', icon: 'restore', showInMenu: true },
           },
           {
             path: 'exercise-tests',
             name: 'ExerciseTests',
-            component: () => import('../pages/bcm/ExerciseTestsPage.vue'),
+            component: () => import('pages/bcm/ExerciseTestsPage.vue'),
             meta: { title: 'Exercise Tests', icon: 'playlist_add_check', showInMenu: true },
           },
         ],
@@ -138,13 +139,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'risks',
         name: 'Risks',
-        component: () => import('../pages/risk/RiskListPage.vue'),
+        component: () => import('pages/risk/RiskListPage.vue'),
         meta: { title: 'Risk Management', icon: 'warning', showInMenu: true },
       },
       {
         path: 'risks/:id',
         name: 'RiskDetail',
-        component: () => import('../pages/risk/RiskDetailPage.vue'),
+        component: () => import('pages/risk/RiskDetailPage.vue'),
         meta: { title: 'Risk Detail' },
       },
 
@@ -154,13 +155,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'compliance',
         name: 'Compliance',
-        component: () => import('../pages/compliance/ComplianceListPage.vue'),
+        component: () => import('pages/compliance/ComplianceListPage.vue'),
         meta: { title: 'Compliance', icon: 'verified_user', showInMenu: true },
       },
       {
         path: 'compliance/:id',
         name: 'ComplianceDetail',
-        component: () => import('../pages/compliance/ComplianceDetailPage.vue'),
+        component: () => import('pages/compliance/ComplianceDetailPage.vue'),
         meta: { title: 'Compliance Detail' },
       },
 
@@ -170,13 +171,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'incidents',
         name: 'Incidents',
-        component: () => import('../pages/incident/IncidentListPage.vue'),
+        component: () => import('pages/incident/IncidentListPage.vue'),
         meta: { title: 'Incident Management', icon: 'report', showInMenu: true },
       },
       {
         path: 'incidents/:id',
         name: 'IncidentDetail',
-        component: () => import('../pages/incident/IncidentDetailPage.vue'),
+        component: () => import('pages/incident/IncidentDetailPage.vue'),
         meta: { title: 'Incident Detail' },
       },
 
@@ -186,13 +187,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'workflows',
         name: 'Workflows',
-        component: () => import('../pages/workflow/WorkflowListPage.vue'),
+        component: () => import('pages/workflow/WorkflowListPage.vue'),
         meta: { title: 'Workflows', icon: 'account_tree', showInMenu: true },
       },
       {
         path: 'workflows/:id',
         name: 'WorkflowDetail',
-        component: () => import('../pages/workflow/WorkflowDetailPage.vue'),
+        component: () => import('pages/workflow/WorkflowDetailPage.vue'),
         meta: { title: 'Workflow Detail' },
       },
 
@@ -202,13 +203,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'rules',
         name: 'Rules',
-        component: () => import('../pages/rules/RulesListPage.vue'),
+        component: () => import('pages/rules/RulesListPage.vue'),
         meta: { title: 'Business Rules', icon: 'rule', showInMenu: true },
       },
       {
         path: 'rules/:id',
         name: 'RuleDetail',
-        component: () => import('../pages/rules/RuleDetailPage.vue'),
+        component: () => import('pages/rules/RuleDetailPage.vue'),
         meta: { title: 'Rule Detail' },
       },
 
@@ -218,19 +219,19 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'documents',
         name: 'Documents',
-        component: () => import('../pages/documents/DocumentsPage.vue'),
+        component: () => import('pages/documents/DocumentsPage.vue'),
         meta: { title: 'Documents', icon: 'folder', showInMenu: true },
       },
       {
         path: 'documents/upload',
         name: 'DocumentUpload',
-        component: () => import('../pages/documents/DocumentUploadPage.vue'),
+        component: () => import('pages/documents/DocumentUploadPage.vue'),
         meta: { title: 'Upload Document' },
       },
       {
         path: 'documents/:id',
         name: 'DocumentDetail',
-        component: () => import('../pages/documents/DocumentDetailPage.vue'),
+        component: () => import('pages/documents/DocumentDetailPage.vue'),
         meta: { title: 'Document Detail' },
       },
 
@@ -240,13 +241,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'notifications',
         name: 'Notifications',
-        component: () => import('../pages/notifications/NotificationsPage.vue'),
+        component: () => import('pages/notifications/NotificationsPage.vue'),
         meta: { title: 'Notifications', icon: 'notifications', showInMenu: true },
       },
       {
         path: 'notifications/settings',
         name: 'NotificationSettings',
-        component: () => import('../pages/notifications/NotificationSettingsPage.vue'),
+        component: () => import('pages/notifications/NotificationSettingsPage.vue'),
         meta: { title: 'Notification Settings' },
       },
 
@@ -256,13 +257,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'sync',
         name: 'SyncDashboard',
-        component: () => import('../pages/sync/SyncDashboardPage.vue'),
+        component: () => import('pages/sync/SyncDashboardPage.vue'),
         meta: { title: 'Synchronization', icon: 'sync' },
       },
       {
         path: 'sync/settings',
         name: 'SyncSettings',
-        component: () => import('../pages/sync/SyncSettingsPage.vue'),
+        component: () => import('pages/sync/SyncSettingsPage.vue'),
         meta: { title: 'Sync Settings' },
       },
 
@@ -272,13 +273,13 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'cache',
         name: 'CacheDashboard',
-        component: () => import('../pages/cache/CacheDashboardPage.vue'),
+        component: () => import('pages/cache/CacheDashboardPage.vue'),
         meta: { title: 'Cache Management', icon: 'storage' },
       },
       {
         path: 'cache/settings',
         name: 'CacheSettings',
-        component: () => import('../pages/cache/CacheSettingsPage.vue'),
+        component: () => import('pages/cache/CacheSettingsPage.vue'),
         meta: { title: 'Cache Settings' },
       },
 
@@ -288,7 +289,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'Profile',
-        component: () => import('../pages/auth/ProfilePage.vue'),
+        component: () => import('pages/auth/ProfilePage.vue'),
         meta: { title: 'Profile', icon: 'person', showInMenu: true },
       },
 
@@ -298,7 +299,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'settings',
         name: 'Settings',
-        component: () => import('../pages/settings/SettingsPage.vue'),
+        component: () => import('pages/settings/SettingsPage.vue'),
         meta: { title: 'Settings', icon: 'settings', showInMenu: true },
       },
 
@@ -308,7 +309,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'audit',
         name: 'AuditLogs',
-        component: () => import('../pages/audit/AuditLogsPage.vue'),
+        component: () => import('pages/audit/AuditLogsPage.vue'),
         meta: {
           title: 'Audit Logs',
           icon: 'history',
@@ -318,13 +319,15 @@ const routes: RouteRecordRaw[] = [
     ],
   },
 
+  */
+
   // ============================================
   // Error Routes
   // ============================================
   {
     path: '/:catchAll(.*)*',
     name: 'ErrorNotFound',
-    component: () => import('../pages/auth/ErrorNotFoundPage.vue'),
+    component: () => import('pages/auth/ErrorNotFoundPage.vue'),
     meta: { title: 'Page Not Found' },
   },
 ]

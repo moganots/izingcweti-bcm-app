@@ -76,7 +76,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useBcmStore } from '../../stores/bcm.store'
+import { useBcmStore } from '../../stores/bcm/bcm.store'
 import { formatDate } from '../../utils/date.utils'
 import { formatCurrency, truncateText } from '../../utils/formatters'
 import PageHeader from '../../components/.common/PageHeader.vue'

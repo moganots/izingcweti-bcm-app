@@ -1,8 +1,8 @@
 // src/boot/permissions.ts
 
 import { boot } from 'quasar/wrappers'
-import { useAuthStore } from '../stores/auth.store'
-import { UserRole } from '../models/entities/user.entity'
+import { UserRole } from './../models/entities'
+import { useAuthStore } from './../stores'
 
 /**
  * Permissions Boot File

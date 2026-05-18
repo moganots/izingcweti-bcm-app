@@ -1,4 +1,4 @@
-import type { User, UserRole } from '../models/entities/user.entity'
+import type { User, UserRole } from '../models/entities/user/user.entity'
 
 /**
  * Authentication Type Definitions

@@ -6,6 +6,6 @@ services:
       - .:/app
     working_dir: /app
     ports:
-      - "9002:9000" # Quasar Dev Server
+      - "9811:9812" # Quasar Dev Server
     stdin_open: true
     tty: true

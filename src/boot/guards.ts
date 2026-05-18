@@ -1,46 +1,38 @@
 import { boot } from 'quasar/wrappers'
-import { useUiStore } from '../stores/ui.store'
+import { useUiStore } from './../stores'
 
-/**
- * Route Guards Boot File
- * Additional route guard configurations
- */
 export default boot(({ router }) => {
-  // Progress bar on route change
   router.beforeEach((to, from, next) => {
-    // Start progress bar
-    if (typeof window !== 'undefined') {
-      const progressBar = document.getElementById('nprogress')
-      if (progressBar) {
-        progressBar.style.display = 'block'
-      }
-    }
+    // Just log navigation, no Loading to avoid DOM conflicts
+    console.log(`Navigating from ${from?.path} to ${to.path}`)
     next()
   })
 
-  router.afterEach((to, from) => {
-    // Complete progress bar
-    if (typeof window !== 'undefined') {
-      const progressBar = document.getElementById('nprogress')
-      if (progressBar) {
-        setTimeout(() => {
-          progressBar.style.display = 'none'
-        }, 300)
-      }
+  router.afterEach((to) => {
+    // Update document title only
+    try {
+      const appName = import.meta.env.VITE_APP_NAME || 'Izingcweti (BCM)'
+      const title = to.meta.title as string
+      document.title = title ? `${title} - ${appName}` : appName
+    } catch (error) {
+      console.warn('Failed to update title:', error)
     }
-
-    // Scroll to top on navigation
-    window.scrollTo(0, 0)
-
-    // Update document title
-    const appName = import.meta.env.VITE_APP_NAME || 'BCM Mobile'
-    const title = to.meta.title as string
-    document.title = title ? `${title} - ${appName}` : appName
   })
 
   // Handle navigation errors
   router.onError((error) => {
     console.error('Router error:', error)
+
+    // Ignore Quasar layout internal errors
+    if (
+      error instanceof Error &&
+      (error.message?.includes('height') ||
+        error.message?.includes('parentNode') ||
+        error.message?.includes('undefined'))
+    ) {
+      console.warn('Layout error (ignored):', error.message)
+      return
+    }
 
     const uiStore = useUiStore()
     uiStore.setError('Navigation failed. Please try again.')

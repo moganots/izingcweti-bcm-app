@@ -1,234 +1,104 @@
+<!-- src/pages/auth/LoginPage.vue -->
 <template>
-  <q-page class="auth-page flex flex-center">
-    <div class="auth-container">
-      <!-- Branding -->
-      <div class="auth-branding gt-sm">
-        <div class="branding-content">
-          <q-icon name="shield" size="80px" color="white" />
-          <h2 class="text-white q-mt-md">Izingcweti BCM</h2>
-          <p class="text-grey-4 text-subtitle1">Business Continuity Management Platform</p>
-          <div class="features-list q-mt-xl">
-            <div class="feature-item">
-              <q-icon name="check_circle" size="20px" color="green-4" /><span
-                >Real-time Risk Monitoring</span
-              >
-            </div>
-            <div class="feature-item">
-              <q-icon name="check_circle" size="20px" color="green-4" /><span
-                >Incident Management</span
-              >
-            </div>
-            <div class="feature-item">
-              <q-icon name="check_circle" size="20px" color="green-4" /><span
-                >Compliance Tracking</span
-              >
-            </div>
-            <div class="feature-item">
-              <q-icon name="check_circle" size="20px" color="green-4" /><span
-                >Offline-First Architecture</span
-              >
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- Login Form -->
-      <div class="auth-form-container">
-        <div class="auth-form-wrapper">
-          <div class="text-center lt-md q-mb-lg">
-            <q-icon name="shield" size="50px" color="primary" />
-            <h4 class="text-primary q-mt-sm q-mb-none">Izingcweti BCM</h4>
-          </div>
-
-          <div class="text-center q-mb-lg">
-            <h5 class="text-dark q-mb-xs">Welcome Back</h5>
-            <p class="text-grey-6">Sign in to continue to your account</p>
-          </div>
-
-          <LoginForm
-            :loading="authStore.isLoading"
-            :error-message="authStore.error || ''"
-            :biometric-available="biometricAvailable"
-            :saved-email="savedEmail"
-            @submit="handleLogin"
-            @biometric-login="handleBiometricLogin"
-            @clear-error="authStore.error = null"
-          />
-
-          <div class="text-center q-mt-lg">
-            <q-badge
-              :color="serverOnline ? 'green' : 'red'"
-              :label="serverOnline ? 'Server Online' : 'Server Offline'"
-              class="q-px-md q-py-xs"
-            />
-          </div>
-
-          <div class="text-center q-mt-md">
-            <p class="text-grey-5 text-caption">Izingcweti BCM v{{ appVersion }}</p>
-          </div>
-        </div>
-      </div>
+  <div class="login-page">
+    <div class="text-center q-mb-md">
+      <q-icon name="lock" size="48px" color="primary" />
+      <div class="text-h5 q-mt-sm">Welcome Back</div>
+      <div class="text-subtitle2 text-grey-6">Sign in to your account</div>
     </div>
 
-    <OfflineBanner v-if="isOffline" />
-  </q-page>
+    <LoginForm
+      :loading="loading"
+      :error-message="errorMessage"
+      :biometric-available="biometricAvailable"
+      :saved-email="savedEmail"
+      @submit="handleLogin"
+      @biometric-login="handleBiometricLogin"
+      @clear-error="clearError"
+    />
+
+    <div class="text-center q-mt-md">
+      <q-btn
+        flat
+        dense
+        color="primary"
+        label="Don't have an account? Sign up"
+        :to="{ name: 'Register' }"
+      />
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../../stores/auth.store'
-import { useUiStore } from '../../stores/ui.store'
-import { useNetwork } from '../../composables/useNetwork'
-import { Device } from '@capacitor/device'
-import LoginForm from '../../components/auth/LoginForm.vue'
-import OfflineBanner from '../../components/.common/OfflineBanner.vue'
+import { useAuthStore } from 'src/stores/auth/auth.store'
+import { LoginForm } from 'src/components/auth'
 
 const router = useRouter()
-const route = useRoute()
 const $q = useQuasar()
 const authStore = useAuthStore()
-const uiStore = useUiStore()
-const { isOnline } = useNetwork()
 
+const loading = ref(false)
+const errorMessage = ref('')
 const biometricAvailable = ref(false)
-const serverOnline = ref(true)
-const appVersion = ref(import.meta.env.VITE_APP_VERSION || '1.0.0')
 const savedEmail = ref('')
 
-const isOffline = computed(() => !isOnline.value)
-
-onMounted(async () => {
-  // Check for redirect message
-  if (route.query.message) {
-    $q.notify({ type: 'positive', message: route.query.message as string, position: 'top' })
-  }
-
-  // Load saved email
-  const remembered = localStorage.getItem('bcm_remembered_email')
-  if (remembered) savedEmail.value = remembered
-
+onMounted(() => {
+  // Check for saved email
+  savedEmail.value = localStorage.getItem('bcm_remembered_email') || ''
+  
   // Check biometric availability
-  try {
-    const info = await Device.getInfo()
-    biometricAvailable.value = info.platform === 'ios' || info.platform === 'android'
-  } catch {
-    biometricAvailable.value = false
-  }
-
-  // Check server status
-  try {
-    const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ping`)
-    serverOnline.value = response.ok
-  } catch {
-    serverOnline.value = false
-  }
+  checkBiometricAvailability()
 })
 
-async function handleLogin(data: {
-  email: string
-  password: string
-  rememberMe: boolean
-}): Promise<void> {
-  if (!isOnline.value) {
-    $q.notify({ type: 'warning', message: 'Cannot sign in while offline', position: 'top' })
-    return
-  }
+async function handleLogin(credentials: { email: string; password: string; rememberMe: boolean }) {
+  loading.value = true
+  errorMessage.value = ''
 
   try {
     await authStore.login({
-      email: data.email.trim().toLowerCase(),
-      password: data.password,
-      remember_me: data.rememberMe,
+      email: credentials.email,
+      password: credentials.password,
+      remember_me: credentials.rememberMe,
     })
-    $q.notify({ type: 'positive', message: 'Welcome back!', position: 'top' })
-    const redirect = (route.query.redirect as string) || '/dashboard'
-    await router.push(redirect)
+    
+    $q.notify({
+      type: 'positive',
+      message: 'Login successful! Redirecting...',
+      position: 'top',
+    })
+    
+    router.push({ name: 'Dashboard' })
   } catch (err: any) {
+    errorMessage.value = err.message || 'Invalid email or password'
     $q.notify({
       type: 'negative',
-      message: err.message || 'Login failed',
+      message: errorMessage.value,
       position: 'top',
-      timeout: 5000,
     })
+  } finally {
+    loading.value = false
   }
 }
 
-async function handleBiometricLogin(): Promise<void> {
+async function checkBiometricAvailability() {
+  if (window.PublicKeyCredential && await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable?.()) {
+    biometricAvailable.value = true
+  }
+}
+
+async function handleBiometricLogin() {
+  // Implement WebAuthn biometric login
   $q.notify({
     type: 'info',
-    message: 'Biometric authentication initiated...',
+    message: 'Biometric login feature coming soon',
     position: 'top',
-    timeout: 2000,
   })
 }
+
+function clearError() {
+  errorMessage.value = ''
+}
 </script>
-
-<style lang="scss" scoped>
-.auth-page {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
-  padding: 20px;
-}
-
-.auth-container {
-  display: flex;
-  width: 100%;
-  max-width: 1000px;
-  min-height: 600px;
-  background: white;
-  border-radius: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  overflow: hidden;
-}
-
-.auth-branding {
-  flex: 1;
-  background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
-  padding: 60px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .features-list {
-    .feature-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-bottom: 16px;
-      color: white;
-      font-size: 15px;
-    }
-  }
-}
-
-.auth-form-container {
-  flex: 1;
-  padding: 60px 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  .auth-form-wrapper {
-    width: 100%;
-    max-width: 400px;
-  }
-}
-
-@media (max-width: 768px) {
-  .auth-page {
-    background: white;
-    padding: 20px;
-  }
-  .auth-container {
-    flex-direction: column;
-    border-radius: 0;
-    box-shadow: none;
-    min-height: auto;
-  }
-  .auth-form-container {
-    padding: 40px 20px;
-  }
-}
-</style>

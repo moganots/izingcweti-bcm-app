@@ -1,5 +1,5 @@
-import { Database } from '../db/Database'
-import { apiClient } from '../../boot/axios' // Now correctly imports the exported apiClient
+import { apiClient } from './../../boot/axios'
+import { Database } from '..'
 import { NetworkMonitor } from './NetworkMonitor'
 import { ConflictResolver } from './ConflictResolver'
 import type {
@@ -9,8 +9,9 @@ import type {
   SyncPullResponse,
   SyncPushResponse,
   SyncChange,
-} from '../../models/entities/sync.entity'
-import { SyncPriority, OperationType, SyncStatus } from '../../models/entities/sync.entity'
+  NetworkInfo,
+} from './../../models/entities'
+import { SyncPriority, OperationType, SyncStatus } from './../../models/entities'
 
 /**
  * Sync Engine Service
@@ -24,8 +25,8 @@ export class SyncEngine {
   private batchSize: number
   private syncInProgress: boolean = false
 
-  constructor() {
-    this.db = Database.getInstance()
+  constructor(db?: Database) {
+    this.db = db || Database.getInstance()
     this.networkMonitor = new NetworkMonitor()
     this.conflictResolver = new ConflictResolver()
     this.maxRetries = parseInt(import.meta.env.VITE_SYNC_MAX_RETRIES || '5')
@@ -44,6 +45,14 @@ export class SyncEngine {
   async cleanup(): Promise<void> {
     this.networkMonitor.stopMonitoring()
     console.log('✓ Sync engine cleaned up')
+  }
+
+  // ============================================
+  // Network Status
+  // ============================================
+
+  async getNetworkStatus(): Promise<NetworkInfo> {
+    return this.networkMonitor.getNetworkStatus()
   }
 
   // ============================================
@@ -87,6 +96,11 @@ export class SyncEngine {
   async incrementAttempts(id: string): Promise<void> {
     const repo = this.db.getRepository('pendingChanges')
     await repo.incrementAttempts(id)
+  }
+
+  async clearPendingChanges(): Promise<void> {
+    const repo = this.db.getRepository('pendingChanges')
+    await repo.clearAll()
   }
 
   // ============================================
@@ -142,7 +156,6 @@ export class SyncEngine {
     appliedChanges: number
     conflicts: SyncConflict[]
   }> {
-    // Use the imported apiClient directly
     const response = await apiClient.post('/sync/push', {
       changes: batch.map((c) => ({
         entityType: c.entity_type,
@@ -341,8 +354,13 @@ export class SyncEngine {
     await metadataRepo.setLastSyncToken(token)
   }
 
-  async getSyncMetadata(): Promise<SyncMetadata | null> {
+  async getSyncMetadata(key?: string): Promise<SyncMetadata | null> {
     const metadataRepo = this.db.getRepository('syncMetadata')
+
+    if (key) {
+      return metadataRepo.getByKey(key)
+    }
+
     const token = await metadataRepo.getLastSyncToken()
     const time = await metadataRepo.getLastSyncTime()
 
@@ -361,6 +379,27 @@ export class SyncEngine {
     }
 
     return null
+  }
+
+  async updateSyncMetadata(key: string, value: string): Promise<void> {
+    const metadataRepo = this.db.getRepository('syncMetadata')
+    const existing = await metadataRepo.getByKey(key)
+
+    if (existing) {
+      await metadataRepo.update(existing.uuid, { value, updated_at: new Date().toISOString() })
+    } else {
+      await metadataRepo.create({
+        key,
+        value,
+        uuid: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
+        created_by: 'system',
+        created_at: new Date().toISOString(),
+        updated_by: 'system',
+        updated_at: new Date().toISOString(),
+        version: 1,
+        sync_status: SyncStatus.SYNCED,
+      })
+    }
   }
 
   // ============================================

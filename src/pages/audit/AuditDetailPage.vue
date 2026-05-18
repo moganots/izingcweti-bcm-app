@@ -188,7 +188,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuditStore } from '../../stores/audit.store'
+import { useAuditStore } from '../../stores/audit/audit.store'
 import { formatDateTime } from '../../utils/date.utils'
 import { formatJSON } from '../../utils/formatters'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

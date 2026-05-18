@@ -50,7 +50,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { useUiStore } from '../stores/ui.store'
+import { useUiStore } from '../stores/ui/ui.store'
 import AppDrawer from '../components/.common/AppDrawer.vue'
 import OfflineBanner from '../components/.common/OfflineBanner.vue'
 

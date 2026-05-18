@@ -1,9 +1,9 @@
 import { boot } from 'quasar/wrappers'
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
-import { useAuthStore } from '../stores/auth.store'
-import { useUiStore } from '../stores/ui.store'
 import { Loading, QSpinnerDots, Notify } from 'quasar'
-import type { ApiResponse } from '../types/common.types'
+import { useAuthStore } from './../stores/auth/auth.store'
+import { useUiStore } from './../stores/ui/ui.store'
+import type { ApiResponse } from './../types'
 
 // Extend Axios config types
 declare module 'axios' {

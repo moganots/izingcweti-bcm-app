@@ -58,8 +58,8 @@
 
 <script setup lang="ts">
 import { computed, ref } from 'vue'
-import { useUiStore } from '../stores/ui.store'
-import { useNotificationStore } from '../stores/notification.store'
+import { useUiStore } from '../stores/ui/ui.store'
+import { useNotificationStore } from '../stores/notification/notification.store'
 import AppDrawer from '../components/.common/AppDrawer.vue'
 import OfflineBanner from '../components/.common/OfflineBanner.vue'
 

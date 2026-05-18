@@ -1,11 +1,6 @@
 import { apiClient } from '../../boot/axios'
 import type { AxiosRequestConfig } from 'axios'
-import type {
-  ApiResponse,
-  PaginatedResponse,
-  PaginationParams,
-  QueryParams,
-} from '../../types/common.types'
+import type { ApiResponse, PaginatedResponse, PaginationParams } from './../../types'
 
 /**
  * Base API Service
@@ -29,7 +24,7 @@ export abstract class BaseService {
    */
   protected async getPaginated<T = any>(
     url: string,
-    params?: PaginationParams & QueryParams,
+    params?: PaginationParams,
     config?: AxiosRequestConfig
   ): Promise<PaginatedResponse<T>> {
     const response = await apiClient.get<PaginatedResponse<T>>(url, {

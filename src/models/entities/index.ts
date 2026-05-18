@@ -1,7 +1,27 @@
-// Sync status (used by all entities)
-export { SyncStatus, SyncPriority, OperationType } from './sync.entity'
+// ============================================
+// Sync (Core - used by all entities)
+// ============================================
+export {
+  SyncStatus,
+  SyncPriority,
+  OperationType,
+  ConflictType,
+  ConflictResolutionStrategy,
+  NetworkStatus,
+  type PendingChange,
+  type SyncConflict,
+  type SyncMetadata,
+  type SyncState,
+  type SyncPullResponse,
+  type SyncChange,
+  type SyncPushRequest,
+  type SyncPushResponse,
+  type NetworkInfo,
+} from './sync/sync.entity'
 
-// User
+// ============================================
+// User & Auth
+// ============================================
 export {
   UserRole,
   type User,
@@ -9,20 +29,48 @@ export {
   type AuthTokens,
   type LoginResponse,
   type AuthState,
-} from './user.entity'
+} from './user/user.entity'
 
-// Organisation
+// ============================================
+// Organisation Structure
+// ============================================
 export {
   type Organisation,
   type BusinessUnit,
   type Department,
   type Document,
+  type DocumentVersion,
   DocumentType,
   DocumentStatus,
   AccessLevel,
-} from './organisation.entity'
+} from './organisation/organisation.entity'
 
-// BCM
+// ============================================
+// Settings
+// ============================================
+export {
+  type UserPreferences,
+  type NotificationSettings,
+  type NotificationChannelSettings,
+  type ThemeSettings,
+  type LanguageSettings,
+  type DisplaySettings,
+  type SecuritySettings,
+  type SyncSettings,
+  type PrivacySettings,
+  type Settings,
+  DEFAULT_USER_PREFERENCES,
+  DEFAULT_THEME_SETTINGS,
+  DEFAULT_LANGUAGE_SETTINGS,
+  DEFAULT_DISPLAY_SETTINGS,
+  DEFAULT_SECURITY_SETTINGS,
+  DEFAULT_SYNC_SETTINGS,
+  DEFAULT_PRIVACY_SETTINGS,
+} from './settings/settings.entity'
+
+// ============================================
+// BCM (Business Continuity Management)
+// ============================================
 export {
   IndustryType,
   MaturityScore,
@@ -38,9 +86,14 @@ export {
   type EmergencyContact,
   type RecoveryStrategy,
   type ExerciseTest,
-} from './bcm.entity'
+  type ComplianceRecord as BCMComplianceRecord,
+  ComplianceStandard as BCMComplianceStandard,
+  ComplianceStatus as BCMComplianceStatus,
+} from './bcm/bcm.entity'
 
-// Risk
+// ============================================
+// Risk Management
+// ============================================
 export {
   RiskCategory,
   ImpactSeverity,
@@ -48,9 +101,11 @@ export {
   type RiskMatrixCell,
   type RiskAssessment,
   type RiskStats,
-} from './risk.entity'
+} from './risk/risk.entity'
 
-// Incident
+// ============================================
+// Incident Management
+// ============================================
 export {
   IncidentSeverity,
   IncidentStatus,
@@ -59,9 +114,11 @@ export {
   type UpdateIncidentDTO,
   type CloseIncidentDTO,
   type IncidentStats,
-} from './incident.entity'
+} from './incident/incident.entity'
 
+// ============================================
 // Workflow
+// ============================================
 export {
   WorkflowState,
   WorkflowType,
@@ -70,7 +127,6 @@ export {
   type ApprovalStep,
   type WorkflowComment,
   type WorkflowStats,
-  // type WorkflowActivity,
   type CreateWorkflowRequest,
   type UpdateWorkflowRequest,
   type SubmitWorkflowRequest,
@@ -86,25 +142,11 @@ export {
   WORKFLOW_TYPE_LABELS,
   WORKFLOW_PRIORITY_LABELS,
   WORKFLOW_PRIORITY_COLORS,
-} from './workflow.entity'
+} from './workflow/workflow.entity'
 
-// Sync
-export {
-  ConflictType,
-  ConflictResolutionStrategy,
-  NetworkStatus,
-  type PendingChange,
-  type SyncConflict,
-  type SyncMetadata,
-  type SyncState,
-  type SyncPullResponse,
-  type SyncChange,
-  type SyncPushRequest,
-  type SyncPushResponse,
-  type NetworkInfo,
-} from './sync.entity'
-
-// Notification
+// ============================================
+// Notifications
+// ============================================
 export {
   NotificationType,
   NotificationPriority,
@@ -114,9 +156,11 @@ export {
   type NotificationPreference,
   type NotificationCounts,
   type CreateNotificationDTO,
-} from './notification.entity'
+} from './notification/notification.entity'
 
-// Audit
+// ============================================
+// Audit Logging
+// ============================================
 export {
   AuditSeverity,
   AuditCategory,
@@ -124,9 +168,11 @@ export {
   type AuditQueryParams,
   type AuditStats,
   type AuditRetentionPolicy,
-} from './audit.entity'
+} from './audit/audit.entity'
 
-// Rules
+// ============================================
+// Business Rules Engine
+// ============================================
 export {
   RuleType,
   RuleTrigger,
@@ -144,17 +190,21 @@ export {
   type TestRuleResult,
   type RuleActionResult,
   type RuleStats,
-} from './rules.entity'
+} from './rules/rules.entity'
 
+// ============================================
 // Cache
+// ============================================
 export {
   type CacheEntry,
   type CacheStats,
   type CreateCacheDTO,
   type CacheQueryParams,
-} from './cache.entity'
+} from './cache/cache.entity'
 
+// ============================================
 // Compliance
+// ============================================
 export {
   ComplianceStandard,
   ComplianceStatus,
@@ -171,6 +221,7 @@ export {
   type ComplianceAuditEntry,
   type ComplianceExportRequest,
   type ComplianceFilterParams,
+  type ComplianceAuditHistoryEntry,
   // Display constants
   COMPLIANCE_STANDARD_LABELS,
   COMPLIANCE_STANDARD_COLORS,
@@ -199,4 +250,70 @@ export {
   isAuditDueSoon,
   calculateComplianceRate,
   formatComplianceStandard,
-} from './compliance.entity'
+} from './compliance/compliance.entity'
+
+// ============================================
+// Entity Type Maps
+// ============================================
+
+/**
+ * Map of entity type names to their corresponding TypeScript interfaces
+ * Useful for dynamic entity handling in repositories and services
+ */
+export const ENTITY_TYPES = {
+  USER: 'User',
+  ORGANISATION: 'Organisation',
+  BUSINESS_UNIT: 'BusinessUnit',
+  DEPARTMENT: 'Department',
+  DOCUMENT: 'Document',
+  RISK: 'Risk',
+  INCIDENT: 'Incident',
+  WORKFLOW: 'Workflow',
+  NOTIFICATION: 'Notification',
+  AUDIT_LOG: 'AuditLog',
+  COMPLIANCE_RECORD: 'ComplianceRecord',
+  SETTINGS: 'Settings',
+  CRITICAL_FUNCTION: 'CriticalFunction',
+  BUSINESS_IMPACT_ASSESSMENT: 'BusinessImpactAssessment',
+  BUSINESS_CONTINUITY_PLAN: 'BusinessContinuityPlan',
+  RECOVERY_STRATEGY: 'RecoveryStrategy',
+  EXERCISE_TEST: 'ExerciseTest',
+  RULE: 'Rule',
+  CACHE_ENTRY: 'CacheEntry',
+  SYNC_CONFLICT: 'SyncConflict',
+  PENDING_CHANGE: 'PendingChange',
+  SYNC_METADATA: 'SyncMetadata',
+} as const
+
+export type EntityType = (typeof ENTITY_TYPES)[keyof typeof ENTITY_TYPES]
+
+/**
+ * Get table name for an entity type
+ */
+export function getTableName(entityType: EntityType): string {
+  const tableMap: Record<EntityType, string> = {
+    [ENTITY_TYPES.USER]: 'users',
+    [ENTITY_TYPES.ORGANISATION]: 'organisations',
+    [ENTITY_TYPES.BUSINESS_UNIT]: 'business_units',
+    [ENTITY_TYPES.DEPARTMENT]: 'departments',
+    [ENTITY_TYPES.DOCUMENT]: 'documents',
+    [ENTITY_TYPES.RISK]: 'risks',
+    [ENTITY_TYPES.INCIDENT]: 'incidents',
+    [ENTITY_TYPES.WORKFLOW]: 'workflows',
+    [ENTITY_TYPES.NOTIFICATION]: 'notifications',
+    [ENTITY_TYPES.AUDIT_LOG]: 'audit_logs',
+    [ENTITY_TYPES.COMPLIANCE_RECORD]: 'compliance_records',
+    [ENTITY_TYPES.SETTINGS]: 'settings',
+    [ENTITY_TYPES.CRITICAL_FUNCTION]: 'critical_functions',
+    [ENTITY_TYPES.BUSINESS_IMPACT_ASSESSMENT]: 'business_impact_assessments',
+    [ENTITY_TYPES.BUSINESS_CONTINUITY_PLAN]: 'business_continuity_plans',
+    [ENTITY_TYPES.RECOVERY_STRATEGY]: 'recovery_strategies',
+    [ENTITY_TYPES.EXERCISE_TEST]: 'exercise_tests',
+    [ENTITY_TYPES.RULE]: 'rules',
+    [ENTITY_TYPES.CACHE_ENTRY]: 'cache',
+    [ENTITY_TYPES.SYNC_CONFLICT]: 'sync_conflicts',
+    [ENTITY_TYPES.PENDING_CHANGE]: 'pending_changes',
+    [ENTITY_TYPES.SYNC_METADATA]: 'sync_metadata',
+  }
+  return tableMap[entityType] || entityType.toLowerCase()
+}

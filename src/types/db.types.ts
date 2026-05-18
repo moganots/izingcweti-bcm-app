@@ -1,4 +1,4 @@
-import { PendingChange } from 'src/models/entities/sync.entity'
+import { PendingChange } from 'src/models/entities/sync/sync.entity'
 
 /**
  * Database Type Definitions

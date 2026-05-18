@@ -1,8 +1,8 @@
 // src/composables/usePermissions.ts
 
 import { computed } from 'vue';
-import { useAuthStore } from '../stores/auth.store';
-import { UserRole } from '../models/entities/user.entity';
+import { useAuthStore } from '../stores/auth/auth.store';
+import { UserRole } from '../models/entities/user/user.entity';
 
 /**
  * Permission definitions for each feature

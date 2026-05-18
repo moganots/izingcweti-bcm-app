@@ -251,7 +251,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useBcmStore } from '../../stores/bcm.store'
+import { useBcmStore } from '../../stores/bcm/bcm.store'
 import { formatDate } from '../../utils/date.utils'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import StatusBadge from '../../components/.common/StatusBadge.vue'

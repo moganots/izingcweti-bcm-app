@@ -17,7 +17,7 @@ RUN npm install --legacy-peer-deps
 COPY . .
 
 # Expose port for Quasar dev server
-EXPOSE 9000
+EXPOSE 9811
 
 # Default command to keep the container running
 CMD ["bash"]

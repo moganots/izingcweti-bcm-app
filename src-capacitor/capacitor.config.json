@@ -1,6 +1,6 @@
 {
-  "appId": "com.izingcweti.bcm.mobile",
-  "appName": "Izingcweti BCM Mobile App",
+  "appId": "com.izingcweti.bcm.app",
+  "appName": "Izingcweti (BCM)",
   "webDir": "www",
   "backgroundColor": "#00000000",
   "plugins": {

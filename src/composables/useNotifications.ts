@@ -1,6 +1,6 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
-import { useNotificationStore } from '../stores/notification.store';
-import { useAuthStore } from '../stores/auth.store';
+import { useNotificationStore } from '../stores/notification/notification.store';
+import { useAuthStore } from '../stores/auth/auth.store';
 
 /**
  * Composable for notification management

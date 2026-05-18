@@ -1,8 +1,6 @@
-// src/boot/dexie.ts
-
 import { boot } from 'quasar/wrappers'
-import { db } from '../services/db/Database'
-import { useSyncStore } from '../stores/sync.store'
+import { db } from './../services/db'
+import { useSyncStore } from './../stores'
 
 /**
  * Dexie/IndexedDB Boot File

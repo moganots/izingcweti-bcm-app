@@ -122,7 +122,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useBcmStore } from '../../stores/bcm.store'
+import { useBcmStore } from '../../stores/bcm/bcm.store'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

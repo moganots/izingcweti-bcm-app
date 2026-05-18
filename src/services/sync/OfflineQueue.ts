@@ -1,8 +1,8 @@
-import { Database } from '../db/Database'
+import { Database } from '..'
+import { OperationType, SyncPriority, SyncStatus } from './../../models/entities'
+import type { PendingChange } from './../../models/entities'
 import { NetworkMonitor } from './NetworkMonitor'
 import { SyncEngine } from './SyncEngine'
-import type { PendingChange } from '../../models/entities/sync.entity'
-import { OperationType, SyncPriority, SyncStatus } from '../../models/entities/sync.entity'
 
 /**
  * Offline Queue Service

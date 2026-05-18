@@ -2,13 +2,13 @@ import { Preferences } from '@capacitor/preferences'
 import { STORAGE_KEYS } from './constants'
 
 /**
- * Auth token interface
+ * Auth token interface - must match the one in auth.store.ts
  */
-interface AuthTokens {
+export interface AuthTokens {
   access_token: string
   refresh_token: string
-  expires_in?: number
-  token_type?: string
+  expires_in?: number // Make optional to match both definitions
+  token_type?: string // Make optional
 }
 
 // ============================================

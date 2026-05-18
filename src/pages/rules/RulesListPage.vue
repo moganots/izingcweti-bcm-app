@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRulesStore } from '../../stores/rules.store'
+import { useRulesStore } from '../../stores/rules/rules.store'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

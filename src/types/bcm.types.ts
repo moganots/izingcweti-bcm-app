@@ -1,16 +1,16 @@
-import type {
+/**
+ * BCM Type Definitions
+ */
+
+import {
   CriticalFunction,
   BusinessImpactAssessment,
   BusinessContinuityPlan,
   RecoveryStrategy,
   ExerciseTest,
   ComplianceRecord,
-} from '../models/entities/bcm.entity'
+} from 'src/models/entities'
 import { QueryParams } from './common.types'
-
-/**
- * BCM Type Definitions
- */
 
 // ============================================
 // BCM Module Types
@@ -195,39 +195,6 @@ export interface ComplianceGap {
   targetStatus: string
   actionItems: string[]
   priority: 'high' | 'medium' | 'low'
-}
-
-// ============================================
-// Dashboard Types
-// ============================================
-
-/**
- * Dashboard data
- */
-export interface DashboardData {
-  kpis: DashboardKPIs
-  recentIncidents: any[]
-  upcomingTests: any[]
-  pendingWorkflows: any[]
-  complianceOverview: ComplianceOverview[]
-  riskTrends: RiskTrend[]
-}
-
-export interface DashboardKPIs {
-  activeBCPs: number
-  activeIncidents: number
-  highRisks: number
-  pendingApprovals: number
-  complianceRate: number
-  maturityScore: number
-}
-
-export interface RiskTrend {
-  period: string
-  label: string
-  highRisks: number
-  mediumRisks: number
-  lowRisks: number
 }
 
 /**
@@ -534,8 +501,6 @@ export interface WorkflowQueryParams extends QueryParams {
 // ============================================
 
 export interface DocumentQueryParams extends QueryParams {
-  /** Search query (q parameter) */
-  q?: string
   /** Filter by document type */
   document_type?:
     | 'BCM_POLICY'

@@ -1,6 +1,5 @@
 import {
   createRouter,
-  createWebHistory,
   createWebHashHistory,
   type RouteLocationNormalized,
   type RouteLocationNormalizedLoaded,
@@ -15,28 +14,25 @@ import { setupAuthGuards, setupOfflineGuard, setupTransitionGuard } from './guar
  */
 const router = createRouter({
   // Use hash history on native mobile (iOS/Android), HTML5 history on web
-  history: Capacitor.isNativePlatform()
-    ? createWebHashHistory(import.meta.env.BASE_URL || '/')
-    : createWebHistory(import.meta.env.BASE_URL || '/'),
+  // For web development, use hash mode consistently to avoid issues
+  history: process.env.NODE_ENV === 'production' && Capacitor.isNativePlatform()
+    ? createWebHashHistory('/')
+    : createWebHashHistory('/'), // Use hash history for both dev and prod to ensure consistency
   routes,
   scrollBehavior(
     to: RouteLocationNormalized,
     from: RouteLocationNormalizedLoaded,
     savedPosition: { left: number; top: number } | null
   ) {
-    // If saved position exists (browser back/forward navigation), restore it
     if (savedPosition) {
       return savedPosition
     }
-    // If navigating to a new page, scroll to top
     if (to.hash) {
-      // If URL has a hash, scroll to that element
       return {
         el: to.hash,
         behavior: 'smooth',
       }
     }
-    // Otherwise scroll to top
     return { top: 0, left: 0 }
   },
 })
@@ -47,6 +43,11 @@ const router = createRouter({
 setupAuthGuards(router)
 setupOfflineGuard(router)
 setupTransitionGuard(router)
+
+// Log initial route for debugging
+router.isReady().then(() => {
+  console.log('Router is ready. Current route:', router.currentRoute.value)
+})
 
 export default router
 

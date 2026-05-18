@@ -1,7 +1,7 @@
 import { computed } from 'vue';
-import { useAuthStore } from '../stores/auth.store';
+import { useAuthStore } from '../stores/auth/auth.store';
 import { useRouter } from 'vue-router';
-import { LoginCredentials, UserRole } from '../models/entities/user.entity';
+import { LoginCredentials, UserRole } from '../models/entities/user/user.entity';
 
 /**
  * Composable for authentication-related functionality

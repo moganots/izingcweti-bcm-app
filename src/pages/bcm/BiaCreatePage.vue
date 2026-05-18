@@ -171,7 +171,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useBcmStore } from '../../stores/bcm.store'
+import { useBcmStore } from '../../stores/bcm/bcm.store'
 
 const route = useRoute()
 const router = useRouter()

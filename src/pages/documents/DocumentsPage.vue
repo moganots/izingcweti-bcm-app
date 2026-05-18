@@ -140,7 +140,7 @@
 import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { documentService } from '../../services/api/DocumentService'
+import { documentService } from '../../services/api/documents/DocumentService'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

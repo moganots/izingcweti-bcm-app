@@ -119,7 +119,7 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { formatTimeAgo } from '../../utils/date.utils'
 import DocumentUploader from '../../components/documents/DocumentUploader.vue'
-import { documentService } from 'src/services/api/DocumentService'
+import { documentService } from 'src/services/api/documents/DocumentService'
 
 const router = useRouter()
 const $q = useQuasar()

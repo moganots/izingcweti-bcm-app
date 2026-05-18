@@ -4,9 +4,9 @@
  */
 export const AppConfig = {
   // Application
-  appName: import.meta.env.VITE_APP_NAME || 'izingcweti BCM Mobile App',
+  appName: import.meta.env.VITE_APP_NAME || 'Izingcweti (BCM)',
   appVersion: import.meta.env.VITE_APP_VERSION || '0.0.1',
-  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'izingcweti BCM Mobile Application',
+  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'Izingcweti (BCM)lication',
 
   // Environment
   envName: import.meta.env.VITE_ENV_NAME || 'Local',

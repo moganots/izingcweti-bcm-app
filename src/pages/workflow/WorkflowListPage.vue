@@ -199,7 +199,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useWorkflowStore } from '../../stores/workflow.store'
+import { useWorkflowStore } from '../../stores/workflow/workflow.store'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

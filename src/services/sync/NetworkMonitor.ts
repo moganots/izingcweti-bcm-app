@@ -1,7 +1,8 @@
 import { Network } from '@capacitor/network'
-import { ConnectionType, getConnectionType, CONNECTION_TYPE_LABELS } from '../../types/sync.types'
-import type { NetworkStatus, ConnectionQuality } from '../../types/sync.types'
-import { useUiStore } from '../../stores/ui.store'
+import { ConnectionType, getConnectionType, CONNECTION_TYPE_LABELS } from './../../types'
+import type { NetworkStatus, ConnectionQuality } from './../../types'
+import type { NetworkInfo } from './../../models/entities'
+import { useUiStore } from './../../stores/ui/ui.store'
 
 export class NetworkMonitor {
   private listeners: Set<(status: NetworkStatus) => void> = new Set()
@@ -42,6 +43,17 @@ export class NetworkMonitor {
       connectionType: this._connectionType,
       signalStrength: this._signalStrength,
       isMetered: this.isMeteredConnection(),
+      lastChecked: new Date().toISOString(),
+    }
+  }
+
+  /**
+   * Get network status as NetworkInfo (for SyncEngine compatibility)
+   */
+  getNetworkStatus(): NetworkInfo {
+    return {
+      isOnline: this._isOnline,
+      connectionType: this._connectionType,
       lastChecked: new Date().toISOString(),
     }
   }
@@ -138,8 +150,7 @@ export class NetworkMonitor {
     // Log changes
     if (previousOnline !== connected) {
       console.log(
-        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${
-          CONNECTION_TYPE_LABELS[connectionType]
+        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${CONNECTION_TYPE_LABELS[connectionType]
         })`
       )
     } else if (previousType !== connectionType) {

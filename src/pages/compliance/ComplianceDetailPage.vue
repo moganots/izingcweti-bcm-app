@@ -312,7 +312,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useComplianceStore } from '../../stores/compliance.store'
+import { useComplianceStore } from '../../stores/compliance/compliance.store'
 import { formatDate } from '../../utils/date.utils'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import ComplianceStatusBadge from '../../components/compliance/ComplianceStatusBadge.vue'

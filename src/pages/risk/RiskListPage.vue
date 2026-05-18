@@ -230,7 +230,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRiskStore } from '../../stores/risk.store'
+import { useRiskStore } from '../../stores/risk/risk.store'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

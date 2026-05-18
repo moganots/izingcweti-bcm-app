@@ -159,7 +159,6 @@ export namespace AuthAPI {
 
 export namespace UserAPI {
   export interface GetUsersParams extends PaginationParams {
-    search?: string
     role?: string
     organisation_id?: string
     is_active?: boolean
@@ -186,7 +185,6 @@ export namespace UserAPI {
 
 export namespace BCMAPI {
   export interface GetBCPsParams extends PaginationParams {
-    search?: string
     plan_status?: string
     function_id?: string
     organisation_id?: string
@@ -235,7 +233,6 @@ export namespace BCMAPI {
 
 export namespace RiskAPI {
   export interface GetRisksParams extends PaginationParams {
-    search?: string
     risk_category?: string
     impact_severity?: string
     organisation_id?: string
@@ -265,7 +262,6 @@ export namespace RiskAPI {
 
 export namespace IncidentAPI {
   export interface GetIncidentsParams extends PaginationParams {
-    search?: string
     incident_severity?: string
     organisation_id?: string
     status?: 'active' | 'closed'

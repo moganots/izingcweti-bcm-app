@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Izingcweti BCM Mobile App</string>
-    <string name="title_activity_main">Izingcweti BCM Mobile App</string>
-    <string name="package_name">com.izingcweti.bcm.mobile</string>
-    <string name="custom_url_scheme">com.izingcweti.bcm.mobile</string>
+    <string name="app_name">Izingcweti (BCM)</string>
+    <string name="title_activity_main">Izingcweti (BCM)</string>
+    <string name="package_name">com.izingcweti.bcm.app</string>
+    <string name="custom_url_scheme">com.izingcweti.bcm.app</string>
 </resources>

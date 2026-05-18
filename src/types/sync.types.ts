@@ -3,7 +3,7 @@ import type {
   OperationType,
   ConflictType,
   SyncPriority,
-} from '../models/entities/sync.entity'
+} from '../models/entities/sync/sync.entity'
 
 /**
  * Sync Type Definitions

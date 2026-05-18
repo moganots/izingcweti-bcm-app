@@ -56,13 +56,7 @@ export interface ApiRequestOptions {
 /**
  * Pagination Parameters
  */
-export interface PaginationParams {
-  query?: string
-  page?: number
-  limit?: number
-  sortBy?: string
-  sortOrder?: 'ASC' | 'DESC'
-}
+export interface PaginationParams extends QueryParams { }
 
 /**
  * Pagination State

@@ -137,7 +137,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useBcmStore } from '../../stores/bcm.store'
+import { useBcmStore } from '../../stores/bcm/bcm.store'
 import { formatCurrency } from '../../utils/formatters'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

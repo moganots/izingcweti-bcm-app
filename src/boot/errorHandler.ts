@@ -1,6 +1,6 @@
 import { boot } from 'quasar/wrappers'
 import { Notify } from 'quasar'
-import { useUiStore } from '../stores/ui.store'
+import { useUiStore } from './../stores'
 
 /**
  * Global Error Handler Boot File
@@ -10,7 +10,7 @@ export default boot(({ app }) => {
   const uiStore = useUiStore()
 
   // Vue error handler
-  app.config.errorHandler = (err: any, instance, info) => {
+  app.config.errorHandler = (err: any, instance: any, info: any) => {
     console.error('Vue Error:', err, info)
 
     const message = getErrorMessage(err)

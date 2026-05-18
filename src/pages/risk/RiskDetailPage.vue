@@ -317,7 +317,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useRiskStore } from '../../stores/risk.store'
+import { useRiskStore } from '../../stores/risk/risk.store'
 import { formatDate } from '../../utils/date.utils'
 import { formatPercentage } from '../../utils/formatters'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'

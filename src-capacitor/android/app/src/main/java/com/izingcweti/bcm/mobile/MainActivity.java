@@ -1,4 +1,4 @@
-package com.izingcweti.bcm.mobile;
+package com.izingcweti.bcm.app;
 
 import com.getcapacitor.BridgeActivity;
 
