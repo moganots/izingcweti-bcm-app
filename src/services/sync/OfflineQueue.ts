@@ -1,6 +1,5 @@
-import { Database } from '..'
+import { db } from '../db/Database'
 import { OperationType, SyncPriority, SyncStatus } from './../../models/entities'
-import type { PendingChange } from './../../models/entities'
 import { NetworkMonitor } from './NetworkMonitor'
 import { SyncEngine } from './SyncEngine'
 
@@ -9,20 +8,19 @@ import { SyncEngine } from './SyncEngine'
  * Manages the queue of operations performed while offline
  */
 export class OfflineQueue {
-  private db: Database
   private networkMonitor: NetworkMonitor
   private syncEngine: SyncEngine
   private processingQueue: boolean = false
+  private removeListener: (() => void) | null = null
 
   constructor() {
-    this.db = Database.getInstance()
     this.networkMonitor = new NetworkMonitor()
     this.syncEngine = new SyncEngine()
 
     // Listen for online status to process queue
-    this.networkMonitor.addListener((status) => {
+    this.removeListener = this.networkMonitor.addListener((status) => {
       if (status.isOnline) {
-        this.processQueue()
+        this.processQueue().catch(console.error)
       }
     })
   }
@@ -75,7 +73,7 @@ export class OfflineQueue {
       console.log(`🔄 Processing ${pendingChanges.length} pending changes...`)
 
       // Process changes in priority order
-      const sorted = pendingChanges.sort((a, b) => a.priority - b.priority)
+      const sorted = pendingChanges.sort((a, b) => (a.priority || 3) - (b.priority || 3))
 
       for (const change of sorted) {
         try {
@@ -104,7 +102,7 @@ export class OfflineQueue {
             await this.syncEngine.incrementAttempts(change.uuid)
 
             // If max retries exceeded, mark as failed
-            if (change.attempts >= 5) {
+            if ((change.attempts || 0) >= 5) {
               console.warn(`  ⚠ Max retries exceeded for ${change.entity_type}/${change.entity_id}`)
             }
           }
@@ -127,7 +125,7 @@ export class OfflineQueue {
     data: Record<string, any>
   }): Promise<void> {
     try {
-      const repository = this.db.getRepository(operation.entityType)
+      const repository = db.getRepository(operation.entityType)
       if (!repository) return
 
       switch (operation.operationType) {
@@ -152,7 +150,7 @@ export class OfflineQueue {
           await repository.update(operation.entityId, {
             deleted_at: now,
             sync_status: SyncStatus.PENDING,
-          } as any)
+          })
           break
       }
     } catch (error) {
@@ -190,7 +188,8 @@ export class OfflineQueue {
     const byType: Record<string, number> = {}
 
     changes.forEach((c) => {
-      byPriority[c.priority] = (byPriority[c.priority] || 0) + 1
+      const priority = c.priority || 3
+      byPriority[priority] = (byPriority[priority] || 0) + 1
       byType[c.operation_type] = (byType[c.operation_type] || 0) + 1
     })
 
@@ -198,7 +197,7 @@ export class OfflineQueue {
       total: changes.length,
       byPriority,
       byType,
-      failed: changes.filter((c) => c.attempts >= 5).length,
+      failed: changes.filter((c) => (c.attempts || 0) >= 5).length,
     }
   }
 
@@ -207,7 +206,7 @@ export class OfflineQueue {
    */
   async clearFailed(): Promise<number> {
     const changes = await this.syncEngine.getPendingChanges()
-    const failed = changes.filter((c) => c.attempts >= 5)
+    const failed = changes.filter((c) => (c.attempts || 0) >= 5)
 
     for (const change of failed) {
       await this.syncEngine.removePendingChange(change.uuid)
@@ -221,13 +220,28 @@ export class OfflineQueue {
    */
   async retryFailed(): Promise<void> {
     const changes = await this.syncEngine.getPendingChanges()
-    const failed = changes.filter((c) => c.attempts >= 5)
+    const failed = changes.filter((c) => (c.attempts || 0) >= 5)
 
     for (const change of failed) {
-      const repo = this.db.getRepository('pendingChanges')
-      await repo.update(change.uuid, { attempts: 0 } as Partial<PendingChange>)
+      const pendingRepo = db.getRepository('pendingChanges')
+      if (pendingRepo) {
+        await pendingRepo.update(change.uuid, { attempts: 0 })
+      }
     }
 
     await this.processQueue()
   }
+
+  /**
+   * Clean up resources
+   */
+  cleanup(): void {
+    if (this.removeListener) {
+      this.removeListener()
+      this.removeListener = null
+    }
+  }
 }
+
+// Export singleton
+export const offlineQueue = new OfflineQueue()

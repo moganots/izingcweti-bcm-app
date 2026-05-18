@@ -1,5 +1,5 @@
 import { apiClient } from './../../boot/axios'
-import { Database } from '..'
+import { BCMDatabase } from '../db/Database'
 import { NetworkMonitor } from './NetworkMonitor'
 import { ConflictResolver } from './ConflictResolver'
 import type {
@@ -18,15 +18,15 @@ import { SyncPriority, OperationType, SyncStatus } from './../../models/entities
  * Core synchronization engine for offline-first data management
  */
 export class SyncEngine {
-  private db: Database
+  private db: BCMDatabase
   private networkMonitor: NetworkMonitor
   private conflictResolver: ConflictResolver
   private maxRetries: number
   private batchSize: number
   private syncInProgress: boolean = false
 
-  constructor(db?: Database) {
-    this.db = db || Database.getInstance()
+  constructor(db?: BCMDatabase) {
+    this.db = db || BCMDatabase.getInstance()
     this.networkMonitor = new NetworkMonitor()
     this.conflictResolver = new ConflictResolver()
     this.maxRetries = parseInt(import.meta.env.VITE_SYNC_MAX_RETRIES || '5')

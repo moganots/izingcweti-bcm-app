@@ -1,4 +1,5 @@
-import { Database } from '..'
+// src/services/sync/ConflictResolver.ts
+import { db } from '../db/Database'
 import { ConflictResolutionStrategy, ConflictType, SyncConflict } from './../../models/entities'
 
 /**
@@ -18,11 +19,7 @@ export interface ConflictResolution {
  * Handles detection and resolution of sync conflicts
  */
 export class ConflictResolver {
-  private db: Database
-
-  constructor() {
-    this.db = Database.getInstance()
-  }
+  // Use the exported db instance directly
 
   // ============================================
   // Conflict Detection
@@ -37,7 +34,15 @@ export class ConflictResolver {
   ): ConflictType | null {
     // Check if both versions modified since last sync
     if (clientVersion.updated_at && serverVersion.updated_at) {
-      return ConflictType.UPDATE_UPDATE
+      // Compare timestamps to determine if real conflict exists
+      const clientTime = new Date(clientVersion.updated_at).getTime()
+      const serverTime = new Date(serverVersion.updated_at).getTime()
+      
+      // If both modified after last sync, it's a conflict
+      if (clientTime > (clientVersion.last_sync_at || 0) && 
+          serverTime > (serverVersion.last_sync_at || 0)) {
+        return ConflictType.UPDATE_UPDATE
+      }
     }
 
     // Check if client deleted but server updated
@@ -45,7 +50,7 @@ export class ConflictResolver {
       return ConflictType.DELETE_UPDATE
     }
 
-    // Check for version skew
+    // Check for version skew (versions differ by more than 1)
     if (clientVersion.version && serverVersion.version) {
       if (Math.abs(clientVersion.version - serverVersion.version) > 1) {
         return ConflictType.VERSION_SKEW
@@ -74,6 +79,7 @@ export class ConflictResolver {
       'updated_by',
       'version',
       'sync_status',
+      'last_sync_at',
     ]
 
     for (const field of allFields) {
@@ -106,8 +112,8 @@ export class ConflictResolver {
       notes?: string
     }
   ): Promise<SyncConflict> {
-    const conflictRepo = this.db.getRepository('syncConflicts')
-    const conflict = await conflictRepo.findById(conflictId)
+    const conflictRepo = db.getRepository('syncConflicts')
+    const conflict = await conflictRepo?.findById(conflictId)
 
     if (!conflict) {
       throw new Error(`Conflict not found: ${conflictId}`)
@@ -145,13 +151,13 @@ export class ConflictResolver {
 
     // Update conflict record
     const now = new Date().toISOString()
-    const updated = await conflictRepo.update(conflictId, {
+    const updated = await conflictRepo?.update(conflictId, {
       resolved: true,
       resolution_strategy: resolution.strategy,
       resolved_data: resolvedData,
       resolved_at: now,
       updated_at: now,
-    } as Partial<SyncConflict>)
+    })
 
     // Apply resolved data to local database
     await this.applyResolution(conflict.entity_type, conflict.entity_id, resolvedData)
@@ -201,7 +207,13 @@ export class ConflictResolver {
     const clientTime = new Date(clientVersion.updated_at || clientVersion.created_at).getTime()
     const serverTime = new Date(serverVersion.updated_at || serverVersion.created_at).getTime()
 
-    return clientTime > serverTime ? { ...clientVersion } : { ...serverVersion }
+    const resolved = clientTime > serverTime ? { ...clientVersion } : { ...serverVersion }
+    
+    // Ensure resolved data is marked as synced
+    resolved.sync_status = 'SYNCED'
+    resolved.updated_at = new Date().toISOString()
+    
+    return resolved
   }
 
   /**
@@ -216,6 +228,8 @@ export class ConflictResolver {
         ...serverVersion,
         deleted_at: clientVersion.deleted_at || serverVersion.deleted_at,
         deleted_by: clientVersion.deleted_by || serverVersion.deleted_by,
+        sync_status: 'SYNCED',
+        updated_at: new Date().toISOString(),
       }
     }
     return this.resolveLastWriteWins(clientVersion, serverVersion)
@@ -240,6 +254,10 @@ export class ConflictResolver {
       }
     }
 
+    merged.sync_status = 'SYNCED'
+    merged.updated_at = new Date().toISOString()
+    merged.version = Math.max(clientVersion.version || 0, serverVersion.version || 0) + 1
+
     return merged
   }
 
@@ -256,7 +274,7 @@ export class ConflictResolver {
     resolvedData: Record<string, any>
   ): Promise<void> {
     try {
-      const repository = this.db.getRepository(entityType)
+      const repository = db.getRepository(entityType)
 
       if (repository) {
         const existing = await repository.findById(entityId)
@@ -326,7 +344,11 @@ export class ConflictResolver {
     byType: Record<string, number>
     byStrategy: Record<string, number>
   }> {
-    const conflictRepo = this.db.getRepository('syncConflicts')
+    const conflictRepo = db.getRepository('syncConflicts')
+    if (!conflictRepo) {
+      return { total: 0, resolved: 0, unresolved: 0, byType: {}, byStrategy: {} }
+    }
+    
     const all = await conflictRepo.findAll()
 
     const byType: Record<string, number> = {}
