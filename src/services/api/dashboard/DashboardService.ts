@@ -111,8 +111,10 @@ export class DashboardService extends BaseService {
    */
   async getKPIs(organisationId?: string): Promise<KpiMetricsResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<KpiMetricsResponse>(API_ENDPOINTS.DASHBOARD.KPI_METRICS(orgId))
-    return this.extractData(response)
+    const response = await this.get<{ data: KpiMetricsResponse }>(
+      API_ENDPOINTS.DASHBOARD.KPI_METRICS(orgId)
+    )
+    return this.extractData(response) as unknown as KpiMetricsResponse
   }
 
   /**
@@ -120,10 +122,10 @@ export class DashboardService extends BaseService {
    */
   async getRiskSummary(organisationId?: string): Promise<RiskSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<RiskSummaryResponse>(
+    const response = await this.get<{ data: RiskSummaryResponse }>(
       API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(orgId)
     )
-    return this.extractData(response)
+    return this.extractData(response) as unknown as RiskSummaryResponse
   }
 
   /**
@@ -131,8 +133,10 @@ export class DashboardService extends BaseService {
    */
   async getBcmSummary(organisationId?: string): Promise<BcmSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<BcmSummaryResponse>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(orgId))
-    return this.extractData(response)
+    const response = await this.get<{ data: BcmSummaryResponse }>(
+      API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(orgId)
+    )
+    return this.extractData(response) as unknown as BcmSummaryResponse
   }
 
   /**
@@ -140,10 +144,10 @@ export class DashboardService extends BaseService {
    */
   async getIncidentSummary(organisationId?: string): Promise<IncidentSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<IncidentSummaryResponse>(
+    const response = await this.get<{ data: IncidentSummaryResponse }>(
       API_ENDPOINTS.DASHBOARD.INCIDENT_SUMMARY(orgId)
     )
-    return this.extractData(response)
+    return this.extractData(response) as unknown as IncidentSummaryResponse
   }
 
   /**
@@ -151,10 +155,10 @@ export class DashboardService extends BaseService {
    */
   async getComplianceSummary(organisationId?: string): Promise<ComplianceSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<ComplianceSummaryResponse>(
+    const response = await this.get<{ data: ComplianceSummaryResponse }>(
       API_ENDPOINTS.DASHBOARD.COMPLIANCE_SUMMARY(orgId)
     )
-    return this.extractData(response)
+    return this.extractData(response) as unknown as ComplianceSummaryResponse
   }
 
   /**
@@ -162,10 +166,10 @@ export class DashboardService extends BaseService {
    */
   async getWorkflowSummary(organisationId?: string): Promise<WorkflowSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<WorkflowSummaryResponse>(
+    const response = await this.get<{ data: WorkflowSummaryResponse }>(
       API_ENDPOINTS.DASHBOARD.WORKFLOW_SUMMARY(orgId)
     )
-    return this.extractData(response)
+    return this.extractData(response) as unknown as WorkflowSummaryResponse
   }
 
   /**
@@ -176,10 +180,12 @@ export class DashboardService extends BaseService {
     organisationId?: string
   ): Promise<RecentActivityResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<RecentActivityResponse>(
-      API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)
-    )
-    return this.extractData(response)
+    // Add limit as query parameter
+    const url = `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?limit=${limit}`
+    const response = await this.get<{ data: { activities: any[] } }>(url)
+    const activities = (this.extractData(response) ?? { data: { activities: [] } })?.data
+      ?.activities
+    return { activities: activities || [] }
   }
 
   /**
@@ -190,10 +196,11 @@ export class DashboardService extends BaseService {
     organisationId?: string
   ): Promise<UpcomingTasksResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<UpcomingTasksResponse>(
-      API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)
-    )
-    return this.extractData(response)
+    // Add limit as query parameter
+    const url = `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?limit=${limit}`
+    const response = await this.get<{ data: { tasks: any[] } }>(url)
+    const tasks = (this.extractData(response) ?? { data: { tasks: [] } })?.data?.tasks
+    return { tasks: tasks || [] }
   }
 
   /**
@@ -201,8 +208,9 @@ export class DashboardService extends BaseService {
    */
   async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<RiskTrend[]>(API_ENDPOINTS.DASHBOARD.RISK_TRENDS(orgId))
-    return this.extractData(response) || []
+    const url = `${API_ENDPOINTS.DASHBOARD.RISK_TRENDS(orgId)}?period=${period}`
+    const response = await this.get<{ data: RiskTrend[] }>(url)
+    return (this.extractData(response) || []) as unknown as RiskTrend[]
   }
 
   /**
@@ -210,14 +218,14 @@ export class DashboardService extends BaseService {
    */
   async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<ComplianceOverview[]>(
+    const response = await this.get<{ data: ComplianceOverview[] }>(
       API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(orgId)
     )
-    return this.extractData(response) || []
+    return (this.extractData(response) || []) as unknown as ComplianceOverview[]
   }
 
   /**
-   * Get complete dashboard data in one call
+   * Get complete dashboard data in one call with error handling for individual endpoints
    */
   async getCompleteDashboard(organisationId?: string): Promise<{
     kpis: KpiMetricsResponse
@@ -231,16 +239,8 @@ export class DashboardService extends BaseService {
   }> {
     const orgId = organisationId || this.getCurrentOrganisationId()
 
-    const [
-      kpis,
-      riskSummary,
-      bcmSummary,
-      incidentSummary,
-      complianceSummary,
-      workflowSummary,
-      recentActivity,
-      upcomingTasks,
-    ] = await Promise.all([
+    // Use Promise.allSettled to handle individual endpoint failures
+    const results = await Promise.allSettled([
       this.getKPIs(orgId),
       this.getRiskSummary(orgId),
       this.getBcmSummary(orgId),
@@ -251,15 +251,89 @@ export class DashboardService extends BaseService {
       this.getUpcomingTasks(10, orgId),
     ])
 
+    // Create default empty responses for failed endpoints
+    const defaultKpis: KpiMetricsResponse = {
+      activeBCPs: 0,
+      activeIncidents: 0,
+      highRisks: 0,
+      pendingApprovals: 0,
+      complianceRate: 0,
+      maturityScore: 0,
+    }
+
+    const defaultRiskSummary: RiskSummaryResponse = {
+      total_risks: 0,
+      critical_risks: 0,
+      high_risks: 0,
+      medium_risks: 0,
+      low_risks: 0,
+      risk_trends: [],
+      top_risk_categories: [],
+    }
+
+    const defaultBcmSummary: BcmSummaryResponse = {
+      total_bcp_plans: 0,
+      active_plans: 0,
+      draft_plans: 0,
+      archived_plans: 0,
+      plans_due_for_review: 0,
+      maturity_score: 0,
+      maturity_level: '',
+      maturity_progress: { overall: 0, domains: [], target: 0, progress: 0 },
+      recovery_strategies_count: 0,
+      exercise_tests_completed: 0,
+      exercise_tests_pending: 0,
+    }
+
+    const defaultIncidentSummary: IncidentSummaryResponse = {
+      total_incidents: 0,
+      active_incidents: 0,
+      resolved_incidents: 0,
+      closed_incidents: 0,
+      critical_incidents: 0,
+      high_incidents: 0,
+      medium_incidents: 0,
+      low_incidents: 0,
+      incident_trends: [],
+      average_resolution_time_hours: 0,
+    }
+
+    const defaultComplianceSummary: ComplianceSummaryResponse = {
+      overall_compliance_rate: 0,
+      compliant_count: 0,
+      partially_compliant_count: 0,
+      non_compliant_count: 0,
+      overdue_audits: 0,
+      upcoming_audits: 0,
+      compliance_by_standard: [],
+    }
+
+    const defaultWorkflowSummary: WorkflowSummaryResponse = {
+      total_workflows: 0,
+      pending_approvals: 0,
+      in_review: 0,
+      completed: 0,
+      rejected: 0,
+      overdue: 0,
+      average_completion_days: 0,
+      recent_workflows: [],
+    }
+
+    const defaultRecentActivity: RecentActivityResponse = { activities: [] }
+    const defaultUpcomingTasks: UpcomingTasksResponse = { tasks: [] }
+
     return {
-      kpis,
-      riskSummary,
-      bcmSummary,
-      incidentSummary,
-      complianceSummary,
-      workflowSummary,
-      recentActivity,
-      upcomingTasks,
+      kpis: results[0].status === 'fulfilled' ? results[0].value : defaultKpis,
+      riskSummary: results[1].status === 'fulfilled' ? results[1].value : defaultRiskSummary,
+      bcmSummary: results[2].status === 'fulfilled' ? results[2].value : defaultBcmSummary,
+      incidentSummary:
+        results[3].status === 'fulfilled' ? results[3].value : defaultIncidentSummary,
+      complianceSummary:
+        results[4].status === 'fulfilled' ? results[4].value : defaultComplianceSummary,
+      workflowSummary:
+        results[5].status === 'fulfilled' ? results[5].value : defaultWorkflowSummary,
+      recentActivity: results[6].status === 'fulfilled' ? results[6].value : defaultRecentActivity,
+      upcomingTasks: results[7].status === 'fulfilled' ? results[7].value : defaultUpcomingTasks,
     }
   }
 

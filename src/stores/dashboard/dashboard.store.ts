@@ -77,17 +77,18 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       const completeData = await dashboardService.getCompleteDashboard()
 
+      // Safely set KPIs with fallbacks
       kpis.value = {
-        activeBCPs: completeData.kpis.activeBCPs ?? 0,
-        activeIncidents: completeData.kpis.activeIncidents ?? 0,
-        highRisks: completeData.kpis.highRisks ?? 0,
-        pendingApprovals: completeData.kpis.pendingApprovals ?? 0,
-        complianceRate: completeData.kpis.complianceRate ?? 0,
-        maturityScore: completeData.kpis.maturityScore ?? 0,
+        activeBCPs: completeData.kpis?.activeBCPs ?? 0,
+        activeIncidents: completeData.kpis?.activeIncidents ?? 0,
+        highRisks: completeData.kpis?.highRisks ?? 0,
+        pendingApprovals: completeData.kpis?.pendingApprovals ?? 0,
+        complianceRate: completeData.kpis?.complianceRate ?? 0,
+        maturityScore: completeData.kpis?.maturityScore ?? 0,
       }
 
-      // Transform recent activity to incidents
-      recentIncidents.value = completeData.recentActivity.activities
+      // Transform recent activity to incidents (with safe navigation)
+      recentIncidents.value = (completeData.recentActivity?.activities || [])
         .filter((a) => a.entity_type === 'Incident')
         .slice(0, 5)
         .map((a) => ({
@@ -99,8 +100,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
           organisation: { uuid: '', name: '' },
         }))
 
-      // Extract tests from upcoming tasks
-      upcomingTests.value = completeData.upcomingTasks.tasks
+      // Extract tests from upcoming tasks (with safe navigation)
+      upcomingTests.value = (completeData.upcomingTasks?.tasks || [])
         .filter((t) => t.type === 'BCP_REVIEW')
         .slice(0, 5)
         .map((t) => ({
@@ -114,9 +115,9 @@ export const useDashboardStore = defineStore('dashboard', () => {
           },
         }))
 
-      pendingWorkflows.value = completeData.workflowSummary.recent_workflows?.slice(0, 5) || []
-      complianceOverview.value = completeData.complianceSummary.compliance_by_standard || []
-      riskTrends.value = completeData.riskSummary.risk_trends || []
+      pendingWorkflows.value = completeData.workflowSummary?.recent_workflows?.slice(0, 5) || []
+      complianceOverview.value = completeData.complianceSummary?.compliance_by_standard || []
+      riskTrends.value = completeData.riskSummary?.risk_trends || []
 
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
@@ -171,7 +172,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadRecentActivity(limit: number = 10): Promise<void> {
     try {
       const activity = await dashboardService.getRecentActivity(limit)
-      // Transform as needed
+      // Transform as needed - you can store this in state if needed
+      console.log('Recent activity loaded:', activity)
     } catch (err: any) {
       console.error('Failed to load recent activity:', err)
     }
@@ -180,7 +182,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadUpcomingTasks(limit: number = 10): Promise<void> {
     try {
       const tasks = await dashboardService.getUpcomingTasks(limit)
-      // Transform as needed
+      // Transform as needed - you can store this in state if needed
+      console.log('Upcoming tasks loaded:', tasks)
     } catch (err: any) {
       console.error('Failed to load upcoming tasks:', err)
     }
