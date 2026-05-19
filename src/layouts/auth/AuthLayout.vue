@@ -47,9 +47,7 @@ import { capitalizeFirstLettersAdvanced } from './../../utils/formatters'
 
 const companyName = import.meta.env.VITE_COMPANY_NAME || 'Izingcweti'
 const appName = import.meta.env.VITE_APP_NAME || 'Business Continuity Management System'
-const appShortName = capitalizeFirstLettersAdvanced(
-  import.meta.env.VITE_APP_NAME || 'Business Continuity Management System'
-)
+const appShortName = capitalizeFirstLettersAdvanced(import.meta.env.VITE_APP_NAME || appName)
 const currentYear = computed(() => new Date().getFullYear())
 const logoLoaded = ref(true)
 const logoSrc = ref('/izingcweti-logo-icon-no-bg.png')

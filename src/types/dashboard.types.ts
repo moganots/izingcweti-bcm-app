@@ -1,4 +1,4 @@
-import { ComplianceOverview } from './bcm.types'
+import { ComplianceOverview, RiskTrend } from './bcm.types'
 
 /**
  * Dashboard data
@@ -19,12 +19,4 @@ export interface DashboardKPIs {
     pendingApprovals: number
     complianceRate: number
     maturityScore: number
-}
-
-export interface RiskTrend {
-    period: string
-    label: string
-    highRisks: number
-    mediumRisks: number
-    lowRisks: number
 }

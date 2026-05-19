@@ -43,9 +43,6 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
-
-const router = useRouter()
 
 export interface KPI {
   label: string
@@ -77,8 +74,10 @@ const computedKpis = computed(() =>
 )
 
 function formatValue(value: number, format?: string): string {
-  if (format === 'currency') return `$${value.toLocaleString()}`
+  if (format === 'currency') return `R${value.toLocaleString()}`
   if (format === 'percentage') return `${value}%`
+  if (value >= 1000000) return `${(value / 1000000).toFixed(1)}M`
+  if (value >= 1000) return `${(value / 1000).toFixed(1)}K`
   return value.toLocaleString()
 }
 </script>
@@ -87,12 +86,10 @@ function formatValue(value: number, format?: string): string {
 .kpi-card {
   border-radius: 12px;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
-
   &:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
   }
-
   .kpi-icon {
     opacity: 0.3;
   }

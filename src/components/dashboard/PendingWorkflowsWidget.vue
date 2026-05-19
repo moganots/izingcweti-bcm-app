@@ -53,23 +53,21 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
 import { formatDate } from '../../utils/date.utils'
 
-export interface Workflow {
+// Simplified Workflow interface for dashboard display
+export interface SimpleWorkflow {
   uuid: string
   title: string
   workflow_type: string
   workflow_state: string
   priority: number
-  due_date?: string
+  due_date?: string | null
 }
-
-const router = useRouter()
 
 const props = withDefaults(
   defineProps<{
-    workflows?: Workflow[]
+    workflows?: SimpleWorkflow[]
     loading?: boolean
   }>(),
   {

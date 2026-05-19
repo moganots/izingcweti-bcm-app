@@ -775,9 +775,10 @@ export interface ComplianceOverview {
 export interface RiskTrend {
   period: string
   label: string
-  highRisks: number
-  mediumRisks: number
-  lowRisks: number
+  critical: number
+  high: number
+  medium: number
+  low: number
   total: number
 }
 

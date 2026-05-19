@@ -261,7 +261,7 @@ export class DashboardService extends BaseService {
   /**
    * Get risk trends
    */
-  async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
+  async getRiskTrends(_period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()
     const summary = await this.getRiskSummary(orgId)
     return summary.risk_trends || []
@@ -280,7 +280,7 @@ export class DashboardService extends BaseService {
    * Get incident trends
    */
   async getIncidentTrends(
-    period: string = 'month',
+    _period: string = 'month',
     organisationId?: string
   ): Promise<IncidentTrend[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()

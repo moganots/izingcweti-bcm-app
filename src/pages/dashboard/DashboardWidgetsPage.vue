@@ -1,4 +1,3 @@
-<!-- src/pages/dashboard/DashboardWidgetsPage.vue -->
 <template>
   <q-page padding>
     <PageHeader
@@ -9,7 +8,6 @@
       @refresh="refreshWidgets"
     />
 
-    <!-- Widget Configuration -->
     <q-card class="q-mb-md" flat bordered>
       <q-card-section>
         <div class="text-h6 q-mb-md">Active Widgets</div>
@@ -42,11 +40,10 @@
       </q-card-actions>
     </q-card>
 
-    <!-- Widget Preview -->
     <div class="row q-col-gutter-md">
       <template v-for="widget in enabledWidgets" :key="widget.id">
         <div :class="widget.size === 'full' ? 'col-12' : 'col-12 col-md-6'">
-          <component :is="widget.component" v-bind="widget.props || {}" />
+          <component :is="widget.component" v-bind="getWidgetProps(widget)" />
         </div>
       </template>
     </div>
@@ -56,14 +53,15 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import PageHeader from '../../components/common/PageHeader.vue'
-import KpiOverview from '../../components/dashboard/KpiOverview.vue'
-import RiskHeatMap from '../../components/dashboard/RiskHeatMap.vue'
-import ComplianceChart from '../../components/dashboard/ComplianceChart.vue'
-import IncidentTrendChart from '../../components/dashboard/IncidentTrendChart.vue'
-import MaturityGauge from '../../components/dashboard/MaturityGauge.vue'
-import PendingWorkflowsWidget from '../../components/dashboard/PendingWorkflowsWidget.vue'
-import RecentActivityList from '../../components/dashboard/RecentActivityList.vue'
+import { useDashboardStore } from 'src/stores/dashboard/dashboard.store'
+import PageHeader from 'src/components/.common/PageHeader.vue'
+import KpiOverview from 'src/components/dashboard/KpiOverview.vue'
+import RiskHeatMap from 'src/components/dashboard/RiskHeatMap.vue'
+import ComplianceChart from 'src/components/dashboard/ComplianceChart.vue'
+import IncidentTrendChart from 'src/components/dashboard/IncidentTrendChart.vue'
+import MaturityGauge from 'src/components/dashboard/MaturityGauge.vue'
+import PendingWorkflowsWidget from 'src/components/dashboard/PendingWorkflowsWidget.vue'
+import RecentActivityList from 'src/components/dashboard/RecentActivityList.vue'
 
 interface Widget {
   id: string
@@ -77,6 +75,7 @@ interface Widget {
 }
 
 const $q = useQuasar()
+const dashboardStore = useDashboardStore()
 const refreshing = ref(false)
 
 const defaultWidgets: Widget[] = [
@@ -149,23 +148,40 @@ const defaultWidgets: Widget[] = [
     component: RecentActivityList,
     props: { title: 'Recent Incidents', type: 'incident', items: [] },
   },
-  {
-    id: 'recent-activities',
-    title: 'Recent Activities',
-    description: 'Latest system activities',
-    icon: 'history',
-    enabled: false,
-    size: 'half',
-    component: RecentActivityList,
-    props: { title: 'Recent Activities', type: 'notification', items: [] },
-  },
 ]
 
 const widgets = ref<Widget[]>([...defaultWidgets])
-
 const enabledWidgets = computed(() => widgets.value.filter((w) => w.enabled))
 
-// Load saved layout from localStorage
+function getWidgetProps(widget: Widget): Record<string, any> {
+  const baseProps: Record<string, any> = { loading: dashboardStore.isLoading }
+
+  switch (widget.id) {
+    case 'kpis':
+      return { ...baseProps, kpis: [] }
+    case 'risk-heatmap':
+      return { ...baseProps, risks: [] }
+    case 'compliance':
+      return { ...baseProps, data: dashboardStore.complianceOverview }
+    case 'incident-trends':
+      return { ...baseProps, data: dashboardStore.riskTrends }
+    case 'maturity':
+      return { ...baseProps, score: dashboardStore.kpis.maturityScore }
+    case 'pending-workflows':
+      return { ...baseProps, workflows: dashboardStore.pendingWorkflows }
+    case 'recent-incidents':
+      return {
+        ...baseProps,
+        title: 'Recent Incidents',
+        type: 'incident',
+        items: dashboardStore.recentIncidents,
+        viewAllRoute: '/incidents',
+      }
+    default:
+      return baseProps
+  }
+}
+
 function loadLayout(): void {
   try {
     const saved = localStorage.getItem('dashboard_widgets')
@@ -181,7 +197,6 @@ function loadLayout(): void {
   }
 }
 
-// Save layout to localStorage
 function saveLayout(): void {
   try {
     const layout: Record<string, boolean> = {}
@@ -189,17 +204,9 @@ function saveLayout(): void {
       layout[widget.id] = widget.enabled
     })
     localStorage.setItem('dashboard_widgets', JSON.stringify(layout))
-    $q.notify({
-      type: 'positive',
-      message: 'Layout saved successfully',
-      position: 'top',
-    })
+    $q.notify({ type: 'positive', message: 'Layout saved successfully', position: 'top' })
   } catch (e) {
-    $q.notify({
-      type: 'negative',
-      message: 'Failed to save layout',
-      position: 'top',
-    })
+    $q.notify({ type: 'negative', message: 'Failed to save layout', position: 'top' })
   }
 }
 
@@ -218,22 +225,14 @@ function toggleWidget(id: string, enabled: boolean): void {
 
 function resetWidgets(): void {
   widgets.value = defaultWidgets.map((w) => ({ ...w }))
-  $q.notify({
-    type: 'info',
-    message: 'Widget layout reset to defaults',
-    position: 'top',
-  })
+  $q.notify({ type: 'info', message: 'Widget layout reset to defaults', position: 'top' })
 }
 
 async function refreshWidgets(): Promise<void> {
   refreshing.value = true
   try {
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-    $q.notify({
-      type: 'positive',
-      message: 'Widgets refreshed',
-      position: 'top',
-    })
+    await dashboardStore.refresh()
+    $q.notify({ type: 'positive', message: 'Widgets refreshed', position: 'top' })
   } finally {
     refreshing.value = false
   }

@@ -17,37 +17,37 @@
       <div v-if="loading" class="text-center q-pa-md">
         <q-spinner-dots size="30px" color="primary" />
       </div>
-      <div v-else-if="data.length === 0" class="text-center q-pa-md text-grey-7">
+      <div v-else-if="incidents!?.length === 0" class="text-center q-pa-md text-grey-7">
         <q-icon name="insights" size="40px" color="grey-4" class="q-mb-sm" />
         <div>No incident data available</div>
       </div>
       <div v-else class="chart-container">
         <div class="chart-bars">
-          <div class="chart-bar-group" v-for="item in data" :key="item.period">
-            <div class="chart-bar-label">{{ item.label }}</div>
+          <div class="chart-bar-group" v-for="incident in incidents" :key="incident.period">
+            <div class="chart-bar-label">{{ incident.label }}</div>
             <div class="chart-bar-stack">
               <div
                 class="chart-bar critical"
-                :style="{ height: getHeight(item.critical) + '%' }"
-                :title="'Critical: ' + item.critical"
+                :style="{ height: getHeight(incident.critical) + '%' }"
+                :title="'Critical: ' + incident.critical"
               ></div>
               <div
                 class="chart-bar high"
-                :style="{ height: getHeight(item.high) + '%' }"
-                :title="'High: ' + item.high"
+                :style="{ height: getHeight(incident.high) + '%' }"
+                :title="'High: ' + incident.high"
               ></div>
               <div
                 class="chart-bar medium"
-                :style="{ height: getHeight(item.medium) + '%' }"
-                :title="'Medium: ' + item.medium"
+                :style="{ height: getHeight(incident.medium) + '%' }"
+                :title="'Medium: ' + incident.medium"
               ></div>
               <div
                 class="chart-bar low"
-                :style="{ height: getHeight(item.low) + '%' }"
-                :title="'Low: ' + item.low"
+                :style="{ height: getHeight(incident.low) + '%' }"
+                :title="'Low: ' + incident.low"
               ></div>
             </div>
-            <div class="chart-bar-value">{{ item.total }}</div>
+            <div class="chart-bar-value">{{ incident.total }}</div>
           </div>
         </div>
         <div class="chart-legend q-mt-md">
@@ -63,6 +63,7 @@
   </q-card>
 </template>
 
+<!-- src/components/dashboard/IncidentTrendChart.vue - update props -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 
@@ -78,7 +79,7 @@ export interface IncidentTrendData {
 
 const props = withDefaults(
   defineProps<{
-    data?: IncidentTrendData[]
+    incidents?: IncidentTrendData[]
     loading?: boolean
   }>(),
   {
@@ -100,8 +101,8 @@ const periodOptions = [
 ]
 
 const maxValue = computed(() => {
-  if (props.data.length === 0) return 1
-  return Math.max(...props.data.map((d) => d.total), 1)
+  if (props.incidents!?.length === 0) return 1
+  return Math.max(...props.incidents!?.map((d) => d.total), 1)
 })
 
 function getHeight(value: number): number {
@@ -109,6 +110,7 @@ function getHeight(value: number): number {
 }
 
 function handlePeriodChange(value: string): void {
+  selectedPeriod.value = value
   emit('period-change', value)
 }
 </script>
