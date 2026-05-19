@@ -259,6 +259,18 @@
               <q-item-label caption>Clear sync metadata and start fresh</q-item-label>
             </q-item-section>
           </q-item>
+
+          <q-separator />
+
+          <q-item clickable @click="exportSyncLogs">
+            <q-item-section avatar>
+              <q-icon name="download" color="primary" />
+            </q-item-section>
+            <q-item-section>
+              <q-item-label>Export Sync Logs</q-item-label>
+              <q-item-label caption>Download synchronization logs for debugging</q-item-label>
+            </q-item-section>
+          </q-item>
         </q-list>
       </SettingsSection>
 
@@ -270,7 +282,7 @@
               <q-item-label>Total Pushed</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2">{{ syncStats.totalPushed }}</span>
+              <span class="text-body2 text-weight-bold">{{ syncStats.totalPushed }}</span>
             </q-item-section>
           </q-item>
           <q-separator />
@@ -279,7 +291,7 @@
               <q-item-label>Total Pulled</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2">{{ syncStats.totalPulled }}</span>
+              <span class="text-body2 text-weight-bold">{{ syncStats.totalPulled }}</span>
             </q-item-section>
           </q-item>
           <q-separator />
@@ -288,7 +300,7 @@
               <q-item-label>Conflicts Resolved</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2">{{ syncStats.conflictsResolved }}</span>
+              <span class="text-body2 text-weight-bold">{{ syncStats.conflictsResolved }}</span>
             </q-item-section>
           </q-item>
           <q-separator />
@@ -297,7 +309,7 @@
               <q-item-label>Average Sync Time</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2">{{ syncStats.avgSyncTime }}ms</span>
+              <span class="text-body2 text-weight-bold">{{ syncStats.avgSyncTime }}ms</span>
             </q-item-section>
           </q-item>
           <q-separator />
@@ -306,7 +318,18 @@
               <q-item-label>Data Transferred</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2">{{ syncStats.dataTransferred }}</span>
+              <span class="text-body2 text-weight-bold">{{ syncStats.dataTransferred }}</span>
+            </q-item-section>
+          </q-item>
+          <q-separator />
+          <q-item>
+            <q-item-section>
+              <q-item-label>Success Rate</q-item-label>
+            </q-item-section>
+            <q-item-section side>
+              <span class="text-body2 text-weight-bold text-green"
+                >{{ syncStats.successRate }}%</span
+              >
             </q-item-section>
           </q-item>
         </q-list>
@@ -316,12 +339,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
+import { useSyncStore } from './../../stores'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SettingsSection from '../../components/settings/SettingsSection.vue'
 
 const $q = useQuasar()
+const syncStore = useSyncStore()
 
 // Settings
 const settings = reactive({
@@ -370,17 +395,53 @@ const strategyOptions = [
 
 // Sync stats
 const syncStats = reactive({
-  totalPushed: 1250,
-  totalPulled: 890,
-  conflictsResolved: 23,
-  avgSyncTime: 245,
-  dataTransferred: '45.2 MB',
+  totalPushed: 0,
+  totalPulled: 0,
+  conflictsResolved: 0,
+  avgSyncTime: 0,
+  dataTransferred: '0 MB',
+  successRate: 100,
 })
 
-// Methods
+// Load statistics on mount
+onMounted(async () => {
+  await loadStats()
+})
+
+async function loadStats(): Promise<void> {
+  try {
+    // Load stats from sync store
+    syncStats.totalPushed = syncStore.totalPushed || 0
+    syncStats.totalPulled = syncStore.totalPulled || 0
+
+    // Calculate success rate based on sync history
+    const history = await syncStore.getSyncHistory()
+    if (history && history.length > 0) {
+      const successful = history.filter((h: any) => h.status === 'success').length
+      syncStats.successRate = Math.round((successful / history.length) * 100)
+    }
+  } catch (err) {
+    console.error('Failed to load stats:', err)
+  }
+}
+
 function saveSetting(key: string, value: any): void {
-  console.log(`Sync setting saved: ${key} = ${value}`)
-  $q.notify({ type: 'positive', message: 'Setting saved', timeout: 1500 })
+  // Save to localStorage or sync store
+  localStorage.setItem(`sync_setting_${key}`, JSON.stringify(value))
+
+  // Apply setting to sync store if needed
+  if (key === 'autoSync') {
+    syncStore.setAutoSync(value)
+  } else if (key === 'syncInterval') {
+    syncStore.setSyncInterval(value)
+  }
+
+  $q.notify({
+    type: 'positive',
+    message: `${key} setting saved`,
+    timeout: 1500,
+    position: 'bottom',
+  })
 }
 
 function clearPendingChanges(): void {
@@ -390,8 +451,13 @@ function clearPendingChanges(): void {
       'Are you sure you want to clear all pending changes? Unsynchronized data will be lost.',
     cancel: true,
     ok: { color: 'negative', label: 'Clear' },
-  }).onOk(() => {
-    $q.notify({ type: 'positive', message: 'Pending changes cleared' })
+  }).onOk(async () => {
+    try {
+      await syncStore.clearAllPendingChanges()
+      $q.notify({ type: 'positive', message: 'Pending changes cleared' })
+    } catch (err: any) {
+      $q.notify({ type: 'negative', message: err.message })
+    }
   })
 }
 
@@ -401,15 +467,35 @@ function resetSyncState(): void {
     message: 'This will reset all sync metadata. You will need to do a full sync. Continue?',
     cancel: true,
     ok: { color: 'negative', label: 'Reset' },
-  }).onOk(() => {
-    $q.notify({ type: 'positive', message: 'Sync state reset' })
+  }).onOk(async () => {
+    try {
+      await syncStore.resetSyncState()
+      $q.notify({ type: 'positive', message: 'Sync state reset successfully' })
+      await loadStats()
+    } catch (err: any) {
+      $q.notify({ type: 'negative', message: err.message })
+    }
   })
+}
+
+function exportSyncLogs(): void {
+  const logs = syncStore.getSyncLogs()
+  const dataStr = JSON.stringify(logs, null, 2)
+  const dataBlob = new Blob([dataStr], { type: 'application/json' })
+  const url = URL.createObjectURL(dataBlob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `sync-logs-${new Date().toISOString()}.json`
+  link.click()
+  URL.revokeObjectURL(url)
+
+  $q.notify({ type: 'positive', message: 'Sync logs exported', timeout: 2000 })
 }
 </script>
 
 <style lang="scss" scoped>
 .settings-container {
-  max-width: 700px;
+  max-width: 800px;
   margin: 0 auto;
 }
 </style>

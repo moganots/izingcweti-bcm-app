@@ -1,25 +1,25 @@
 <template>
-  <div class="page-header q-mb-md">
+  <div class="page-header q-mb-lg">
     <div class="row items-center justify-between">
-      <div class="col">
+      <div>
         <div class="text-h4 text-weight-bold">{{ title }}</div>
-        <div v-if="subtitle" class="text-subtitle1 text-grey-7 q-mt-xs">{{ subtitle }}</div>
+        <div v-if="subtitle" class="text-subtitle1 text-grey-7 q-mt-sm">
+          {{ subtitle }}
+        </div>
       </div>
-      <div class="col-auto">
+      <div class="row items-center q-gutter-sm">
+        <slot name="actions" />
         <q-btn
           v-if="showRefresh"
           flat
           round
+          dense
           icon="refresh"
           :loading="refreshing"
-          @click="$emit('refresh')"
+          @click="handleRefresh"
         >
           <q-tooltip>Refresh</q-tooltip>
         </q-btn>
-        <q-btn v-if="showSettings" flat round icon="settings" @click="$emit('settings')">
-          <q-tooltip>Settings</q-tooltip>
-        </q-btn>
-        <slot name="actions" />
       </div>
     </div>
     <q-separator class="q-mt-md" />
@@ -27,26 +27,30 @@
 </template>
 
 <script setup lang="ts">
-withDefaults(
-  defineProps<{
-    title: string
-    subtitle?: string
-    showRefresh?: boolean
-    showSettings?: boolean
-    refreshing?: boolean
-  }>(),
-  {
-    subtitle: '',
-    showRefresh: false,
-    showSettings: false,
-    refreshing: false,
-  }
-)
+import { ref } from 'vue'
 
-defineEmits<{
-  refresh: []
-  settings: []
+const props = defineProps<{
+  title: string
+  subtitle?: string
+  showRefresh?: boolean
 }>()
+
+const emit = defineEmits<{
+  refresh: []
+}>()
+
+const refreshing = ref(false)
+
+async function handleRefresh() {
+  refreshing.value = true
+  try {
+    await emit('refresh')
+  } finally {
+    setTimeout(() => {
+      refreshing.value = false
+    }, 500)
+  }
+}
 </script>
 
 <style lang="scss" scoped>

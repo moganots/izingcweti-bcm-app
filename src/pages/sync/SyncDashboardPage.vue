@@ -24,11 +24,13 @@
       <div class="col-6 col-md-3">
         <q-card flat bordered :class="'bg-' + statusColor + '-1'">
           <q-card-section class="text-center">
-            <SyncStatusIndicator
-              :status="syncStatus"
-              :pending-count="pendingCount"
-              :last-sync-at="lastSyncAt"
-            />
+            <div class="flex flex-center">
+              <SyncStatusIndicator
+                :status="syncStatus"
+                :pending-count="pendingCount"
+                :last-sync-at="lastSyncAt"
+              />
+            </div>
             <div class="text-caption text-grey-7 q-mt-sm">Sync Status</div>
           </q-card-section>
         </q-card>
@@ -95,11 +97,21 @@
         class="text-grey-7"
         dense
       >
-        <q-tab name="pending" :label="'Pending (' + pendingCount + ')'">
-          <q-badge v-if="pendingCount > 0" floating color="orange">{{ pendingCount }}</q-badge>
+        <q-tab name="pending">
+          <template #default>
+            <div class="row items-center q-gutter-xs">
+              <span>Pending Changes</span>
+              <q-badge v-if="pendingCount > 0" color="orange" rounded>{{ pendingCount }}</q-badge>
+            </div>
+          </template>
         </q-tab>
-        <q-tab name="conflicts" :label="'Conflicts (' + conflictCount + ')'">
-          <q-badge v-if="conflictCount > 0" floating color="red">{{ conflictCount }}</q-badge>
+        <q-tab name="conflicts">
+          <template #default>
+            <div class="row items-center q-gutter-xs">
+              <span>Conflicts</span>
+              <q-badge v-if="conflictCount > 0" color="red" rounded>{{ conflictCount }}</q-badge>
+            </div>
+          </template>
         </q-tab>
         <q-tab name="history" label="History" />
       </q-tabs>
@@ -138,27 +150,22 @@
 
     <!-- Resolve Conflict Dialog -->
     <q-dialog v-model="showResolveDialog" persistent>
-      <q-card style="width: 600px; max-width: 90vw">
-        <q-card-section>
-          <div class="text-h6">Resolve Conflict</div>
-        </q-card-section>
-        <q-card-section>
-          <ConflictResolver
-            :conflict="resolvingConflict"
-            :submitting="resolving"
-            @resolve="handleResolveConflict"
-            @cancel="showResolveDialog = false"
-          />
-        </q-card-section>
-      </q-card>
+      <div style="width: 700px; max-width: 90vw">
+        <ConflictResolver
+          :conflict="resolvingConflict"
+          :submitting="resolving"
+          @resolve="handleResolveConflict"
+          @cancel="showResolveDialog = false"
+        />
+      </div>
     </q-dialog>
   </q-page>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useSyncStore } from '../../stores/sync.store'
+import { useSyncStore } from './../../stores'
 import { useNetwork } from '../../composables/useNetwork'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SyncStatusIndicator from '../../components/sync/SyncStatusIndicator.vue'
@@ -182,7 +189,7 @@ const showResolveDialog = ref(false)
 const resolving = ref(false)
 const resolvingConflict = ref<any>(null)
 
-// Sync data
+// Sync data from store
 const syncStatus = computed(() => syncStore.status)
 const pendingChanges = computed(() => syncStore.pendingChanges)
 const conflicts = computed(() => syncStore.conflicts)
@@ -196,18 +203,14 @@ const totalPushed = computed(() => syncStore.totalPushed)
 const totalPulled = computed(() => syncStore.totalPulled)
 const hasPendingChanges = computed(() => syncStore.hasPendingChanges)
 
+// Sync history
 const syncHistory = ref<any[]>([])
+
 const statusColor = computed(() => {
-  switch (syncStatus.value) {
-    case 'syncing':
-      return 'orange'
-    case 'error':
-      return 'red'
-    case 'offline':
-      return 'grey'
-    default:
-      return hasPendingChanges.value ? 'orange' : 'green'
-  }
+  if (syncStatus.value === 'syncing') return 'orange'
+  if (syncStatus.value === 'error') return 'red'
+  if (syncStatus.value === 'offline') return 'grey'
+  return hasPendingChanges.value ? 'orange' : 'green'
 })
 
 const lastSyncText = computed(() => {
@@ -221,18 +224,36 @@ const lastSyncText = computed(() => {
   return `${Math.floor(hours / 24)}d`
 })
 
-// Lifecycle
-onMounted(() => loadSyncData())
+// Auto-refresh interval
+let refreshInterval: number | null = null
 
-// Methods
+onMounted(() => {
+  loadSyncData()
+  // Auto-refresh every 30 seconds
+  refreshInterval = window.setInterval(() => {
+    if (!isSyncing.value) {
+      loadPendingChanges()
+      loadConflicts()
+    }
+  }, 30000)
+})
+
+onUnmounted(() => {
+  if (refreshInterval) {
+    clearInterval(refreshInterval)
+  }
+})
+
 async function loadSyncData(): Promise<void> {
-  await Promise.all([loadPendingChanges(), loadConflicts()])
+  await Promise.all([loadPendingChanges(), loadConflicts(), loadHistory()])
 }
 
 async function loadPendingChanges(): Promise<void> {
   loadingPending.value = true
   try {
     await syncStore.loadPendingChanges()
+  } catch (err: any) {
+    console.error('Failed to load pending changes:', err)
   } finally {
     loadingPending.value = false
   }
@@ -242,8 +263,53 @@ async function loadConflicts(): Promise<void> {
   loadingConflicts.value = true
   try {
     await syncStore.loadConflicts()
+  } catch (err: any) {
+    console.error('Failed to load conflicts:', err)
   } finally {
     loadingConflicts.value = false
+  }
+}
+
+async function loadHistory(): Promise<void> {
+  loadingHistory.value = true
+  try {
+    // Mock history data - replace with actual store method
+    syncHistory.value = [
+      {
+        id: '1',
+        type: 'full',
+        status: 'success',
+        timestamp: new Date().toISOString(),
+        details: 'Full synchronization completed',
+        pushed: 5,
+        pulled: 12,
+        conflicts: 0,
+      },
+      {
+        id: '2',
+        type: 'push',
+        status: 'success',
+        timestamp: new Date(Date.now() - 3600000).toISOString(),
+        details: 'Changes pushed to server',
+        pushed: 3,
+        pulled: 0,
+        conflicts: 0,
+      },
+      {
+        id: '3',
+        type: 'pull',
+        status: 'success',
+        timestamp: new Date(Date.now() - 7200000).toISOString(),
+        details: 'Changes pulled from server',
+        pushed: 0,
+        pulled: 8,
+        conflicts: 1,
+      },
+    ]
+  } catch (err: any) {
+    console.error('Failed to load history:', err)
+  } finally {
+    loadingHistory.value = false
   }
 }
 
@@ -251,6 +317,7 @@ async function handlePush(): Promise<void> {
   try {
     await syncStore.pushChanges()
     $q.notify({ type: 'positive', message: 'Changes pushed successfully', timeout: 2000 })
+    await loadPendingChanges()
   } catch (err: any) {
     $q.notify({ type: 'negative', message: err.message || 'Push failed' })
   }
@@ -260,6 +327,7 @@ async function handlePull(): Promise<void> {
   try {
     await syncStore.pullChanges()
     $q.notify({ type: 'positive', message: 'Changes pulled successfully', timeout: 2000 })
+    await Promise.all([loadPendingChanges(), loadConflicts()])
   } catch (err: any) {
     $q.notify({ type: 'negative', message: err.message || 'Pull failed' })
   }
@@ -268,7 +336,7 @@ async function handlePull(): Promise<void> {
 async function handleFullSync(): Promise<void> {
   try {
     await syncStore.fullSync()
-    $q.notify({ type: 'positive', message: 'Sync completed', timeout: 2000 })
+    $q.notify({ type: 'positive', message: 'Sync completed successfully', timeout: 2000 })
     await loadSyncData()
   } catch (err: any) {
     $q.notify({ type: 'negative', message: err.message || 'Sync failed' })
@@ -280,16 +348,40 @@ function handleRetry(): void {
 }
 
 async function handlePushSingle(change: any): Promise<void> {
-  console.log('Push single change:', change)
+  try {
+    await syncStore.pushChange(change.id)
+    $q.notify({ type: 'positive', message: 'Change pushed successfully', timeout: 2000 })
+    await loadPendingChanges()
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to push change' })
+  }
 }
 
 async function handleRetrySingle(change: any): Promise<void> {
-  console.log('Retry single change:', change)
+  try {
+    await syncStore.retryChange(change.id)
+    $q.notify({ type: 'positive', message: 'Retry queued', timeout: 2000 })
+    await loadPendingChanges()
+  } catch (err: any) {
+    $q.notify({ type: 'negative', message: err.message || 'Failed to retry' })
+  }
 }
 
 async function handleRemovePending(change: any): Promise<void> {
-  console.log('Remove pending change:', change)
-  await loadPendingChanges()
+  $q.dialog({
+    title: 'Remove Pending Change',
+    message: 'Are you sure you want to remove this pending change? This action cannot be undone.',
+    cancel: true,
+    ok: { color: 'negative', label: 'Remove' },
+  }).onOk(async () => {
+    try {
+      await syncStore.removePendingChange(change.id)
+      $q.notify({ type: 'positive', message: 'Change removed', timeout: 2000 })
+      await loadPendingChanges()
+    } catch (err: any) {
+      $q.notify({ type: 'negative', message: err.message || 'Failed to remove change' })
+    }
+  })
 }
 
 function openResolveDialog(conflict: any): void {
@@ -303,11 +395,11 @@ async function handleResolveConflict(data: {
 }): Promise<void> {
   resolving.value = true
   try {
-    await syncStore.resolveConflict(resolvingConflict.value.uuid, data)
-    $q.notify({ type: 'positive', message: 'Conflict resolved', timeout: 2000 })
+    await syncStore.resolveConflict(resolvingConflict.value.id, data)
+    $q.notify({ type: 'positive', message: 'Conflict resolved successfully', timeout: 2000 })
     showResolveDialog.value = false
     resolvingConflict.value = null
-    await loadConflicts()
+    await Promise.all([loadConflicts(), loadPendingChanges()])
   } catch (err: any) {
     $q.notify({ type: 'negative', message: err.message || 'Failed to resolve conflict' })
   } finally {
