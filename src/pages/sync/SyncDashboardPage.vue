@@ -347,9 +347,14 @@ function handleRetry(): void {
   handleFullSync()
 }
 
+function openResolveDialog(conflict: any): void {
+  resolvingConflict.value = conflict
+  showResolveDialog.value = true
+}
+
 async function handlePushSingle(change: any): Promise<void> {
   try {
-    await syncStore.pushChange(change.id)
+    await syncStore.pushChange(change.uuid || change.id)
     $q.notify({ type: 'positive', message: 'Change pushed successfully', timeout: 2000 })
     await loadPendingChanges()
   } catch (err: any) {
@@ -359,7 +364,7 @@ async function handlePushSingle(change: any): Promise<void> {
 
 async function handleRetrySingle(change: any): Promise<void> {
   try {
-    await syncStore.retryChange(change.id)
+    await syncStore.retryChange(change.uuid || change.id)
     $q.notify({ type: 'positive', message: 'Retry queued', timeout: 2000 })
     await loadPendingChanges()
   } catch (err: any) {
@@ -375,7 +380,7 @@ async function handleRemovePending(change: any): Promise<void> {
     ok: { color: 'negative', label: 'Remove' },
   }).onOk(async () => {
     try {
-      await syncStore.removePendingChange(change.id)
+      await syncStore.removePendingChange(change.uuid || change.id)
       $q.notify({ type: 'positive', message: 'Change removed', timeout: 2000 })
       await loadPendingChanges()
     } catch (err: any) {
@@ -384,18 +389,24 @@ async function handleRemovePending(change: any): Promise<void> {
   })
 }
 
-function openResolveDialog(conflict: any): void {
-  resolvingConflict.value = conflict
-  showResolveDialog.value = true
-}
-
+// Update the resolve conflict handler
 async function handleResolveConflict(data: {
   strategy: string
   resolvedData?: any
 }): Promise<void> {
   resolving.value = true
   try {
-    await syncStore.resolveConflict(resolvingConflict.value.id, data)
+    // Map the strategy string to the expected type
+    let strategy: 'server-wins' | 'client-wins' | 'merge' | 'last_write_wins' = 'merge'
+    if (data.strategy === 'client_wins') strategy = 'client-wins'
+    else if (data.strategy === 'server_wins') strategy = 'server-wins'
+    else if (data.strategy === 'last_write_wins') strategy = 'last_write_wins'
+    else strategy = 'merge'
+
+    await syncStore.resolveConflict(resolvingConflict.value.uuid, {
+      strategy,
+      resolvedData: data.resolvedData,
+    })
     $q.notify({ type: 'positive', message: 'Conflict resolved successfully', timeout: 2000 })
     showResolveDialog.value = false
     resolvingConflict.value = null

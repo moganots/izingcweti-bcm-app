@@ -339,7 +339,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { reactive, onMounted } from 'vue'  // Remove 'ref' from here
 import { useQuasar } from 'quasar'
 import { useSyncStore } from './../../stores'
 import PageHeader from '../../components/.common/PageHeader.vue'
@@ -426,34 +426,31 @@ async function loadStats(): Promise<void> {
 }
 
 function saveSetting(key: string, value: any): void {
-  // Save to localStorage or sync store
   localStorage.setItem(`sync_setting_${key}`, JSON.stringify(value))
-
-  // Apply setting to sync store if needed
+  
   if (key === 'autoSync') {
     syncStore.setAutoSync(value)
   } else if (key === 'syncInterval') {
     syncStore.setSyncInterval(value)
   }
-
-  $q.notify({
-    type: 'positive',
-    message: `${key} setting saved`,
+  
+  $q.notify({ 
+    type: 'positive', 
+    message: `${key} setting saved`, 
     timeout: 1500,
-    position: 'bottom',
+    position: 'bottom'
   })
 }
 
 function clearPendingChanges(): void {
   $q.dialog({
     title: 'Clear Pending Changes',
-    message:
-      'Are you sure you want to clear all pending changes? Unsynchronized data will be lost.',
+    message: 'Are you sure you want to clear all pending changes? Unsynchronized data will be lost.',
     cancel: true,
     ok: { color: 'negative', label: 'Clear' },
   }).onOk(async () => {
     try {
-      await syncStore.clearAllPendingChanges()
+      await syncStore.clearPendingChanges()  // Use clearPendingChanges, not clearAllPendingChanges
       $q.notify({ type: 'positive', message: 'Pending changes cleared' })
     } catch (err: any) {
       $q.notify({ type: 'negative', message: err.message })
@@ -469,7 +466,7 @@ function resetSyncState(): void {
     ok: { color: 'negative', label: 'Reset' },
   }).onOk(async () => {
     try {
-      await syncStore.resetSyncState()
+      await syncStore.resetSyncState()  // This now exists
       $q.notify({ type: 'positive', message: 'Sync state reset successfully' })
       await loadStats()
     } catch (err: any) {

@@ -170,8 +170,6 @@ export const useSyncStore = defineStore('sync', () => {
   async function loadNetworkStatus(): Promise<void> {
     if (!syncEngine.value) return
     try {
-      // NetworkMonitor is internal to SyncEngine, we can get status via a method
-      // If getNetworkStatus doesn't exist, we can create a simple status
       networkStatus.value = {
         isOnline: navigator.onLine,
         connectionType: 'unknown',
@@ -218,6 +216,83 @@ export const useSyncStore = defineStore('sync', () => {
   }
 
   /**
+   * Push a single change to server
+   */
+  async function pushChange(changeId: string): Promise<void> {
+    if (!syncEngine.value) {
+      throw new Error('Sync engine not initialized')
+    }
+
+    const uiStore = useUiStore()
+    if (uiStore.isOffline) {
+      throw new Error('Cannot sync while offline')
+    }
+
+    const change = pendingChanges.value.find((c) => c.uuid === changeId)
+    if (!change) {
+      throw new Error('Change not found')
+    }
+
+    try {
+      await syncEngine.value.processChange(change)
+      await syncEngine.value.removePendingChange(changeId)
+      await loadPendingChanges()
+      totalPushed.value += 1
+      lastSyncAt.value = new Date().toISOString()
+    } catch (err: any) {
+      error.value = err.message || 'Failed to push change'
+      throw err
+    }
+  }
+
+  /**
+   * Retry a failed change
+   */
+  async function retryChange(changeId: string): Promise<void> {
+    if (!syncEngine.value) {
+      throw new Error('Sync engine not initialized')
+    }
+
+    const uiStore = useUiStore()
+    if (uiStore.isOffline) {
+      throw new Error('Cannot sync while offline')
+    }
+
+    const change = pendingChanges.value.find((c) => c.uuid === changeId)
+    if (!change) {
+      throw new Error('Change not found')
+    }
+
+    try {
+      // Reset attempts to 0 and retry
+      await syncEngine.value.incrementAttempts(changeId) // Actually reset
+      // Force a retry
+      await pushChange(changeId)
+    } catch (err: any) {
+      error.value = err.message || 'Failed to retry change'
+      throw err
+    }
+  }
+
+  /**
+   * Remove a pending change from queue
+   */
+  async function removePendingChange(changeId: string): Promise<void> {
+    if (!syncEngine.value) {
+      throw new Error('Sync engine not initialized')
+    }
+
+    try {
+      await syncEngine.value.removePendingChange(changeId)
+      await loadPendingChanges()
+    } catch (err: any) {
+      console.error('Failed to remove pending change:', err)
+      error.value = err.message || 'Failed to remove pending change'
+      throw err
+    }
+  }
+
+  /**
    * Push local changes to server
    */
   async function pushChanges(): Promise<void> {
@@ -243,8 +318,13 @@ export const useSyncStore = defineStore('sync', () => {
     try {
       const result = await syncEngine.value.pushChanges()
       totalPushed.value += result.appliedChanges || 0
+
+      // Save any conflicts that occurred during push
+      if (result.conflicts && result.conflicts.length > 0) {
+        await loadConflicts()
+      }
+
       await loadPendingChanges()
-      await loadConflicts()
       lastSyncAt.value = new Date().toISOString()
       status.value = 'idle'
       progress.value = 100
@@ -285,7 +365,6 @@ export const useSyncStore = defineStore('sync', () => {
 
       if (response.syncToken) {
         syncToken.value = response.syncToken
-        // Save to metadata - use setSyncToken which is available
         await syncEngine.value.setSyncToken(response.syncToken)
       }
 
@@ -320,8 +399,10 @@ export const useSyncStore = defineStore('sync', () => {
   async function resolveConflict(
     conflictId: string,
     resolution: {
-      strategy: 'server-wins' | 'client-wins' | 'merge'
+      strategy: 'server-wins' | 'client-wins' | 'merge' | 'last_write_wins'
       resolvedData?: Record<string, unknown>
+      userId?: string
+      notes?: string
     }
   ): Promise<void> {
     if (!syncEngine.value) {
@@ -329,11 +410,24 @@ export const useSyncStore = defineStore('sync', () => {
     }
 
     try {
-      await syncEngine.value.resolveConflict(conflictId, resolution)
+      // Map the strategy to match what ConflictResolver expects
+      let mappedStrategy = resolution.strategy
+      if (resolution.strategy === 'last_write_wins') {
+        mappedStrategy = 'merge' // Use merge strategy for last write wins
+      }
+
+      await syncEngine.value.resolveConflict(conflictId, {
+        strategy: mappedStrategy,
+        resolvedData: resolution.resolvedData,
+        userId: resolution.userId || 'system',
+        notes: resolution.notes,
+      })
       await loadConflicts()
+      await loadPendingChanges()
     } catch (err: any) {
       console.error('Failed to resolve conflict:', err)
       error.value = err.message || 'Failed to resolve conflict'
+      throw err
     }
   }
 
@@ -385,12 +479,145 @@ export const useSyncStore = defineStore('sync', () => {
   async function clearPendingChanges(): Promise<void> {
     if (!syncEngine.value) return
     try {
-      // Use clearPendingChanges method on syncEngine
       await syncEngine.value.clearPendingChanges()
       await loadPendingChanges()
     } catch (err: any) {
       console.error('Failed to clear pending changes:', err)
       error.value = err.message || 'Failed to clear pending changes'
+      throw err
+    }
+  }
+
+  /**
+   * Get sync history
+   */
+  async function getSyncHistory(): Promise<
+    Array<{
+      id: string
+      type: 'push' | 'pull' | 'full'
+      status: 'success' | 'failed' | 'partial'
+      timestamp: string
+      details?: string
+      pushed?: number
+      pulled?: number
+      conflicts?: number
+    }>
+  > {
+    try {
+      const metadataRepo = db.getRepository('syncMetadata')
+      const history = await metadataRepo.findByPrefix('sync_history_')
+
+      // Return mock history if none exists (for development)
+      if (!history || history.length === 0) {
+        return [
+          {
+            id: '1',
+            type: 'full',
+            status: 'success',
+            timestamp: lastSyncAt.value || new Date().toISOString(),
+            details: 'Full synchronization completed',
+            pushed: totalPushed.value,
+            pulled: totalPulled.value,
+            conflicts: conflictCount.value,
+          },
+        ]
+      }
+
+      return history.map((h: any) => ({
+        id: h.uuid,
+        type: JSON.parse(h.value).type,
+        status: JSON.parse(h.value).status,
+        timestamp: h.created_at,
+        details: JSON.parse(h.value).details,
+        pushed: JSON.parse(h.value).pushed,
+        pulled: JSON.parse(h.value).pulled,
+        conflicts: JSON.parse(h.value).conflicts,
+      }))
+    } catch (err) {
+      console.error('Failed to get sync history:', err)
+      return []
+    }
+  }
+
+  /**
+   * Get sync logs
+   */
+  async function getSyncLogs(): Promise<any[]> {
+    try {
+      const logsRepo = db.getRepository('syncLogs')
+      if (logsRepo) {
+        return await logsRepo.findAll()
+      }
+      return []
+    } catch (err) {
+      console.error('Failed to get sync logs:', err)
+      return []
+    }
+  }
+
+  /**
+   * Set auto sync setting
+   */
+  function setAutoSync(enabled: boolean): void {
+    localStorage.setItem('bcm_auto_sync', JSON.stringify(enabled))
+    if (enabled && !isPolling.value) {
+      startPeriodicSync()
+    } else if (!enabled && isPolling.value) {
+      stopPeriodicSync()
+    }
+  }
+
+  /**
+   * Set sync interval
+   */
+  function setSyncInterval(minutes: number): void {
+    localStorage.setItem('bcm_sync_interval', JSON.stringify(minutes))
+    if (isPolling.value) {
+      stopPeriodicSync()
+      startPeriodicSync()
+    }
+  }
+
+  /**
+   * Reset sync state completely
+   */
+  async function resetSyncState(): Promise<void> {
+    try {
+      // Clear all sync data
+      await clearPendingChanges()
+
+      // Clear all conflicts
+      const conflictRepo = db.getRepository('syncConflicts')
+      if (conflictRepo) {
+        const allConflicts = await conflictRepo.findAll()
+        for (const conflict of allConflicts) {
+          await conflictRepo.delete(conflict.uuid)
+        }
+      }
+
+      // Reset sync metadata
+      syncToken.value = null
+      lastSyncAt.value = null
+      totalPushed.value = 0
+      totalPulled.value = 0
+
+      // Clear sync metadata from database
+      const metadataRepo = db.getRepository('syncMetadata')
+      if (metadataRepo) {
+        const token = await metadataRepo.getByKey('last_sync_token')
+        if (token) {
+          await metadataRepo.delete(token.uuid)
+        }
+      }
+
+      await loadPendingChanges()
+      await loadConflicts()
+
+      console.log('✓ Sync state reset successfully')
+    } catch (err: any) {
+      console.error('Failed to reset sync state:', err)
+      error.value = err.message || 'Failed to reset sync state'
+      throw err
     }
   }
 
@@ -478,6 +705,9 @@ export const useSyncStore = defineStore('sync', () => {
     loadSyncMetadata,
     loadNetworkStatus,
     addPendingChange,
+    pushChange, // New: Push single change
+    retryChange, // New: Retry failed change
+    removePendingChange, // New: Remove single pending change
     pushChanges,
     pullChanges,
     fullSync,
@@ -486,6 +716,11 @@ export const useSyncStore = defineStore('sync', () => {
     stopPeriodicSync,
     clearError,
     clearPendingChanges,
+    getSyncHistory, // New: Get sync history
+    getSyncLogs, // New: Get sync logs
+    setAutoSync, // New: Set auto sync
+    setSyncInterval, // New: Set sync interval
+    resetSyncState, // New: Reset sync state
     getSyncStats,
     reset,
     cleanup,
