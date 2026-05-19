@@ -1,255 +1,95 @@
+<!-- src/layouts/user/MainLayout.vue -->
 <template>
-  <q-layout view="hHh Lpr lff">
-    <!-- Header -->
-    <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
-        <q-btn dense flat round icon="menu" @click="toggleDrawer" />
+  <q-layout view="lHh Lpr lFf">
+    <!-- Header (Sticky) -->
+    <AppHeader :page-title="pageTitle" />
 
-        <q-toolbar-title class="cursor-pointer" @click="goToDashboard">
-          <span class="text-weight-bold">{{ companyName }}</span>
-          <span class="text-subtitle2 q-ml-sm">{{ appShortName }}</span>
-        </q-toolbar-title>
+    <!-- Footer Navigation (Sticky - always at bottom) -->
+    <AppFooter @toggle-drawer="toggleMenuDrawer" />
 
-        <!-- Search -->
-        <q-input
-          v-model="searchQuery"
-          dense
-          dark
-          flat
-          placeholder="Search..."
-          class="q-mr-md search-input"
-          @keyup.enter="handleSearch"
-        >
-          <template v-slot:prepend>
-            <q-icon name="search" />
-          </template>
-        </q-input>
+    <!-- Menu Drawer (Right Side) -->
+    <MenuDrawer v-model="menuDrawerOpen" />
 
-        <!-- Notifications -->
-        <q-btn dense flat round icon="notifications" class="q-mr-sm">
-          <q-badge v-if="notificationCount" color="red" floating>
-            {{ notificationCount > 9 ? '9+' : notificationCount }}
-          </q-badge>
-          <q-menu auto-close>
-            <q-list style="min-width: 300px">
-              <q-item class="bg-grey-2">
-                <q-item-section>
-                  <div class="text-subtitle2">Notifications</div>
-                </q-item-section>
-                <q-item-section side>
-                  <q-btn flat dense label="Mark all read" size="sm" />
-                </q-item-section>
-              </q-item>
-              <q-item v-for="n in notifications" :key="n.id" clickable v-close-popup>
-                <q-item-section avatar>
-                  <q-icon :name="n.icon" :color="n.color" />
-                </q-item-section>
-                <q-item-section>
-                  <q-item-label>{{ n.title }}</q-item-label>
-                  <q-item-label caption>{{ n.time }}</q-item-label>
-                </q-item-section>
-              </q-item>
-              <q-item v-if="!notifications.length" class="text-center">
-                <q-item-section>No new notifications</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-
-        <!-- User Menu -->
-        <q-btn dense flat round>
-          <q-avatar size="32px">
-            <q-icon name="person" />
-          </q-avatar>
-          <q-menu auto-close>
-            <q-list>
-              <q-item clickable @click="goToProfile">
-                <q-item-section avatar><q-icon name="account_circle" /></q-item-section>
-                <q-item-section>Profile</q-item-section>
-              </q-item>
-              <q-item clickable @click="goToSettings">
-                <q-item-section avatar><q-icon name="settings" /></q-item-section>
-                <q-item-section>Settings</q-item-section>
-              </q-item>
-              <q-separator />
-              <q-item clickable @click="handleLogout">
-                <q-item-section avatar><q-icon name="logout" /></q-item-section>
-                <q-item-section>Logout</q-item-section>
-              </q-item>
-            </q-list>
-          </q-menu>
-        </q-btn>
-      </q-toolbar>
-    </q-header>
-
-    <!-- Drawer -->
-    <q-drawer
-      v-model="drawerOpen"
-      show-if-above
-      :width="250"
-      :breakpoint="700"
-      bordered
-      class="bg-grey-1"
-    >
-      <q-scroll-area class="fit">
-        <q-list padding>
-          <q-item
-            v-for="item in menuItems"
-            :key="item.name"
-            clickable
-            v-ripple
-            :active="isActiveRoute(item.route)"
-            :to="item.route"
-            exact
-          >
-            <q-item-section avatar>
-              <q-icon :name="item.icon" :color="isActiveRoute(item.route) ? 'primary' : 'grey-7'" />
-            </q-item-section>
-            <q-item-section>{{ item.label }}</q-item-section>
-          </q-item>
-
-          <q-separator class="q-mt-md q-mb-md" />
-
-          <!-- Admin Section -->
-          <template v-if="authStore.isAdmin">
-            <div class="text-caption text-grey-7 q-px-md q-mb-sm">ADMINISTRATION</div>
-            <q-item
-              v-for="item in adminItems"
-              :key="item.name"
-              clickable
-              v-ripple
-              :active="isActiveRoute(item.route)"
-              :to="item.route"
-            >
-              <q-item-section avatar>
-                <q-icon :name="item.icon" />
-              </q-item-section>
-              <q-item-section>{{ item.label }}</q-item-section>
-            </q-item>
-          </template>
-        </q-list>
-      </q-scroll-area>
-    </q-drawer>
-
-    <!-- Page Content -->
-    <q-page-container>
-      <router-view />
+    <!-- Page Content (Scrollable area between header and footer) -->
+    <q-page-container class="page-content">
+      <keep-alive>
+        <router-view v-slot="{ Component }">
+          <transition name="fade" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
+      </keep-alive>
     </q-page-container>
   </q-layout>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
-import { useQuasar } from 'quasar'
-import { useAuthStore } from 'src/stores/auth/auth.store'
-import { capitalizeFirstLettersAdvanced } from 'src/utils/formatters'
+import { ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import AppHeader from 'src/components/ui/AppHeader.vue'
+import AppFooter from 'src/components/ui/AppFooter.vue'
+import MenuDrawer from 'src/components/ui/MenuDrawer.vue'
 
-const router = useRouter()
 const route = useRoute()
-const $q = useQuasar()
-const authStore = useAuthStore()
+const menuDrawerOpen = ref(false)
 
-const drawerOpen = ref(true)
-const searchQuery = ref('')
-const notificationCount = ref(3)
-const companyName = import.meta.env.VITE_COMPANY_NAME || 'Izingcweti'
-const appName = import.meta.env.VITE_APP_NAME || 'Business Continuity Management System'
-const appShortName = capitalizeFirstLettersAdvanced(import.meta.env.VITE_APP_NAME || appName)
+const pageTitle = computed(() => (route.meta?.title as string) || 'Dashboard')
 
-const notifications = ref([
-  {
-    id: 1,
-    icon: 'warning',
-    color: 'orange',
-    title: 'Risk assessment due tomorrow',
-    time: '2h ago',
-  },
-  { id: 2, icon: 'check_circle', color: 'green', title: 'BCP review completed', time: '5h ago' },
-  {
-    id: 3,
-    icon: 'schedule',
-    color: 'blue',
-    title: 'Training reminder: BCM Fundamentals',
-    time: '1d ago',
-  },
-])
-
-const menuItems = [
-  { name: 'dashboard', label: 'Dashboard', icon: 'dashboard', route: { name: 'Dashboard' } },
-  { name: 'risks', label: 'Risk Register', icon: 'warning', route: { name: 'Risks' } },
-  { name: 'bcm', label: 'BCM Plans', icon: 'business_center', route: { name: 'BCMPlans' } },
-  { name: 'incidents', label: 'Incidents', icon: 'report_problem', route: { name: 'Incidents' } },
-  { name: 'reports', label: 'Reports', icon: 'analytics', route: { name: 'Reports' } },
-  { name: 'training', label: 'Training', icon: 'school', route: { name: 'Training' } },
-]
-
-const adminItems = [
-  { name: 'users', label: 'User Management', icon: 'people', route: { name: 'Users' } },
-  {
-    name: 'organisations',
-    label: 'Organisations',
-    icon: 'business',
-    route: { name: 'Organisations' },
-  },
-  { name: 'audit-logs', label: 'Audit Logs', icon: 'history', route: { name: 'AuditLogs' } },
-]
-
-function toggleDrawer() {
-  drawerOpen.value = !drawerOpen.value
+function toggleMenuDrawer(): void {
+  menuDrawerOpen.value = !menuDrawerOpen.value
 }
-
-function isActiveRoute(routeObj: any): boolean {
-  return route.name === routeObj.name
-}
-
-function goToDashboard() {
-  router.push({ name: 'Dashboard' })
-}
-
-function goToProfile() {
-  router.push({ name: 'Profile' })
-}
-
-function goToSettings() {
-  router.push({ name: 'Settings' })
-}
-
-function handleSearch() {
-  if (searchQuery.value.trim()) {
-    router.push({ name: 'Search', query: { q: searchQuery.value } })
-  }
-}
-
-async function handleLogout() {
-  $q.dialog({
-    title: 'Confirm',
-    message: 'Are you sure you want to logout?',
-    cancel: true,
-    persistent: true,
-  }).onOk(async () => {
-    await authStore.logout()
-    router.push({ name: 'Login' })
-    $q.notify({
-      type: 'positive',
-      message: 'Logged out successfully',
-      position: 'top',
-    })
-  })
-}
-
-onMounted(() => {
-  // Load notifications count
-  // fetchNotifications()
-})
 </script>
 
-<style scoped lang="scss">
-.search-input {
-  width: 250px;
+<style lang="scss" scoped>
+// Fade transition for route changes
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
 
-  @media (max-width: 768px) {
-    width: 150px;
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+// Page content styling
+.page-content {
+  // Header is sticky by default with q-header
+  // Footer is sticky by default with q-footer
+  // Content area scrolls naturally between them
+
+  padding: 16px;
+
+  // Ensure proper scrolling behavior
+  overflow-y: auto;
+
+  // Calculate min-height to fill space between header and footer
+  // q-page-container automatically handles this, but we add padding bottom for safety
+  padding-bottom: 16px;
+
+  // Smooth scrolling
+  scroll-behavior: smooth;
+}
+
+// Mobile adjustments
+@media (max-width: 600px) {
+  .page-content {
+    padding: 12px;
   }
+}
+
+// Ensure the layout takes full viewport height
+:deep(.q-layout) {
+  height: 100vh;
+}
+
+// Ensure footer stays at bottom
+:deep(.q-footer) {
+  z-index: 1000;
+}
+
+// Ensure header stays at top
+:deep(.q-header) {
+  z-index: 1001;
 }
 </style>

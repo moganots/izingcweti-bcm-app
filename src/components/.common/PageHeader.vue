@@ -1,4 +1,3 @@
-<!-- src/components/common/PageHeader.vue -->
 <template>
   <div class="page-header q-mb-md">
     <div class="row items-center justify-between">
@@ -17,13 +16,7 @@
         >
           <q-tooltip>Refresh</q-tooltip>
         </q-btn>
-        <q-btn
-          v-if="showSettings"
-          flat
-          round
-          icon="settings"
-          @click="$emit('settings')"
-        >
+        <q-btn v-if="showSettings" flat round icon="settings" @click="$emit('settings')">
           <q-tooltip>Settings</q-tooltip>
         </q-btn>
         <slot name="actions" />
@@ -60,10 +53,10 @@ defineEmits<{
 .page-header {
   .text-h4 {
     font-size: 1.75rem;
-    
+
     @media (max-width: 600px) {
       font-size: 1.5rem;
     }
   }
 }
-</style> 
+</style>

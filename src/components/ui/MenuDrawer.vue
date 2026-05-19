@@ -1,8 +1,7 @@
-<!-- src/components/ui/AppDrawer.vue -->
 <template>
   <q-drawer
     v-model="drawerOpen"
-    show-if-above
+    side="right"
     :width="280"
     :breakpoint="768"
     bordered
@@ -12,14 +11,20 @@
     <div class="drawer-header q-pa-md">
       <div class="row items-center">
         <q-avatar size="48px" class="q-mr-sm">
-          <q-icon name="shield" size="32px" color="white" />
+          <img src="/izingcweti-logo-icon-no-bg.png" alt="Logo" />
         </q-avatar>
         <div>
-          <div class="text-h6 text-white">Izingcweti BCM App</div>
+          <div class="text-h6 text-white">Izingcweti BCM</div>
           <div class="text-caption text-grey-4">
             {{ userRole || 'User' }}
           </div>
         </div>
+      </div>
+
+      <!-- User Info -->
+      <div class="q-mt-sm">
+        <div class="text-subtitle2 text-white">{{ userFullName }}</div>
+        <div class="text-caption text-grey-4">{{ userEmail }}</div>
       </div>
 
       <!-- Sync Status -->
@@ -36,40 +41,20 @@
     <!-- Navigation Menu -->
     <q-scroll-area class="fit">
       <q-list padding>
-        <!-- Dashboard -->
-        <q-item clickable v-ripple :to="{ name: 'Dashboard' }" exact active-class="text-primary">
-          <q-item-section avatar>
-            <q-icon name="dashboard" />
-          </q-item-section>
-          <q-item-section>Dashboard</q-item-section>
-        </q-item>
+        <!-- Main Navigation Items (not in footer) -->
+        <template v-for="group in menuGroups" :key="group.label">
+          <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
+            {{ group.label }}
+          </q-item-label>
 
-        <q-separator spaced />
-
-        <!-- BCM Section -->
-        <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
-          Business Continuity
-        </q-item-label>
-
-        <q-expansion-item
-          v-for="group in menuGroups"
-          :key="group.label"
-          :icon="group.icon"
-          :label="group.label"
-          :default-opened="isGroupActive(group)"
-          expand-separator
-          header-class="text-weight-medium"
-        >
           <q-item
             v-for="item in group.items"
             :key="item.name"
-            :to="{ name: item.name }"
-            :active="route.name === item.name"
             clickable
             v-ripple
+            :to="{ name: item.name }"
+            :active="route.name === item.name"
             exact
-            dense
-            class="q-pl-lg"
             active-class="text-primary"
           >
             <q-item-section avatar>
@@ -80,7 +65,32 @@
               <q-badge :color="item.badgeColor" :label="item.badge" />
             </q-item-section>
           </q-item>
-        </q-expansion-item>
+        </template>
+
+        <q-separator spaced />
+
+        <!-- Admin Section -->
+        <template v-if="authStore.isAdmin">
+          <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
+            Administration
+          </q-item-label>
+
+          <q-item
+            v-for="item in adminItems"
+            :key="item.name"
+            clickable
+            v-ripple
+            :to="{ name: item.name }"
+            :active="route.name === item.name"
+            exact
+            active-class="text-primary"
+          >
+            <q-item-section avatar>
+              <q-icon :name="item.icon" />
+            </q-item-section>
+            <q-item-section>{{ item.label }}</q-item-section>
+          </q-item>
+        </template>
 
         <q-separator spaced />
 
@@ -89,37 +99,11 @@
           System
         </q-item-label>
 
-        <q-item
-          clickable
-          v-ripple
-          :to="{ name: 'Notifications' }"
-          exact
-          active-class="text-primary"
-        >
-          <q-item-section avatar>
-            <q-icon name="notifications" />
-          </q-item-section>
-          <q-item-section>Notifications</q-item-section>
-          <q-item-section v-if="notificationStore.unreadCount > 0" side>
-            <q-badge color="red" :label="notificationStore.unreadCount" />
-          </q-item-section>
-        </q-item>
-
         <q-item clickable v-ripple :to="{ name: 'Documents' }" exact active-class="text-primary">
           <q-item-section avatar>
             <q-icon name="folder" />
           </q-item-section>
           <q-item-section>Documents</q-item-section>
-        </q-item>
-
-        <q-separator spaced />
-
-        <!-- User Section -->
-        <q-item clickable v-ripple :to="{ name: 'Profile' }" exact active-class="text-primary">
-          <q-item-section avatar>
-            <q-icon name="person" />
-          </q-item-section>
-          <q-item-section>Profile</q-item-section>
         </q-item>
 
         <q-item clickable v-ripple :to="{ name: 'Settings' }" exact active-class="text-primary">
@@ -128,13 +112,10 @@
           </q-item-section>
           <q-item-section>Settings</q-item-section>
         </q-item>
-      </q-list>
-    </q-scroll-area>
 
-    <!-- Drawer Footer -->
-    <div class="drawer-footer q-pa-sm" :class="isDarkMode ? 'bg-dark' : 'bg-grey-2'">
-      <q-separator />
-      <q-list dense>
+        <q-separator spaced />
+
+        <!-- Footer Actions -->
         <q-item clickable v-ripple @click="handleSync">
           <q-item-section avatar>
             <q-icon
@@ -160,7 +141,7 @@
           <q-item-section class="text-negative">Logout</q-item-section>
         </q-item>
       </q-list>
-    </div>
+    </q-scroll-area>
   </q-drawer>
 </template>
 
@@ -168,14 +149,8 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from '../../stores/auth/auth.store'
-import { useSyncStore } from '../../stores/sync.store'
-import { useNotificationStore } from '../../stores/notification/notification.store'
-import { useUiStore } from '../../stores/ui/ui.store'
+import { useAuthStore, useSyncStore, useUiStore } from '../../stores'
 
-// ============================================
-// Types
-// ============================================
 interface MenuItem {
   name: string
   label: string
@@ -186,25 +161,17 @@ interface MenuItem {
 
 interface MenuGroup {
   label: string
-  icon: string
   items: MenuItem[]
 }
 
-// ============================================
-// Stores & Router
-// ============================================
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
 const authStore = useAuthStore()
 const syncStore = useSyncStore()
-const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
 
-// ============================================
-// Props & Emits
-// ============================================
-const props = withDefaults(defineProps<{ modelValue?: boolean }>(), { modelValue: false })
+const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
 
 const drawerOpen = computed({
@@ -212,19 +179,15 @@ const drawerOpen = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-// ============================================
-// Computed
-// ============================================
 const userRole = computed(() => authStore.userRole)
+const userFullName = computed(() => authStore.fullName)
+const userEmail = computed(() => authStore.userEmail)
 const isDarkMode = computed(() => uiStore.isDarkMode)
 
-// ============================================
-// Menu Groups - FIXED: Added proper typing
-// ============================================
+// Menu Groups (All navigation not in footer)
 const menuGroups: MenuGroup[] = [
   {
-    label: 'BCM Core',
-    icon: 'business',
+    label: 'Business Continuity',
     items: [
       { name: 'CriticalFunctions', label: 'Critical Functions', icon: 'functions' },
       { name: 'BIA', label: 'Business Impact Analysis', icon: 'assessment' },
@@ -235,25 +198,25 @@ const menuGroups: MenuGroup[] = [
   },
   {
     label: 'Risk & Compliance',
-    icon: 'shield',
     items: [
-      { name: 'Risks', label: 'Risk Management', icon: 'warning' },
-      { name: 'Incidents', label: 'Incidents', icon: 'report' },
+      { name: 'Risks', label: 'Risk Register', icon: 'warning' },
+      { name: 'Compliance', label: 'Compliance', icon: 'verified_user' },
     ],
   },
   {
-    label: 'Workflow',
-    icon: 'account_tree',
-    items: [{ name: 'Workflows', label: 'Workflows', icon: 'account_tree' }],
+    label: 'Operations',
+    items: [
+      { name: 'Incidents', label: 'Incidents', icon: 'report' },
+      { name: 'Workflows', label: 'Workflows', icon: 'account_tree' },
+    ],
   },
 ]
 
-// ============================================
-// Methods
-// ============================================
-function isGroupActive(group: MenuGroup): boolean {
-  return group.items.some((item) => route.name === item.name)
-}
+const adminItems = [
+  { name: 'Users', label: 'User Management', icon: 'people' },
+  { name: 'Organisations', label: 'Organisations', icon: 'business' },
+  { name: 'AuditLogs', label: 'Audit Logs', icon: 'history' },
+]
 
 async function handleSync(): Promise<void> {
   if (syncStore.isSyncing) return
@@ -307,10 +270,5 @@ function formatTimeAgo(date: string | null): string {
   to {
     transform: rotate(360deg);
   }
-}
-
-.drawer-footer {
-  position: sticky;
-  bottom: 0;
 }
 </style>

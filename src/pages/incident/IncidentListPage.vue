@@ -133,16 +133,14 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useIncidentStore } from '../../stores/incident.store'
-import { useBcmStore } from '../../stores/bcm/bcm.store'
-import PageHeader from '../../components/.common/PageHeader.vue'
-import SearchBar from '../../components/.common/SearchBar.vue'
-import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
-import EmptyState from '../../components/.common/EmptyState.vue'
-import IncidentCard from '../../components/incident/IncidentCard.vue'
-import IncidentStatsCards from '../../components/incident/IncidentStatsCards.vue'
-import IncidentReportForm from '../../components/incident/IncidentReportForm.vue'
-import IncidentResolutionForm from '../../components/incident/IncidentResolutionForm.vue'
+import { useIncidentStore, useBcmStore } from '../../stores'
+import { PageHeader, SearchBar, LoadingSpinner, EmptyState } from '../../components/.common'
+import {
+  IncidentCard,
+  IncidentStatsCards,
+  IncidentReportForm,
+  IncidentResolutionForm,
+} from '../../components/incident'
 import { IncidentSeverity } from 'src/models/entities'
 
 const $q = useQuasar()

@@ -16,6 +16,7 @@ export { useSyncStore } from './sync/sync.store'
 export { useUiStore } from './ui/ui.store'
 export { useUserStore } from './user/user.store'
 export { useWorkflowStore } from './workflow/workflow.store'
+export { useNotificationStore } from './notification/notification.store'
 
 // Default export for Quasar compatibility
 import { createPinia } from 'pinia'
