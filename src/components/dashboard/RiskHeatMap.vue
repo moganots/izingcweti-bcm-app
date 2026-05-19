@@ -2,7 +2,10 @@
   <q-card flat bordered>
     <q-card-section>
       <div class="text-h6 q-mb-md">Risk Heat Map</div>
-      <div class="heat-map">
+      <div v-if="loading" class="text-center q-pa-md">
+        <q-spinner-dots size="30px" color="primary" />
+      </div>
+      <div v-else class="heat-map">
         <div class="heat-map-grid">
           <div class="heat-map-header heat-map-corner"></div>
           <div class="heat-map-header" v-for="likelihood in likelihoods" :key="likelihood.label">
@@ -23,10 +26,22 @@
         </div>
         <div class="heat-map-legend q-mt-md">
           <div class="row q-gutter-sm items-center justify-center">
-            <q-badge color="green-3" text-color="dark" label="Low" />
-            <q-badge color="yellow-3" text-color="dark" label="Medium" />
-            <q-badge color="orange-3" text-color="dark" label="High" />
-            <q-badge color="red-3" text-color="dark" label="Critical" />
+            <div class="legend-item">
+              <span class="legend-color bg-green-3"></span>
+              <span class="legend-label">Low</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color bg-yellow-3"></span>
+              <span class="legend-label">Medium</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color bg-orange-3"></span>
+              <span class="legend-label">High</span>
+            </div>
+            <div class="legend-item">
+              <span class="legend-color bg-red-3"></span>
+              <span class="legend-label">Critical</span>
+            </div>
           </div>
         </div>
       </div>
@@ -37,8 +52,25 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps<{ risks?: any[] }>()
-defineEmits<{ 'cell-click': [cell: { impact: string; likelihood: number }] }>()
+export interface RiskData {
+  impact_severity: string
+  likelihood: number
+}
+
+const props = withDefaults(
+  defineProps<{
+    risks?: RiskData[]
+    loading?: boolean
+  }>(),
+  {
+    risks: () => [],
+    loading: false,
+  }
+)
+
+defineEmits<{
+  'cell-click': [cell: { impact: string; likelihood: number }]
+}>()
 
 const impacts = ['Insignificant', 'Low', 'Medium', 'High', 'Critical']
 const likelihoods = [
@@ -49,12 +81,11 @@ const likelihoods = [
   { label: 'VH', value: 1.0 },
 ]
 
-const risksData = computed(() => props.risks || [])
+const risksData = computed(() => props.risks)
 
 function getCellCount(i: number, j: number): number {
   return risksData.value.filter(
-    (r: any) =>
-      r.impact_severity === impacts[i] && Math.abs(r.likelihood - likelihoods[j]!?.value) < 0.2
+    (r) => r.impact_severity === impacts[i] && Math.abs(r.likelihood - likelihoods[j]!?.value) < 0.2
   ).length
 }
 
@@ -73,35 +104,61 @@ function getCellClass(i: number, j: number): string {
   grid-template-columns: 80px repeat(5, 1fr);
   gap: 2px;
 }
+
 .heat-map-header {
-  padding: 6px;
+  padding: 8px 4px;
   text-align: center;
-  font-weight: bold;
-  font-size: 11px;
-  background: #f5f5f5;
+  font-weight: 600;
+  font-size: 12px;
+  background: var(--grey-2);
+  border-radius: 4px;
 }
+
 .heat-map-corner {
   grid-column: 1;
   grid-row: 1;
 }
+
 .heat-map-impact {
   grid-column: 1;
+  font-weight: 500;
 }
+
 .heat-map-cell {
-  padding: 4px;
+  padding: 12px 4px;
   text-align: center;
   cursor: pointer;
-  transition: transform 0.2s;
-  min-height: 40px;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+  min-height: 50px;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 4px;
+
+  &:hover {
+    transform: scale(1.02);
+    opacity: 0.9;
+  }
 }
-.heat-map-cell:hover {
-  transform: scale(1.05);
-}
+
 .cell-count {
-  font-size: 14px;
+  font-size: 16px;
   font-weight: bold;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.legend-label {
+  font-size: 12px;
 }
 </style>

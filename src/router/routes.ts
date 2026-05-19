@@ -34,7 +34,6 @@ const routes: RouteRecordRaw[] = [
     ],
   },
 
-  /*
   // ============================================
   // Main Application Routes (Authenticated)
   // ============================================
@@ -289,7 +288,7 @@ const routes: RouteRecordRaw[] = [
       {
         path: 'profile',
         name: 'Profile',
-        component: () => import('pages/auth/ProfilePage.vue'),
+        component: () => import('pages/user/ProfilePage.vue'),
         meta: { title: 'Profile', icon: 'person', showInMenu: true },
       },
 
@@ -318,8 +317,6 @@ const routes: RouteRecordRaw[] = [
       },
     ],
   },
-
-  */
 
   // ============================================
   // Error Routes

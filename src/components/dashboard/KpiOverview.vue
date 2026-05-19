@@ -1,11 +1,12 @@
 <template>
   <div class="kpi-overview">
     <div class="row q-col-gutter-md">
-      <div class="col-6 col-md-3" v-for="kpi in kpis" :key="kpi.label">
+      <div class="col-6 col-sm-4 col-md-3" v-for="kpi in computedKpis" :key="kpi.label">
         <q-card
           flat
           bordered
-          class="kpi-card cursor-pointer"
+          class="kpi-card"
+          :class="{ 'cursor-pointer': kpi.action }"
           @click="kpi.action ? $router.push(kpi.action) : null"
         >
           <q-card-section>
@@ -19,7 +20,7 @@
                 <div
                   v-if="kpi.trend !== undefined"
                   class="text-caption q-mt-xs"
-                  :class="kpi.trend >= 0 ? 'text-green' : 'text-red'"
+                  :class="kpi.trend >= 0 ? 'text-positive' : 'text-negative'"
                 >
                   <q-icon
                     :name="kpi.trend >= 0 ? 'trending_up' : 'trending_down'"
@@ -29,7 +30,9 @@
                   {{ Math.abs(kpi.trend) }}%
                 </div>
               </div>
-              <q-icon :name="kpi.icon" size="36px" :color="kpi.color" class="text-grey-30" />
+              <div class="col-auto">
+                <q-icon :name="kpi.icon" size="36px" :color="kpi.color" class="kpi-icon" />
+              </div>
             </div>
           </q-card-section>
         </q-card>
@@ -40,25 +43,35 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 
-interface KPI {
+const router = useRouter()
+
+export interface KPI {
   label: string
   value: number
   icon: string
-  color: string
+  color?: string
   format?: 'number' | 'currency' | 'percentage'
   trend?: number
   action?: string
 }
 
-const props = withDefaults(defineProps<{ kpis?: KPI[]; loading?: boolean }>(), {
-  kpis: () => [],
-  loading: false,
-})
+const props = withDefaults(
+  defineProps<{
+    kpis?: KPI[]
+    loading?: boolean
+  }>(),
+  {
+    kpis: () => [],
+    loading: false,
+  }
+)
 
-const kpis = computed(() =>
+const computedKpis = computed(() =>
   props.kpis.map((kpi) => ({
     ...kpi,
+    color: kpi.color || 'primary',
     formattedValue: formatValue(kpi.value, kpi.format),
   }))
 )
@@ -73,12 +86,15 @@ function formatValue(value: number, format?: string): string {
 <style lang="scss" scoped>
 .kpi-card {
   border-radius: 12px;
-  transition: transform 0.2s;
-}
-.kpi-card:hover {
-  transform: translateY(-2px);
-}
-.text-grey-30 {
-  opacity: 0.3;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+  }
+
+  .kpi-icon {
+    opacity: 0.3;
+  }
 }
 </style>

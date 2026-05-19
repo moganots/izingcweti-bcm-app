@@ -6,23 +6,25 @@
         <q-spinner-dots size="30px" color="primary" />
       </div>
       <div v-else-if="data.length === 0" class="text-center q-pa-md text-grey-7">
-        No compliance data available
+        <q-icon name="verified" size="40px" color="grey-4" class="q-mb-sm" />
+        <div>No compliance data available</div>
       </div>
       <div v-else>
-        <div class="row q-col-gutter-md">
+        <div class="row q-col-gutter-md q-mb-md">
           <div class="col-4" v-for="item in chartData" :key="item.label">
             <div class="text-center">
               <q-circular-progress
                 :value="item.percentage"
-                size="70px"
+                size="80px"
                 :color="item.color"
                 track-color="grey-3"
                 show-value
                 font-size="14px"
+                class="q-mb-sm"
               >
                 {{ item.percentage }}%
               </q-circular-progress>
-              <div class="text-caption q-mt-sm text-weight-medium">{{ item.label }}</div>
+              <div class="text-caption text-weight-medium">{{ item.label }}</div>
               <div class="text-caption text-grey-6">
                 {{ item.compliant }}/{{ item.total }} compliant
               </div>
@@ -36,7 +38,7 @@
             <q-linear-progress
               :value="item.percentage / 100"
               :color="item.color"
-              size="12px"
+              size="8px"
               rounded
               class="q-mb-xs"
             />
@@ -50,9 +52,15 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 
+export interface ComplianceData {
+  standard: string
+  compliant: number
+  total: number
+}
+
 const props = withDefaults(
   defineProps<{
-    data?: Array<{ standard: string; compliant: number; total: number }>
+    data?: ComplianceData[]
     loading?: boolean
   }>(),
   {
@@ -67,6 +75,7 @@ const chartData = computed(() => {
       { label: 'ISO 22301', compliant: 0, total: 0, percentage: 0, color: 'blue' },
       { label: 'NIST 800-34', compliant: 0, total: 0, percentage: 0, color: 'green' },
       { label: 'FFIEC', compliant: 0, total: 0, percentage: 0, color: 'orange' },
+      { label: 'COBIT 2019', compliant: 0, total: 0, percentage: 0, color: 'purple' },
     ]
   }
   return props.data.map((d) => ({
@@ -76,10 +85,10 @@ const chartData = computed(() => {
     percentage: d.total > 0 ? Math.round((d.compliant / d.total) * 100) : 0,
     color:
       d.total > 0 && d.compliant / d.total >= 0.8
-        ? 'green'
+        ? 'positive'
         : d.compliant / d.total >= 0.5
-        ? 'orange'
-        : 'red',
+        ? 'warning'
+        : 'negative',
   }))
 })
 </script>
