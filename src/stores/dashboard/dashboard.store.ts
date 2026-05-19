@@ -10,6 +10,13 @@ import type {
   RiskTrend,
 } from '../../types/bcm.types'
 
+// Helper function to round numbers
+function roundNumber(value: number, decimals: number = 0): number {
+  if (typeof value !== 'number' || isNaN(value)) return 0
+  const multiplier = Math.pow(10, decimals)
+  return Math.round(value * multiplier) / multiplier
+}
+
 const defaultKPIs: DashboardKPIs = {
   activeBCPs: 0,
   activeIncidents: 0,
@@ -32,7 +39,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const error = ref<string | null>(null)
   const lastRefreshed = ref<string | null>(null)
 
-  // Getters
+  // Getters with rounded values for display
   const hasActiveIncidents = computed(() => (kpis.value.activeIncidents || 0) > 0)
   const hasHighRisks = computed(() => (kpis.value.highRisks || 0) > 0)
   const hasPendingApprovals = computed(() => (kpis.value.pendingApprovals || 0) > 0)
@@ -44,12 +51,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
   )
 
   const complianceRatePercent = computed(() => {
-    const rate = kpis.value.complianceRate || 0
-    return `${Math.round(rate)}%`
+    const rate = roundNumber(kpis.value.complianceRate || 0, 0)
+    return `${rate}%`
   })
 
+  const roundedMaturityScore = computed(() => roundNumber(kpis.value.maturityScore || 0, 1))
+
   const maturityLevel = computed(() => {
-    const score = kpis.value.maturityScore || 0
+    const score = roundNumber(kpis.value.maturityScore || 0, 0)
     if (score >= 5) return { level: 5, label: 'Optimizing', color: 'green' }
     if (score >= 4) return { level: 4, label: 'Managed', color: 'blue' }
     if (score >= 3) return { level: 3, label: 'Defined', color: 'cyan' }
@@ -69,6 +78,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
     upcomingTests.value.filter((t) => t.date && new Date(t.date) < new Date())
   )
 
+  // Helper to round KPIs
+  const roundKPIs = (data: DashboardKPIs): DashboardKPIs => ({
+    activeBCPs: Math.round(data.activeBCPs ?? 0),
+    activeIncidents: Math.round(data.activeIncidents ?? 0),
+    highRisks: Math.round(data.highRisks ?? 0),
+    pendingApprovals: Math.round(data.pendingApprovals ?? 0),
+    complianceRate: roundNumber(data.complianceRate ?? 0, 0),
+    maturityScore: roundNumber(data.maturityScore ?? 0, 1),
+  })
+
   // Actions
   async function loadDashboard(): Promise<void> {
     isLoading.value = true
@@ -77,15 +96,15 @@ export const useDashboardStore = defineStore('dashboard', () => {
     try {
       const completeData = await dashboardService.getCompleteDashboard()
 
-      // Safely set KPIs with fallbacks
-      kpis.value = {
+      // Safely set KPIs with rounding
+      kpis.value = roundKPIs({
         activeBCPs: completeData.kpis?.activeBCPs ?? 0,
         activeIncidents: completeData.kpis?.activeIncidents ?? 0,
         highRisks: completeData.kpis?.highRisks ?? 0,
         pendingApprovals: completeData.kpis?.pendingApprovals ?? 0,
         complianceRate: completeData.kpis?.complianceRate ?? 0,
         maturityScore: completeData.kpis?.maturityScore ?? 0,
-      }
+      })
 
       // Transform recent activity to incidents (with safe navigation)
       recentIncidents.value = (completeData.recentActivity?.activities || [])
@@ -115,9 +134,32 @@ export const useDashboardStore = defineStore('dashboard', () => {
           },
         }))
 
-      pendingWorkflows.value = completeData.workflowSummary?.recent_workflows?.slice(0, 5) || []
-      complianceOverview.value = completeData.complianceSummary?.compliance_by_standard || []
-      riskTrends.value = completeData.riskSummary?.risk_trends || []
+      // Round workflow priorities
+      pendingWorkflows.value = (completeData.workflowSummary?.recent_workflows || [])
+        .slice(0, 5)
+        .map((wf) => ({
+          ...wf,
+          priority: Math.round(wf.priority ?? 0),
+        }))
+
+      complianceOverview.value = (completeData.complianceSummary?.compliance_by_standard || []).map(
+        (standard) => ({
+          ...standard,
+          compliant: Math.round(standard.compliant ?? 0),
+          partially: Math.round(standard.partially ?? 0),
+          nonCompliant: Math.round(standard.nonCompliant ?? 0),
+          total: Math.round(standard.total ?? 0),
+          complianceRate: roundNumber(standard.complianceRate ?? 0, 1),
+        })
+      )
+
+      riskTrends.value = (completeData.riskSummary?.risk_trends || []).map((trend) => ({
+        ...trend,
+        highRisks: Math.round(trend.high ?? 0),
+        mediumRisks: Math.round(trend.medium ?? 0),
+        lowRisks: Math.round(trend.low ?? 0),
+        total: Math.round(trend.total ?? 0),
+      }))
 
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
@@ -143,7 +185,13 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
     try {
       const trends = await dashboardService.getRiskTrends(period)
-      riskTrends.value = trends || []
+      riskTrends.value = (trends || []).map((trend) => ({
+        ...trend,
+        highRisks: Math.round(trend.high ?? 0),
+        mediumRisks: Math.round(trend.medium ?? 0),
+        lowRisks: Math.round(trend.low ?? 0),
+        total: Math.round(trend.total ?? 0),
+      }))
     } catch (err: any) {
       console.error('Failed to load risk trends:', err)
       error.value = err.message || 'Failed to load risk trends'
@@ -155,14 +203,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadKPIsOnly(): Promise<void> {
     try {
       const kpiData = await dashboardService.getKPIs()
-      kpis.value = {
+      kpis.value = roundKPIs({
         activeBCPs: kpiData.activeBCPs ?? 0,
         activeIncidents: kpiData.activeIncidents ?? 0,
         highRisks: kpiData.highRisks ?? 0,
         pendingApprovals: kpiData.pendingApprovals ?? 0,
         complianceRate: kpiData.complianceRate ?? 0,
         maturityScore: kpiData.maturityScore ?? 0,
-      }
+      })
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
       console.error('Failed to load KPIs:', err)
@@ -172,7 +220,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadRecentActivity(limit: number = 10): Promise<void> {
     try {
       const activity = await dashboardService.getRecentActivity(limit)
-      // Transform as needed - you can store this in state if needed
       console.log('Recent activity loaded:', activity)
     } catch (err: any) {
       console.error('Failed to load recent activity:', err)
@@ -182,7 +229,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadUpcomingTasks(limit: number = 10): Promise<void> {
     try {
       const tasks = await dashboardService.getUpcomingTasks(limit)
-      // Transform as needed - you can store this in state if needed
       console.log('Upcoming tasks loaded:', tasks)
     } catch (err: any) {
       console.error('Failed to load upcoming tasks:', err)
@@ -192,7 +238,10 @@ export const useDashboardStore = defineStore('dashboard', () => {
   async function loadPendingWorkflows(limit: number = 5): Promise<void> {
     try {
       const summary = await dashboardService.getWorkflowSummary()
-      pendingWorkflows.value = summary.recent_workflows?.slice(0, limit) || []
+      pendingWorkflows.value = (summary.recent_workflows || []).slice(0, limit).map((wf) => ({
+        ...wf,
+        priority: Math.round(wf.priority ?? 0),
+      }))
     } catch (err: any) {
       console.error('Failed to load pending workflows:', err)
     }
@@ -232,6 +281,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
     hasPendingApprovals,
     hasOverdueItems,
     complianceRatePercent,
+    roundedMaturityScore,
     maturityLevel,
     criticalIncidents,
     highPriorityWorkflows,
