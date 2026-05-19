@@ -447,12 +447,7 @@ function handleTabChange(tab: string): void {
       router.push({ name: 'Notifications' })
       break
     case 'sync':
-      if (isSyncing.value) return
-      handleSync()
-      // Reset tab after sync
-      setTimeout(() => {
-        if (route.name === 'Dashboard') selectedTab.value = 'home'
-      }, 100)
+      router.push({ name: 'SyncDashboard' })
       break
     case 'profile':
       router.push({ name: 'Profile' })
