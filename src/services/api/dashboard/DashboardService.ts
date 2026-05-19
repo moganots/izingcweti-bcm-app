@@ -2,9 +2,6 @@ import { BaseService } from '../BaseService'
 import { API_ENDPOINTS } from '../../../utils/constants'
 import { useAuthStore } from '../../../stores/auth/auth.store'
 import type {
-  DashboardKPIs,
-  DashboardIncident,
-  DashboardTest,
   DashboardWorkflow,
   ComplianceOverview,
   RiskTrend,
@@ -12,21 +9,17 @@ import type {
   IncidentTrend,
 } from './../../../types'
 
-/**
- * Dashboard Overview Response
- */
-export interface DashboardOverview {
-  kpis: DashboardKPIs
-  recent_incidents: DashboardIncident[]
-  upcoming_tests: DashboardTest[]
-  pending_workflows: DashboardWorkflow[]
-  compliance_overview: ComplianceOverview[]
+// Define response types matching backend
+export interface KpiMetricsResponse {
+  activeBCPs: number
+  activeIncidents: number
+  highRisks: number
+  pendingApprovals: number
+  complianceRate: number
+  maturityScore: number
 }
 
-/**
- * Risk Summary Response
- */
-export interface RiskSummary {
+export interface RiskSummaryResponse {
   total_risks: number
   critical_risks: number
   high_risks: number
@@ -36,10 +29,7 @@ export interface RiskSummary {
   top_risk_categories: Array<{ category: string; count: number; percentage: number }>
 }
 
-/**
- * BCM Summary Response
- */
-export interface BcmSummary {
+export interface BcmSummaryResponse {
   total_bcp_plans: number
   active_plans: number
   draft_plans: number
@@ -53,10 +43,7 @@ export interface BcmSummary {
   exercise_tests_pending: number
 }
 
-/**
- * Incident Summary Response
- */
-export interface IncidentSummary {
+export interface IncidentSummaryResponse {
   total_incidents: number
   active_incidents: number
   resolved_incidents: number
@@ -69,10 +56,7 @@ export interface IncidentSummary {
   average_resolution_time_hours: number
 }
 
-/**
- * Compliance Summary Response
- */
-export interface ComplianceSummary {
+export interface ComplianceSummaryResponse {
   overall_compliance_rate: number
   compliant_count: number
   partially_compliant_count: number
@@ -82,10 +66,7 @@ export interface ComplianceSummary {
   compliance_by_standard: ComplianceOverview[]
 }
 
-/**
- * Workflow Summary Response
- */
-export interface WorkflowSummary {
+export interface WorkflowSummaryResponse {
   total_workflows: number
   pending_approvals: number
   in_review: number
@@ -96,10 +77,7 @@ export interface WorkflowSummary {
   recent_workflows: DashboardWorkflow[]
 }
 
-/**
- * Recent Activity Response
- */
-export interface RecentActivity {
+export interface RecentActivityResponse {
   activities: Array<{
     id: string
     action: string
@@ -112,10 +90,7 @@ export interface RecentActivity {
   }>
 }
 
-/**
- * Upcoming Tasks Response
- */
-export interface UpcomingTasks {
+export interface UpcomingTasksResponse {
   tasks: Array<{
     id: string
     title: string
@@ -128,63 +103,44 @@ export interface UpcomingTasks {
 }
 
 /**
- * KPI Metrics Response
- */
-export interface KpiMetrics {
-  activeBCPs: number
-  activeIncidents: number
-  highRisks: number
-  pendingApprovals: number
-  complianceRate: number
-  maturityScore: number
-}
-
-/**
  * Dashboard API Service
  */
 export class DashboardService extends BaseService {
   /**
-   * Get complete dashboard overview
+   * Get dashboard KPIs
    */
-  async getOverview(organisationId?: string): Promise<DashboardOverview> {
+  async getKPIs(organisationId?: string): Promise<KpiMetricsResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<DashboardOverview>(API_ENDPOINTS.DASHBOARD.OVERVIEW(orgId))
-    return this.extractData(response)
-  }
-
-  /**
-   * Get dashboard KPIs (simplified version)
-   */
-  async getKPIs(organisationId?: string): Promise<KpiMetrics> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<KpiMetrics>(API_ENDPOINTS.DASHBOARD.KPI_METRICS(orgId))
+    const response = await this.get<KpiMetricsResponse>(API_ENDPOINTS.DASHBOARD.KPI_METRICS(orgId))
     return this.extractData(response)
   }
 
   /**
    * Get risk summary for dashboard
    */
-  async getRiskSummary(organisationId?: string): Promise<RiskSummary> {
+  async getRiskSummary(organisationId?: string): Promise<RiskSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<RiskSummary>(API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(orgId))
+    const response = await this.get<RiskSummaryResponse>(
+      API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(orgId)
+    )
     return this.extractData(response)
   }
 
   /**
    * Get BCM summary for dashboard
    */
-  async getBcmSummary(organisationId?: string): Promise<BcmSummary> {
+  async getBcmSummary(organisationId?: string): Promise<BcmSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<BcmSummary>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(orgId))
+    const response = await this.get<BcmSummaryResponse>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(orgId))
     return this.extractData(response)
   }
 
   /**
    * Get incident summary for dashboard
    */
-  async getIncidentSummary(organisationId?: string): Promise<IncidentSummary> {
+  async getIncidentSummary(organisationId?: string): Promise<IncidentSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<IncidentSummary>(
+    const response = await this.get<IncidentSummaryResponse>(
       API_ENDPOINTS.DASHBOARD.INCIDENT_SUMMARY(orgId)
     )
     return this.extractData(response)
@@ -193,9 +149,9 @@ export class DashboardService extends BaseService {
   /**
    * Get compliance summary for dashboard
    */
-  async getComplianceSummary(organisationId?: string): Promise<ComplianceSummary> {
+  async getComplianceSummary(organisationId?: string): Promise<ComplianceSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<ComplianceSummary>(
+    const response = await this.get<ComplianceSummaryResponse>(
       API_ENDPOINTS.DASHBOARD.COMPLIANCE_SUMMARY(orgId)
     )
     return this.extractData(response)
@@ -204,97 +160,24 @@ export class DashboardService extends BaseService {
   /**
    * Get workflow summary for dashboard
    */
-  async getWorkflowSummary(organisationId?: string): Promise<WorkflowSummary> {
+  async getWorkflowSummary(organisationId?: string): Promise<WorkflowSummaryResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<WorkflowSummary>(
+    const response = await this.get<WorkflowSummaryResponse>(
       API_ENDPOINTS.DASHBOARD.WORKFLOW_SUMMARY(orgId)
     )
     return this.extractData(response)
   }
 
   /**
-   * Get recent incidents for dashboard
-   */
-  async getRecentIncidents(
-    limit: number = 5,
-    organisationId?: string
-  ): Promise<DashboardIncident[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<DashboardIncident[]>(
-      `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?type=incident&limit=${limit}`
-    )
-    return this.extractData(response) || []
-  }
-
-  /**
-   * Get upcoming tests for dashboard
-   */
-  async getUpcomingTests(limit: number = 5, organisationId?: string): Promise<DashboardTest[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<DashboardTest[]>(
-      `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?type=test&limit=${limit}`
-    )
-    return this.extractData(response) || []
-  }
-
-  /**
-   * Get pending workflows for dashboard
-   */
-  async getPendingWorkflows(
-    limit: number = 5,
-    organisationId?: string
-  ): Promise<DashboardWorkflow[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const summary = await this.getWorkflowSummary(orgId)
-    return (summary.recent_workflows || []).slice(0, limit)
-  }
-
-  /**
-   * Get compliance overview
-   */
-  async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const summary = await this.getComplianceSummary(orgId)
-    return summary.compliance_by_standard || []
-  }
-
-  /**
-   * Get risk trends
-   */
-  async getRiskTrends(_period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const summary = await this.getRiskSummary(orgId)
-    return summary.risk_trends || []
-  }
-
-  /**
-   * Get BCM maturity progress
-   */
-  async getMaturityProgress(organisationId?: string): Promise<MaturityProgress> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const summary = await this.getBcmSummary(orgId)
-    return summary.maturity_progress || { overall: 0, domains: [], target: 0, progress: 0 }
-  }
-
-  /**
-   * Get incident trends
-   */
-  async getIncidentTrends(
-    _period: string = 'month',
-    organisationId?: string
-  ): Promise<IncidentTrend[]> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const summary = await this.getIncidentSummary(orgId)
-    return summary.incident_trends || []
-  }
-
-  /**
    * Get recent activity feed
    */
-  async getRecentActivity(limit: number = 10, organisationId?: string): Promise<RecentActivity> {
+  async getRecentActivity(
+    limit: number = 10,
+    organisationId?: string
+  ): Promise<RecentActivityResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<RecentActivity>(
-      `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?limit=${limit}`
+    const response = await this.get<RecentActivityResponse>(
+      API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)
     )
     return this.extractData(response)
   }
@@ -302,26 +185,49 @@ export class DashboardService extends BaseService {
   /**
    * Get upcoming tasks
    */
-  async getUpcomingTasks(limit: number = 10, organisationId?: string): Promise<UpcomingTasks> {
+  async getUpcomingTasks(
+    limit: number = 10,
+    organisationId?: string
+  ): Promise<UpcomingTasksResponse> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<UpcomingTasks>(
-      `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?limit=${limit}`
+    const response = await this.get<UpcomingTasksResponse>(
+      API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)
     )
     return this.extractData(response)
+  }
+
+  /**
+   * Get risk trends
+   */
+  async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
+    const orgId = organisationId || this.getCurrentOrganisationId()
+    const response = await this.get<RiskTrend[]>(API_ENDPOINTS.DASHBOARD.RISK_TRENDS(orgId))
+    return this.extractData(response) || []
+  }
+
+  /**
+   * Get compliance overview
+   */
+  async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
+    const orgId = organisationId || this.getCurrentOrganisationId()
+    const response = await this.get<ComplianceOverview[]>(
+      API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(orgId)
+    )
+    return this.extractData(response) || []
   }
 
   /**
    * Get complete dashboard data in one call
    */
   async getCompleteDashboard(organisationId?: string): Promise<{
-    kpis: KpiMetrics
-    riskSummary: RiskSummary
-    bcmSummary: BcmSummary
-    incidentSummary: IncidentSummary
-    complianceSummary: ComplianceSummary
-    workflowSummary: WorkflowSummary
-    recentActivity: RecentActivity
-    upcomingTasks: UpcomingTasks
+    kpis: KpiMetricsResponse
+    riskSummary: RiskSummaryResponse
+    bcmSummary: BcmSummaryResponse
+    incidentSummary: IncidentSummaryResponse
+    complianceSummary: ComplianceSummaryResponse
+    workflowSummary: WorkflowSummaryResponse
+    recentActivity: RecentActivityResponse
+    upcomingTasks: UpcomingTasksResponse
   }> {
     const orgId = organisationId || this.getCurrentOrganisationId()
 
@@ -355,18 +261,6 @@ export class DashboardService extends BaseService {
       recentActivity,
       upcomingTasks,
     }
-  }
-
-  /**
-   * Export dashboard data
-   */
-  async exportDashboard(organisationId?: string, format: 'pdf' | 'csv' = 'pdf'): Promise<void> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    await this.download(
-      API_ENDPOINTS.DASHBOARD.EXPORT(orgId),
-      `dashboard_export_${new Date().toISOString().split('T')[0]}.${format}`,
-      { params: { format } }
-    )
   }
 
   // ============================================

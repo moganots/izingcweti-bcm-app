@@ -20,9 +20,7 @@ const defaultKPIs: DashboardKPIs = {
 }
 
 export const useDashboardStore = defineStore('dashboard', () => {
-  // ============================================
   // State
-  // ============================================
   const kpis = ref<DashboardKPIs>({ ...defaultKPIs })
   const recentIncidents = ref<DashboardIncident[]>([])
   const upcomingTests = ref<DashboardTest[]>([])
@@ -34,9 +32,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
   const error = ref<string | null>(null)
   const lastRefreshed = ref<string | null>(null)
 
-  // ============================================
   // Getters
-  // ============================================
   const hasActiveIncidents = computed(() => (kpis.value.activeIncidents || 0) > 0)
   const hasHighRisks = computed(() => (kpis.value.highRisks || 0) > 0)
   const hasPendingApprovals = computed(() => (kpis.value.pendingApprovals || 0) > 0)
@@ -49,7 +45,7 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   const complianceRatePercent = computed(() => {
     const rate = kpis.value.complianceRate || 0
-    return `${Math.round(rate * 100)}%`
+    return `${Math.round(rate)}%`
   })
 
   const maturityLevel = computed(() => {
@@ -73,38 +69,54 @@ export const useDashboardStore = defineStore('dashboard', () => {
     upcomingTests.value.filter((t) => t.date && new Date(t.date) < new Date())
   )
 
-  // ============================================
   // Actions
-  // ============================================
-
   async function loadDashboard(): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      const [kpiData, incidents, tests, workflows, compliance, trends] = await Promise.all([
-        dashboardService.getKPIs(),
-        dashboardService.getRecentIncidents(5),
-        dashboardService.getUpcomingTests(5),
-        dashboardService.getPendingWorkflows(5),
-        dashboardService.getComplianceOverview(),
-        dashboardService.getRiskTrends('month'),
-      ])
+      const completeData = await dashboardService.getCompleteDashboard()
 
       kpis.value = {
-        activeBCPs: kpiData.activeBCPs ?? 0,
-        activeIncidents: kpiData.activeIncidents ?? 0,
-        highRisks: kpiData.highRisks ?? 0,
-        pendingApprovals: kpiData.pendingApprovals ?? 0,
-        complianceRate: kpiData.complianceRate ?? 0,
-        maturityScore: kpiData.maturityScore ?? 0,
+        activeBCPs: completeData.kpis.activeBCPs ?? 0,
+        activeIncidents: completeData.kpis.activeIncidents ?? 0,
+        highRisks: completeData.kpis.highRisks ?? 0,
+        pendingApprovals: completeData.kpis.pendingApprovals ?? 0,
+        complianceRate: completeData.kpis.complianceRate ?? 0,
+        maturityScore: completeData.kpis.maturityScore ?? 0,
       }
 
-      recentIncidents.value = incidents || []
-      upcomingTests.value = tests || []
-      pendingWorkflows.value = workflows || []
-      complianceOverview.value = compliance || []
-      riskTrends.value = trends || []
+      // Transform recent activity to incidents
+      recentIncidents.value = completeData.recentActivity.activities
+        .filter((a) => a.entity_type === 'Incident')
+        .slice(0, 5)
+        .map((a) => ({
+          uuid: a.id,
+          incident_severity: a.action,
+          root_cause: a.entity_name,
+          declared_at: a.timestamp,
+          closed_at: null,
+          organisation: { uuid: '', name: '' },
+        }))
+
+      // Extract tests from upcoming tasks
+      upcomingTests.value = completeData.upcomingTasks.tasks
+        .filter((t) => t.type === 'BCP_REVIEW')
+        .slice(0, 5)
+        .map((t) => ({
+          uuid: t.id,
+          exercise_test_type: t.type,
+          date: t.due_date,
+          passed: false,
+          business_continuity_plan: {
+            uuid: t.id,
+            critical_function: { name: t.title },
+          },
+        }))
+
+      pendingWorkflows.value = completeData.workflowSummary.recent_workflows?.slice(0, 5) || []
+      complianceOverview.value = completeData.complianceSummary.compliance_by_standard || []
+      riskTrends.value = completeData.riskSummary.risk_trends || []
 
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
@@ -124,9 +136,6 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
-  /**
-   * Load risk trends for a specific period
-   */
   async function loadRiskTrends(period: string = 'month'): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -159,28 +168,28 @@ export const useDashboardStore = defineStore('dashboard', () => {
     }
   }
 
-  async function loadRecentIncidents(limit: number = 5): Promise<void> {
+  async function loadRecentActivity(limit: number = 10): Promise<void> {
     try {
-      const incidents = await dashboardService.getRecentIncidents(limit)
-      recentIncidents.value = incidents || []
+      const activity = await dashboardService.getRecentActivity(limit)
+      // Transform as needed
     } catch (err: any) {
-      console.error('Failed to load recent incidents:', err)
+      console.error('Failed to load recent activity:', err)
     }
   }
 
-  async function loadUpcomingTests(limit: number = 5): Promise<void> {
+  async function loadUpcomingTasks(limit: number = 10): Promise<void> {
     try {
-      const tests = await dashboardService.getUpcomingTests(limit)
-      upcomingTests.value = tests || []
+      const tasks = await dashboardService.getUpcomingTasks(limit)
+      // Transform as needed
     } catch (err: any) {
-      console.error('Failed to load upcoming tests:', err)
+      console.error('Failed to load upcoming tasks:', err)
     }
   }
 
   async function loadPendingWorkflows(limit: number = 5): Promise<void> {
     try {
-      const workflows = await dashboardService.getPendingWorkflows(limit)
-      pendingWorkflows.value = workflows || []
+      const summary = await dashboardService.getWorkflowSummary()
+      pendingWorkflows.value = summary.recent_workflows?.slice(0, limit) || []
     } catch (err: any) {
       console.error('Failed to load pending workflows:', err)
     }
@@ -230,8 +239,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
     refresh,
     loadRiskTrends,
     loadKPIsOnly,
-    loadRecentIncidents,
-    loadUpcomingTests,
+    loadRecentActivity,
+    loadUpcomingTasks,
     loadPendingWorkflows,
     clearDashboard,
     resetError,

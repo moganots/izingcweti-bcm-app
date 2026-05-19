@@ -65,9 +65,11 @@ export const API_ENDPOINTS = {
     BUSINESS_UNITS: {
       BASE: '/business-units',
       BY_ID: (id: string) => `/business-units/${id}`,
-      CRITICAL: (organisationId: string) => `/organisations/${organisationId}/business-units/critical`,
+      CRITICAL: (organisationId: string) =>
+        `/organisations/${organisationId}/business-units/critical`,
       SEARCH: '/business-units/search',
-      BULK_IMPORT: (organisationId: string) => `/organisations/${organisationId}/business-units/bulk-import`,
+      BULK_IMPORT: (organisationId: string) =>
+        `/organisations/${organisationId}/business-units/bulk-import`,
       EXPORT: (organisationId: string) => `/organisations/${organisationId}/business-units/export`,
     },
 
@@ -75,9 +77,11 @@ export const API_ENDPOINTS = {
     DEPARTMENTS: {
       BASE: '/departments',
       BY_ID: (id: string) => `/departments/${id}`,
-      WITHOUT_BIA: (organisationId: string) => `/organisations/${organisationId}/departments/without-bia`,
+      WITHOUT_BIA: (organisationId: string) =>
+        `/organisations/${organisationId}/departments/without-bia`,
       SEARCH: '/departments/search',
-      BULK_IMPORT: (businessUnitId: string) => `/business-units/${businessUnitId}/departments/bulk-import`,
+      BULK_IMPORT: (businessUnitId: string) =>
+        `/business-units/${businessUnitId}/departments/bulk-import`,
       EXPORT: (businessUnitId: string) => `/business-units/${businessUnitId}/departments/export`,
     },
   },
@@ -113,7 +117,8 @@ export const API_ENDPOINTS = {
       BASE: '/critical-functions',
       BY_ID: (id: string) => `/critical-functions/${id}`,
       BY_DEPARTMENT: (departmentId: string) => `/departments/${departmentId}/critical-functions`,
-      BY_ORGANISATION: (organisationId: string) => `/organisations/${organisationId}/critical-functions`,
+      BY_ORGANISATION: (organisationId: string) =>
+        `/organisations/${organisationId}/critical-functions`,
       SEARCH: '/critical-functions/search',
     },
 
@@ -199,7 +204,8 @@ export const API_ENDPOINTS = {
     ESCALATE: (id: string) => `/workflows/${id}/escalate`,
     REASSIGN: (id: string) => `/workflows/${id}/reassign`,
     ADD_COMMENT: (id: string) => `/workflows/${id}/comments`,
-    BY_ENTITY: (entityType: string, entityId: string) => `/workflows/entity/${entityType}/${entityId}`,
+    BY_ENTITY: (entityType: string, entityId: string) =>
+      `/workflows/entity/${entityType}/${entityId}`,
     SEARCH: '/workflows/search',
     EXPORT: '/workflows/export',
   },
@@ -228,7 +234,8 @@ export const API_ENDPOINTS = {
     BY_ID: (id: string) => `/audit-logs/${id}`,
     BY_USER: (userId: string) => `/audit-logs/user/${userId}`,
     BY_ORGANISATION: (organisationId: string) => `/audit-logs/organisation/${organisationId}`,
-    BY_ENTITY: (entityType: string, entityId: string) => `/audit-logs/entity/${entityType}/${entityId}`,
+    BY_ENTITY: (entityType: string, entityId: string) =>
+      `/audit-logs/entity/${entityType}/${entityId}`,
     STATS: '/audit-logs/stats',
     EXPORT: '/audit-logs/export',
     RETENTION_POLICIES: '/audit-logs/retention-policies',
@@ -264,10 +271,12 @@ export const API_ENDPOINTS = {
     ORGANISATION: (organisationId: string) => `/settings/organisation/${organisationId}`,
     SYSTEM_DEFAULTS: '/settings/system-defaults',
     RESET_USER: (userId: string) => `/settings/user/${userId}/reset`,
-    RESET_ORGANISATION: (organisationId: string) => `/settings/organisation/${organisationId}/reset`,
+    RESET_ORGANISATION: (organisationId: string) =>
+      `/settings/organisation/${organisationId}/reset`,
     PREFERENCE: (userId: string, key: string) => `/settings/user/${userId}/preference/${key}`,
     PREFERENCES_BULK: (userId: string) => `/settings/user/${userId}/preferences/bulk`,
-    NOTIFICATION_SETTINGS: (userId: string, type: string) => `/settings/user/${userId}/notifications/${type}`,
+    NOTIFICATION_SETTINGS: (userId: string, type: string) =>
+      `/settings/user/${userId}/notifications/${type}`,
     NOTIFICATION_SETTINGS_BULK: (userId: string) => `/settings/user/${userId}/notifications/bulk`,
     THEME_SETTINGS: (userId: string) => `/settings/user/${userId}/theme`,
     LANGUAGE_SETTINGS: (userId: string) => `/settings/user/${userId}/language`,
@@ -340,16 +349,16 @@ export const API_ENDPOINTS = {
   // Dashboard Endpoints
   // ============================================
   DASHBOARD: {
-    OVERVIEW: (organisationId: string) => `/dashboard/${organisationId}/overview`,
-    RISK_SUMMARY: (organisationId: string) => `/dashboard/${organisationId}/risk-summary`,
-    BCM_SUMMARY: (organisationId: string) => `/dashboard/${organisationId}/bcm-summary`,
-    INCIDENT_SUMMARY: (organisationId: string) => `/dashboard/${organisationId}/incident-summary`,
-    COMPLIANCE_SUMMARY: (organisationId: string) => `/dashboard/${organisationId}/compliance-summary`,
-    WORKFLOW_SUMMARY: (organisationId: string) => `/dashboard/${organisationId}/workflow-summary`,
-    RECENT_ACTIVITY: (organisationId: string) => `/dashboard/${organisationId}/recent-activity`,
-    UPCOMING_TASKS: (organisationId: string) => `/dashboard/${organisationId}/upcoming-tasks`,
-    KPI_METRICS: (organisationId: string) => `/dashboard/${organisationId}/kpi-metrics`,
-    EXPORT: (organisationId: string) => `/dashboard/${organisationId}/export`,
+    KPI_METRICS: (orgId: string) => `/dashboard/${orgId}/kpi-metrics`,
+    RISK_SUMMARY: (orgId: string) => `/dashboard/${orgId}/risk-summary`,
+    BCM_SUMMARY: (orgId: string) => `/dashboard/${orgId}/bcm-summary`,
+    INCIDENT_SUMMARY: (orgId: string) => `/dashboard/${orgId}/incident-summary`,
+    COMPLIANCE_SUMMARY: (orgId: string) => `/dashboard/${orgId}/compliance-summary`,
+    WORKFLOW_SUMMARY: (orgId: string) => `/dashboard/${orgId}/workflow-summary`,
+    RECENT_ACTIVITY: (orgId: string) => `/dashboard/${orgId}/recent-activity`,
+    UPCOMING_TASKS: (orgId: string) => `/dashboard/${orgId}/upcoming-tasks`,
+    RISK_TRENDS: (orgId: string) => `/dashboard/${orgId}/risk-trends`,
+    COMPLIANCE_OVERVIEW: (orgId: string) => `/dashboard/${orgId}/compliance-overview`,
   },
 
   // ============================================
@@ -388,9 +397,11 @@ export const API_ENDPOINTS = {
     CERTIFICATE: (courseId: string) => `/training/courses/${courseId}/certificate`,
     STATS: '/training/stats',
     MATERIALS: (courseId: string) => `/training/courses/${courseId}/materials`,
-    MATERIAL_BY_ID: (courseId: string, materialId: string) => `/training/courses/${courseId}/materials/${materialId}`,
+    MATERIAL_BY_ID: (courseId: string, materialId: string) =>
+      `/training/courses/${courseId}/materials/${materialId}`,
     QUIZZES: (courseId: string) => `/training/courses/${courseId}/quizzes`,
-    SUBMIT_QUIZ: (courseId: string, quizId: string) => `/training/courses/${courseId}/quizzes/${quizId}/submit`,
+    SUBMIT_QUIZ: (courseId: string, quizId: string) =>
+      `/training/courses/${courseId}/quizzes/${quizId}/submit`,
   },
 
   // ============================================
@@ -603,7 +614,8 @@ export const API_ENDPOINTS = {
       TASK_BY_ID: (id: string) => `/services/workflow-service/tasks/${id}`,
       COMPLETE_TASK: (taskId: string) => `/services/workflow-service/tasks/${taskId}/complete`,
       CLAIM_TASK: (taskId: string) => `/services/workflow-service/tasks/${taskId}/claim`,
-      VARIABLES: (instanceId: string) => `/services/workflow-service/instances/${instanceId}/variables`,
+      VARIABLES: (instanceId: string) =>
+        `/services/workflow-service/instances/${instanceId}/variables`,
       HISTORY: '/services/workflow-service/history',
     },
 
