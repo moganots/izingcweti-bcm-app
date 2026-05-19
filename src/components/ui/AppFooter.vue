@@ -28,9 +28,11 @@
   <q-dialog
     v-model="menuDialogOpen"
     position="bottom"
-    full-width
     transition-show="slide-up"
     transition-hide="slide-down"
+    :maximized="false"
+    full-width
+    @update:model-value="handleDialogClose"
   >
     <q-card class="menu-dialog-card" :class="{ 'bg-dark text-white': isDarkMode }">
       <q-card-section class="q-pa-sm">
@@ -51,7 +53,7 @@
       <q-separator />
 
       <q-card-section class="q-pa-none">
-        <q-scroll-area style="height: 60vh; max-height: 500px">
+        <q-scroll-area style="height: 50vh; max-height: 400px">
           <q-list padding>
             <!-- User Info Section -->
             <div class="user-info-section q-pa-md bg-grey-2" :class="{ 'bg-grey-9': isDarkMode }">
@@ -249,6 +251,7 @@
             :active="route.name === item.name"
             exact
             active-class="text-primary"
+            @click="closeDrawer"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" size="20px" />
@@ -273,6 +276,7 @@
             :active="route.name === item.name"
             exact
             active-class="text-primary"
+            @click="closeDrawer"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" />
@@ -287,14 +291,28 @@
           System
         </q-item-label>
 
-        <q-item clickable v-ripple :to="{ name: 'Documents' }" exact active-class="text-primary">
+        <q-item
+          clickable
+          v-ripple
+          :to="{ name: 'Documents' }"
+          exact
+          active-class="text-primary"
+          @click="closeDrawer"
+        >
           <q-item-section avatar>
             <q-icon name="folder" />
           </q-item-section>
           <q-item-section>Documents</q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple :to="{ name: 'Settings' }" exact active-class="text-primary">
+        <q-item
+          clickable
+          v-ripple
+          :to="{ name: 'Settings' }"
+          exact
+          active-class="text-primary"
+          @click="closeDrawer"
+        >
           <q-item-section avatar>
             <q-icon name="settings" />
           </q-item-section>
@@ -303,7 +321,7 @@
 
         <q-separator spaced />
 
-        <q-item clickable v-ripple @click="handleSyncFromMenu">
+        <q-item clickable v-ripple @click="handleSyncFromDrawer">
           <q-item-section avatar>
             <q-icon
               name="sync"
@@ -345,6 +363,11 @@ interface MenuGroup {
   label: string
   items: MenuItem[]
 }
+
+// Define emits
+const emit = defineEmits<{
+  toggleDrawer: []
+}>()
 
 const router = useRouter()
 const route = useRoute()
@@ -409,7 +432,8 @@ watch(
     else if (newName === 'Notifications') selectedTab.value = 'notifications'
     else if (newName === 'Profile') selectedTab.value = 'profile'
     else if (newName === 'SyncDashboard') selectedTab.value = 'sync'
-    else selectedTab.value = 'menu'
+    // Don't change selectedTab to 'menu' for other routes
+    // Keep the current selection
   },
   { immediate: true }
 )
@@ -425,6 +449,10 @@ function handleTabChange(tab: string): void {
     case 'sync':
       if (isSyncing.value) return
       handleSync()
+      // Reset tab after sync
+      setTimeout(() => {
+        if (route.name === 'Dashboard') selectedTab.value = 'home'
+      }, 100)
       break
     case 'profile':
       router.push({ name: 'Profile' })
@@ -450,6 +478,12 @@ async function handleSyncFromMenu(): Promise<void> {
   closeMenu()
 }
 
+async function handleSyncFromDrawer(): Promise<void> {
+  if (syncStore.isSyncing) return
+  await handleSync()
+  closeDrawer()
+}
+
 function openMenu(): void {
   if (window.innerWidth < 1024) {
     menuDialogOpen.value = true
@@ -460,18 +494,47 @@ function openMenu(): void {
 
 function closeMenu(): void {
   menuDialogOpen.value = false
+  // Don't reset selectedTab here
+}
+
+function closeDrawer(): void {
   drawerOpen.value = false
-  selectedTab.value = 'home'
+  // Don't reset selectedTab here
+}
+
+function handleDialogClose(val: boolean): void {
+  if (!val) {
+    // Dialog was closed, reset selectedTab to home or current route
+    if (route.name === 'Dashboard') {
+      selectedTab.value = 'home'
+    } else if (route.name === 'Notifications') {
+      selectedTab.value = 'notifications'
+    } else if (route.name === 'Profile') {
+      selectedTab.value = 'profile'
+    } else {
+      selectedTab.value = 'home'
+    }
+  }
 }
 
 function handleDrawerChange(val: boolean): void {
   if (!val) {
-    selectedTab.value = 'home'
+    // Drawer was closed, reset selectedTab to home or current route
+    if (route.name === 'Dashboard') {
+      selectedTab.value = 'home'
+    } else if (route.name === 'Notifications') {
+      selectedTab.value = 'notifications'
+    } else if (route.name === 'Profile') {
+      selectedTab.value = 'profile'
+    } else {
+      selectedTab.value = 'home'
+    }
   }
 }
 
 async function handleLogout(): Promise<void> {
   closeMenu()
+  closeDrawer()
   $q.dialog({
     title: 'Logout',
     message: 'Are you sure you want to logout?',
@@ -498,6 +561,27 @@ function formatTimeAgo(date: string | null): string {
   border-radius: 20px 20px 0 0;
   max-width: 500px;
   margin: 0 auto;
+  margin-bottom: 0;
+}
+
+// Position the dialog just above the footer
+:deep(.q-dialog__inner--bottom) {
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 56px; // Height of the footer
+}
+
+// Adjust for different footer heights
+@media (max-width: 600px) {
+  :deep(.q-dialog__inner--bottom) {
+    padding-bottom: 56px; // Mobile footer height
+  }
+}
+
+@media (min-width: 601px) and (max-width: 1023px) {
+  :deep(.q-dialog__inner--bottom) {
+    padding-bottom: 60px; // Tablet footer height (tabs with labels)
+  }
 }
 
 .user-info-section {
