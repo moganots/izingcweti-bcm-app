@@ -13,7 +13,7 @@ export default defineConfig((/* ctx */) => {
     // https://v2.quasar.dev/quasar-cli-vite/boot-files
     boot: [
       'pinia', // Pinia store setup (FIRST - stores need to be available)
-      'quasar', // Quasar plugins configuration
+      //'quasar', // Quasar plugins configuration
       'i18n', // Internationalization
       'axios', // HTTP client
       'dexie', // Local database (IndexedDB)
@@ -148,9 +148,16 @@ export default defineConfig((/* ctx */) => {
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#devserver
     // Full list of options: https://v2.quasar.dev/quasar-cli-vite/quasar-config-js#devServer
     devServer: {
-      open: true,
       port: 9811,
-      https: false,
+      open: true,
+      proxy: {
+        '/api': {
+          target: 'http://localhost:9810',
+          changeOrigin: true,
+          secure: false,
+          ws: true,
+        }
+      }
     },
 
     // https://v2.quasar.dev/quasar-cli-vite/quasar-config-file#framework

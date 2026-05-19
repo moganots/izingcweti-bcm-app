@@ -2,7 +2,7 @@ import { CapacitorConfig } from '@capacitor/cli'
 
 const config: CapacitorConfig = {
     appId: 'com.izingcweti.bcm.app',
-    appName: 'Izingcweti BCM',
+    appName: 'Izingcweti BCM App',
     webDir: 'dist/spa',
     server: {
         androidScheme: 'https',

@@ -1,6 +1,18 @@
-import { apiClient } from '../../boot/axios'
 import type { AxiosRequestConfig } from 'axios'
+import { apiClient } from './../../boot/axios'
 import type { ApiResponse, PaginatedResponse, PaginationParams } from './../../types'
+
+/**
+ * Raw API response format from backend
+ */
+interface RawApiResponse<T = any> {
+  status: string
+  message?: string
+  data: T
+  requestId?: string
+  timestamp?: string
+  apiVersion?: string
+}
 
 /**
  * Base API Service
@@ -96,7 +108,7 @@ export abstract class BaseService {
         'Content-Type': 'multipart/form-data',
         ...config?.headers,
       },
-      onUploadProgress: (progressEvent) => {
+      onUploadProgress: (progressEvent: any) => {
         if (onProgress && progressEvent.total) {
           const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
           onProgress(progress)
@@ -132,12 +144,20 @@ export abstract class BaseService {
 
   /**
    * Extract data from API response
+   * Handles both formats: { success: true, data } and { status: 'success', data }
    */
-  protected extractData<T>(response: ApiResponse<T>): T {
-    if (!response.success) {
-      throw new Error(response.message || 'Request failed')
+  protected extractData<T>(response: ApiResponse<T> | RawApiResponse<T>): T {
+    // Check for the raw API response format (status: 'success')
+    if ('status' in response && response.status === 'success') {
+      return (response as RawApiResponse<T>).data
     }
-    return response.data
+    
+    // Check for the standard format (success: true)
+    if ('success' in response && response.success === true) {
+      return (response as ApiResponse<T>).data
+    }
+    
+    throw new Error((response as any).message || 'Request failed')
   }
 
   /**

@@ -1,26 +1,78 @@
-// Quasar SCSS (& Sass) Variables
 // --------------------------------------------------
-// To customize the look and feel of this app, you can override
-// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
+// Izingcweti BCM - Brand Color Variables
+// Based on the Izingcweti logo and brand identity
+// --------------------------------------------------
 
-// Check documentation for full list of Quasar variables
+// Primary Brand Colors (Based on typical South African corporate + agricultural tones)
+$primary   : #1B5E20;  // Deep Forest Green - Trust, Growth, Stability
+$primary-light: #4CAF50;  // Vibrant Green - Energy, Freshness
+$primary-dark : #0D3B12;  // Dark Forest - Authority, Depth
 
-// Your own variables (that are declared here) and Quasar's own
-// ones will be available out of the box in your .vue/.scss/.sass files
+// Secondary Colors
+$secondary : #FF8F00;  // Warm Amber/Gold - African sun, Value, Warning
+$secondary-light: #FFB74D;  // Light Amber - Optimism, Warmth
+$secondary-dark : #E65100;  // Dark Orange - Urgency, Action
 
-// It's highly recommended to change the default colors
-// to match your app's branding.
-// Tip: Use the "Theme Builder" on Quasar's documentation website.
+// Accent Colors
+$accent    : #1A73E8;  // Trust Blue - Technology, Reliability
+$accent-light: #64B5F6;  // Light Blue - Clarity, Information
+$accent-dark : #0D47A1;  // Deep Blue - Authority, Professional
 
-// Primary green theme for agricultural app
-$primary   : #2E7D32;  // Forest green - main brand color
-$secondary : #66BB6A;  // Light green - complementary
-$accent    : #81C784;  // Soft mint green - highlights
+// Semantic Colors
+$positive  : #2E7D32;  // Success Green
+$negative  : #D32F2F;  // Error Red  
+$info      : #0288D1;  // Info Blue
+$warning   : #F57C00;  // Warning Orange
 
-$dark      : #1B5E20;  // Deep forest green for dark mode
-$dark-page : #0D3B12;  // Very dark green for dark backgrounds
+// Dark Mode Colors
+$dark      : #1a1a2e;  // Dark Navy/Black
+$dark-page : #16213e;  // Darker Blue-Black
 
-$positive  : #21BA45;  // Keep existing positive (success) green
-$negative  : #C10015;  // Keep existing negative (error) red
-$info      : #31CCEC;  // Keep existing info blue
-$warning   : #F2C037;  // Keep existing warning amber
+// Neutral Colors
+$grey-1    : #f8f9fa;
+$grey-2    : #e9ecef;
+$grey-3    : #dee2e6;
+$grey-4    : #ced4da;
+$grey-5    : #adb5bd;
+$grey-6    : #6c757d;
+$grey-7    : #495057;
+$grey-8    : #343a40;
+$grey-9    : #212529;
+
+// Status Colors
+$success   : #2E7D32;
+$error     : #D32F2F;
+$warning   : #F57C00;
+$info      : #0288D1;
+
+// Spacing
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+
+// Border Radius
+$radius-sm: 4px;
+$radius-md: 8px;
+$radius-lg: 12px;
+$radius-xl: 16px;
+$radius-full: 9999px;
+
+// Shadows
+$shadow-sm: 0 1px 3px rgba(0,0,0,0.12);
+$shadow-md: 0 4px 6px rgba(0,0,0,0.1);
+$shadow-lg: 0 10px 15px rgba(0,0,0,0.1);
+$shadow-xl: 0 20px 25px rgba(0,0,0,0.1);
+
+// Transitions
+$transition-fast: 150ms ease;
+$transition-normal: 250ms ease;
+$transition-slow: 350ms ease;
+
+// Z-Index
+$z-drawer: 1000;
+$z-modal: 1100;
+$z-toast: 1200;
+$z-tooltip: 1300;

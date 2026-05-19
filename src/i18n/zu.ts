@@ -1,6 +1,6 @@
 export default {
   app: {
-    name: 'Izingcweti BCM Mobile',
+    name: 'Izingcweti BCM App App',
     fullName: 'Ukuphathwa Kokuqhubeka Kwebhizinisi',
     loading: 'Iyalayisha...',
     error: 'Kukhona iphutha',

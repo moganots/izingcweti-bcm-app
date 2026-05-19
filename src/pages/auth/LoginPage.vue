@@ -1,4 +1,3 @@
-<!-- src/pages/auth/LoginPage.vue -->
 <template>
   <div class="login-page">
     <div class="text-center q-mb-md">

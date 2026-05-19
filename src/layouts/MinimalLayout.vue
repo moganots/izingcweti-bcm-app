@@ -26,7 +26,7 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 
 const pageTitle = computed(() => {
-  return (route.meta?.title as string) || 'Izingcweti BCM'
+  return (route.meta?.title as string) || 'Izingcweti BCM App'
 })
 
 const showBack = computed(() => {

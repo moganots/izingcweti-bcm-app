@@ -2,7 +2,7 @@
   <q-card flat bordered>
     <q-card-section class="text-center">
       <q-icon name="shield" size="48px" color="primary" class="q-mb-md" />
-      <div class="text-h6">Izingcweti BCM</div>
+      <div class="text-h6">Izingcweti BCM App</div>
       <div class="text-caption text-grey-7 q-mb-md">Business Continuity Management</div>
       <div class="text-caption text-grey-6">Version {{ version }}</div>
       <div class="text-caption text-grey-6">Build {{ buildNumber }}</div>

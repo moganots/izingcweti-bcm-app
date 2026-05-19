@@ -1,7 +1,3 @@
-// src/utils/formatters.ts
-
-import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
-
 /**
  * Data Formatting Utilities
  * Provides consistent formatting across the application
@@ -21,9 +17,9 @@ import { format, formatDistanceToNow, parseISO, isValid } from 'date-fns';
 export function formatCurrency(
   value: number | null | undefined,
   currency: string = 'USD',
-  locale: string = 'en-US',
+  locale: string = 'en-US'
 ): string {
-  if (value === null || value === undefined) return 'N/A';
+  if (value === null || value === undefined) return 'N/A'
 
   try {
     return new Intl.NumberFormat(locale, {
@@ -31,9 +27,9 @@ export function formatCurrency(
       currency,
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(value);
+    }).format(value)
   } catch {
-    return `$${value.toFixed(2)}`;
+    return `$${value.toFixed(2)}`
   }
 }
 
@@ -43,12 +39,12 @@ export function formatCurrency(
  * @returns Formatted number string
  */
 export function formatNumber(value: number | null | undefined): string {
-  if (value === null || value === undefined) return 'N/A';
+  if (value === null || value === undefined) return 'N/A'
 
   try {
-    return new Intl.NumberFormat('en-US').format(value);
+    return new Intl.NumberFormat('en-US').format(value)
   } catch {
-    return value.toString();
+    return value.toString()
   }
 }
 
@@ -59,8 +55,8 @@ export function formatNumber(value: number | null | undefined): string {
  * @returns Formatted percentage string
  */
 export function formatPercentage(value: number | null | undefined, decimals: number = 1): string {
-  if (value === null || value === undefined) return 'N/A';
-  return `${value.toFixed(decimals)}%`;
+  if (value === null || value === undefined) return 'N/A'
+  return `${value.toFixed(decimals)}%`
 }
 
 /**
@@ -70,8 +66,8 @@ export function formatPercentage(value: number | null | undefined, decimals: num
  * @returns Formatted decimal string
  */
 export function formatDecimal(value: number | null | undefined, precision: number = 2): string {
-  if (value === null || value === undefined) return 'N/A';
-  return value.toFixed(precision);
+  if (value === null || value === undefined) return 'N/A'
+  return value.toFixed(precision)
 }
 
 /**
@@ -80,13 +76,13 @@ export function formatDecimal(value: number | null | undefined, precision: numbe
  * @returns Human-readable file size string
  */
 export function formatFileSize(bytes: number | null | undefined): string {
-  if (bytes === null || bytes === undefined || bytes === 0) return '0 B';
+  if (bytes === null || bytes === undefined || bytes === 0) return '0 B'
 
-  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB']
+  const i = Math.floor(Math.log(bytes) / Math.log(1024))
 
-  if (i === 0) return `${bytes} ${sizes[i]}`;
-  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`;
+  if (i === 0) return `${bytes} ${sizes[i]}`
+  return `${(bytes / Math.pow(1024, i)).toFixed(1)} ${sizes[i]}`
 }
 
 /**
@@ -95,12 +91,12 @@ export function formatFileSize(bytes: number | null | undefined): string {
  * @returns Formatted duration string
  */
 export function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
+  if (ms < 1000) return `${ms}ms`
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
 
-  const minutes = Math.floor(ms / 60000);
-  const seconds = Math.floor((ms % 60000) / 1000);
-  return `${minutes}m ${seconds}s`;
+  const minutes = Math.floor(ms / 60000)
+  const seconds = Math.floor((ms % 60000) / 1000)
+  return `${minutes}m ${seconds}s`
 }
 
 /**
@@ -109,12 +105,12 @@ export function formatDuration(ms: number): string {
  * @returns Formatted duration string
  */
 export function formatResolutionTime(hours: number | null | undefined): string {
-  if (hours === null || hours === undefined) return 'N/A';
-  if (hours < 1) return `${Math.round(hours * 60)} minutes`;
-  if (hours < 24) return `${hours.toFixed(1)} hours`;
-  const days = Math.floor(hours / 24);
-  const remainingHours = Math.round(hours % 24);
-  return `${days}d ${remainingHours}h`;
+  if (hours === null || hours === undefined) return 'N/A'
+  if (hours < 1) return `${Math.round(hours * 60)} minutes`
+  if (hours < 24) return `${hours.toFixed(1)} hours`
+  const days = Math.floor(hours / 24)
+  const remainingHours = Math.round(hours % 24)
+  return `${days}d ${remainingHours}h`
 }
 
 // ============================================
@@ -128,9 +124,9 @@ export function formatResolutionTime(hours: number | null | undefined): string {
  * @returns Truncated text string
  */
 export function truncateText(text: string | null | undefined, maxLength: number = 50): string {
-  if (!text) return '';
-  if (text.length <= maxLength) return text;
-  return `${text.substring(0, maxLength)}...`;
+  if (!text) return ''
+  if (text.length <= maxLength) return text
+  return `${text.substring(0, maxLength)}...`
 }
 
 /**
@@ -139,11 +135,48 @@ export function truncateText(text: string | null | undefined, maxLength: number 
  * @returns Capitalized text string
  */
 export function capitalizeWords(text: string | null | undefined): string {
-  if (!text) return '';
+  if (!text) return ''
   return text
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .join(' ')
+}
+
+/**
+ * Extracts and capitalizes the first letter of every word in a string
+ * @param input - The input string to process
+ * @returns A string containing the capitalized first letters of each word
+ *
+ * @example
+ * capitalizeFirstLetters("hello world") // returns "HW"
+ * capitalizeFirstLetters("the quick brown fox") // returns "TQBF"
+ */
+export function capitalizeFirstLetters(input: string): string {
+  if (!input || input.trim().length === 0) {
+    return ''
+  }
+
+  return input
+    .trim()
+    .split(/\s+/) // Split by any whitespace (spaces, tabs, newlines)
+    .map((word) => word.charAt(0).toUpperCase())
+    .join('')
+}
+
+// Alternative version that also handles punctuation and special characters
+export function capitalizeFirstLettersAdvanced(input: string): string {
+  if (!input || input.trim().length === 0) {
+    return ''
+  }
+
+  // Match words (letters, numbers, and apostrophes for contractions)
+  const words = input.match(/[\w\u00C0-\u024F]+(?:'[\w\u00C0-\u024F]+)?/g)
+
+  if (!words) {
+    return ''
+  }
+
+  return words.map((word) => word.charAt(0).toUpperCase()).join('')
 }
 
 /**
@@ -152,14 +185,14 @@ export function capitalizeWords(text: string | null | undefined): string {
  * @returns Title Case text string
  */
 export function toTitleCase(text: string | null | undefined): string {
-  if (!text) return '';
+  if (!text) return ''
   return text
     .replace(/_/g, ' ')
     .replace(/([A-Z])/g, ' $1')
     .trim()
     .split(' ')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
+    .join(' ')
 }
 
 /**
@@ -170,10 +203,10 @@ export function toTitleCase(text: string | null | undefined): string {
 export function toCamelCase(text: string): string {
   return text
     .replace(/(?:^\w|[A-Z]|\b\w)/g, (letter, index) =>
-      index === 0 ? letter.toLowerCase() : letter.toUpperCase(),
+      index === 0 ? letter.toLowerCase() : letter.toUpperCase()
     )
     .replace(/\s+/g, '')
-    .replace(/[^a-zA-Z0-9]/g, '');
+    .replace(/[^a-zA-Z0-9]/g, '')
 }
 
 /**
@@ -187,7 +220,7 @@ export function slugify(text: string): string {
     .replace(/\s+/g, '-')
     .replace(/[^a-z0-9-]/g, '')
     .replace(/-+/g, '-')
-    .replace(/^-|-$/g, '');
+    .replace(/^-|-$/g, '')
 }
 
 /**
@@ -197,9 +230,9 @@ export function slugify(text: string): string {
  * @returns Masked text string
  */
 export function maskText(text: string, visibleChars: number = 4): string {
-  if (!text || text.length <= visibleChars) return text;
-  const masked = '*'.repeat(text.length - visibleChars);
-  return masked + text.slice(-visibleChars);
+  if (!text || text.length <= visibleChars) return text
+  const masked = '*'.repeat(text.length - visibleChars)
+  return masked + text.slice(-visibleChars)
 }
 
 /**
@@ -208,11 +241,10 @@ export function maskText(text: string, visibleChars: number = 4): string {
  * @returns Masked email string
  */
 export function maskEmail(email: string): string {
-  const [username, domain] = email.split('@');
-  if (!domain) return email;
-  const maskedUsername =
-    username!?.charAt(0) + '***' + username!?.charAt(username!?.length - 1);
-  return `${maskedUsername}@${domain}`;
+  const [username, domain] = email.split('@')
+  if (!domain) return email
+  const maskedUsername = username!?.charAt(0) + '***' + username!?.charAt(username!?.length - 1)
+  return `${maskedUsername}@${domain}`
 }
 
 /**
@@ -221,61 +253,61 @@ export function maskEmail(email: string): string {
  * @returns Formatted phone number
  */
 export function formatPhone(phone: string): string {
-  const cleaned = phone.replace(/\D/g, '');
+  const cleaned = phone.replace(/\D/g, '')
   if (cleaned.length === 10) {
-    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`;
+    return `(${cleaned.slice(0, 3)}) ${cleaned.slice(3, 6)}-${cleaned.slice(6)}`
   }
   if (cleaned.length === 11) {
-    return `+${cleaned[0]} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`;
+    return `+${cleaned[0]} (${cleaned.slice(1, 4)}) ${cleaned.slice(4, 7)}-${cleaned.slice(7)}`
   }
-  return phone;
+  return phone
 }
 
 /**
  * Extract initials from a name or email address
- * 
+ *
  * Examples:
  * - "John Doe" → "JD"
  * - "john.doe@example.com" → "JD"
  * - "John" → "JO"
  * - "john_doe" → "JD"
  * - null/undefined → "?"
- * 
+ *
  * @param text - Name, email, or any string to extract initials from
  * @returns 1-2 character uppercase initials, or "?" if input is empty
  */
 export function getInitials(text: string | null | undefined): string {
   // Handle null/undefined/empty
   if (!text || text.trim().length === 0) {
-    return '?';
+    return '?'
   }
 
   // If it's an email, extract the local part (before @)
-  let name = text!?.trim() || '';
+  let name = text!?.trim() || ''
   if (text?.includes('@')) {
-    name = text.split('@')[0]!?.trim() || '';
+    name = text.split('@')[0]!?.trim() || ''
   }
 
   // Replace common separators with spaces
-  name = name.replace(/[._\-+]/g, ' ');
+  name = name.replace(/[._\-+]/g, ' ')
 
   // Split into parts
-  const parts = name.trim().split(/\s+/).filter(Boolean);
+  const parts = name.trim().split(/\s+/).filter(Boolean)
 
   // If we have at least two parts, use first and last
   if (parts.length >= 2) {
-    const firstInitial = parts[0]!?.charAt(0);
-    const lastInitial = parts[parts.length - 1]!?.charAt(0);
-    return (firstInitial + lastInitial).toUpperCase();
+    const firstInitial = parts[0]!?.charAt(0)
+    const lastInitial = parts[parts.length - 1]!?.charAt(0)
+    return (firstInitial + lastInitial).toUpperCase()
   }
 
   // Single part - use first two characters (or just first if single character)
-  const singlePart = parts[0];
+  const singlePart = parts[0]
   if (singlePart!?.length >= 2) {
-    return singlePart!?.substring(0, 2).toUpperCase();
+    return singlePart!?.substring(0, 2).toUpperCase()
   }
 
-  return singlePart!?.charAt(0).toUpperCase();
+  return singlePart!?.charAt(0).toUpperCase()
 }
 
 // ============================================
@@ -288,7 +320,7 @@ export function getInitials(text: string | null | undefined): string {
  * @returns CSS color name
  */
 export function getSeverityColor(severity: string | null | undefined): string {
-  if (!severity) return 'grey';
+  if (!severity) return 'grey'
 
   const colors: Record<string, string> = {
     Critical: 'red',
@@ -297,9 +329,9 @@ export function getSeverityColor(severity: string | null | undefined): string {
     Low: 'green',
     Informational: 'blue',
     Insignificant: 'grey',
-  };
+  }
 
-  return colors[severity] || 'grey';
+  return colors[severity] || 'grey'
 }
 
 /**
@@ -308,11 +340,11 @@ export function getSeverityColor(severity: string | null | undefined): string {
  * @returns CSS color name
  */
 export function getRiskScoreColor(score: number): string {
-  if (score >= 8.5) return 'red';
-  if (score >= 7) return 'orange';
-  if (score >= 5) return 'yellow';
-  if (score >= 3) return 'light-green';
-  return 'green';
+  if (score >= 8.5) return 'red'
+  if (score >= 7) return 'orange'
+  if (score >= 5) return 'yellow'
+  if (score >= 3) return 'light-green'
+  return 'green'
 }
 
 /**
@@ -321,7 +353,7 @@ export function getRiskScoreColor(score: number): string {
  * @returns CSS color name
  */
 export function getStatusColor(status: string | null | undefined): string {
-  if (!status) return 'grey';
+  if (!status) return 'grey'
 
   const colors: Record<string, string> = {
     // BCP Statuses
@@ -346,9 +378,9 @@ export function getStatusColor(status: string | null | undefined): string {
     Rejected: 'red',
     Cancelled: 'grey',
     Escalated: 'deep-orange',
-  };
+  }
 
-  return colors[status] || 'grey';
+  return colors[status] || 'grey'
 }
 
 /**
@@ -370,9 +402,9 @@ export function getDocumentIcon(docType: string): string {
     AUDIT_REPORT: 'search',
     EXERCISE_REPORT: 'fitness_center',
     MEETING_MINUTES: 'group',
-  };
+  }
 
-  return icons[docType] || 'description';
+  return icons[docType] || 'description'
 }
 
 /**
@@ -392,9 +424,9 @@ export function getDocumentColor(docType: string): string {
     COMPLIANCE_EVIDENCE: 'indigo',
     TRAINING_MATERIAL: 'cyan',
     AUDIT_REPORT: 'brown',
-  };
+  }
 
-  return colors[docType] || 'grey';
+  return colors[docType] || 'grey'
 }
 
 // ============================================
@@ -409,9 +441,9 @@ export function getDocumentColor(docType: string): string {
  */
 export function formatJSON(obj: any, indent: number = 2): string {
   try {
-    return JSON.stringify(obj, null, indent);
+    return JSON.stringify(obj, null, indent)
   } catch {
-    return String(obj);
+    return String(obj)
   }
 }
 
@@ -423,9 +455,9 @@ export function formatJSON(obj: any, indent: number = 2): string {
  */
 export function parseJSON<T = any>(str: string, fallback: T | null = null): T | null {
   try {
-    return JSON.parse(str) as T;
+    return JSON.parse(str) as T
   } catch {
-    return fallback;
+    return fallback
   }
 }
 
@@ -445,6 +477,8 @@ export const Formatters = {
   // String
   truncateText,
   capitalizeWords,
+  capitalizeFirstLetters,
+  capitalizeFirstLettersAdvanced,
   toTitleCase,
   toCamelCase,
   slugify,
@@ -461,4 +495,4 @@ export const Formatters = {
   // JSON
   formatJSON,
   parseJSON,
-};
+}

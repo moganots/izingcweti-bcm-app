@@ -75,7 +75,7 @@ const props = defineProps<{
   cachedTabs?: string[]
 }>()
 
-const pageTitle = computed(() => (route.meta?.title as string) || 'Izingcweti BCM')
+const pageTitle = computed(() => (route.meta?.title as string) || 'Izingcweti BCM App')
 
 const tabs = computed(() => props.tabs || [])
 

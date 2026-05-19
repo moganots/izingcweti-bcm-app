@@ -1,4 +1,3 @@
-<!-- src/pages/auth/ForgotPasswordPage.vue -->
 <template>
   <div class="forgot-password-page">
     <div class="text-center q-mb-md">

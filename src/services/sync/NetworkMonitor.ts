@@ -275,21 +275,29 @@ export class NetworkMonitor {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ping`, {
+      
+      const apiUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:9810/api'
+      
+      // Use a more reliable endpoint or handle 404 gracefully
+      const response = await fetch(`${apiUrl}/health`, {
         method: 'HEAD',
         signal: controller.signal,
-      })
+      }).catch(() => null) // Don't throw on fetch error
 
       clearTimeout(timeoutId)
 
-      if (response.ok && !this._isOnline) {
+      if (response && response.ok && !this._isOnline) {
         this.updateStatus(true, this._connectionType)
-      } else if (!response.ok && this._isOnline) {
-        this.updateStatus(false, ConnectionType.NONE)
+      } else if ((!response || !response.ok) && this._isOnline) {
+        // Don't go offline just because /ping returns 404
+        // Only go offline if we get a network error
+        if (response === null) {
+          this.updateStatus(false, ConnectionType.NONE)
+        }
       }
     } catch {
       if (this._isOnline) {
+        // Only mark offline on actual network errors, not 404s
         this.updateStatus(false, ConnectionType.NONE)
       }
     }

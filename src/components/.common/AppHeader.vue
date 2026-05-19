@@ -4,7 +4,7 @@
       <q-btn flat dense round icon="menu" @click="$emit('toggle-drawer')" />
       <q-toolbar-title class="cursor-pointer" @click="$router.push('/dashboard')">
         <q-icon name="shield" size="24px" class="q-mr-sm" />
-        {{ title || 'Izingcweti BCM' }}
+        {{ title || 'Izingcweti BCM App' }}
       </q-toolbar-title>
 
       <q-btn v-if="isOffline" flat dense round icon="wifi_off" color="orange" />

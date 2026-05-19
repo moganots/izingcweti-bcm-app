@@ -11,7 +11,7 @@ export default boot(({ router }) => {
   router.afterEach((to) => {
     // Update document title only
     try {
-      const appName = import.meta.env.VITE_APP_NAME || 'Izingcweti (BCM)'
+      const appName = import.meta.env.VITE_APP_NAME || 'Business Continuity Management System'
       const title = to.meta.title as string
       document.title = title ? `${title} - ${appName}` : appName
     } catch (error) {

@@ -15,7 +15,7 @@
           <q-icon name="shield" size="32px" color="white" />
         </q-avatar>
         <div>
-          <div class="text-h6 text-white">Izingcweti BCM</div>
+          <div class="text-h6 text-white">Izingcweti BCM App</div>
           <div class="text-caption text-grey-4">
             {{ userRole || 'User' }}
           </div>

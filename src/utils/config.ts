@@ -4,9 +4,9 @@
  */
 export const AppConfig = {
   // Application
-  appName: import.meta.env.VITE_APP_NAME || 'Izingcweti (BCM)',
+  appName: import.meta.env.VITE_APP_NAME || 'Business Continuity Management System',
   appVersion: import.meta.env.VITE_APP_VERSION || '0.0.1',
-  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'Izingcweti (BCM)lication',
+  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'Business Continuity Management Systemlication',
 
   // Environment
   envName: import.meta.env.VITE_ENV_NAME || 'Local',

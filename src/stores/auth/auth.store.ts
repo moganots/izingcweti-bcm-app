@@ -120,7 +120,10 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         localStorage.removeItem('bcm_remembered_email')
       }
+      
+      console.log('Login successful:', { userId: response.user.uuid, email: response.user.email })
     } catch (err: any) {
+      console.error('Login error:', err)
       const message = err.response?.data?.message || err.message || 'Login failed'
       error.value = message
       throw new Error(message)

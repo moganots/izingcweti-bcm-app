@@ -11,20 +11,20 @@
           color="white"
           text-color="primary"
           unelevated
-          to="/dashboard"
           label="Go to Dashboard"
           icon="dashboard"
           size="lg"
+          @click="goToDashboard"
         />
         <q-btn
           outline
           color="white"
           text-color="white"
-          to="/"
           label="Go Home"
           icon="home"
           size="lg"
           class="q-ml-sm"
+          @click="goHome"
         />
       </div>
       <div class="q-mt-xl">
@@ -42,18 +42,29 @@
 <script setup lang="ts">
 import { onMounted, ref, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+
 const router = useRouter()
 const countdown = ref(10)
 let timer: ReturnType<typeof setInterval> | null = null
+
+const goToDashboard = () => {
+  router.push('/dashboard')
+}
+
+const goHome = () => {
+  router.push('/')
+}
+
 onMounted(() => {
   timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
-      clearInterval(timer!)
+      if (timer) clearInterval(timer)
       router.push('/dashboard')
     }
   }, 1000)
 })
+
 onUnmounted(() => {
   if (timer) clearInterval(timer)
 })
@@ -67,6 +78,7 @@ onUnmounted(() => {
   text-shadow: 4px 4px 0 rgba(255, 255, 255, 0.1);
   animation: pulse 2s ease-in-out infinite alternate;
 }
+
 @keyframes pulse {
   0% {
     transform: scale(1);
@@ -75,6 +87,7 @@ onUnmounted(() => {
     transform: scale(1.05);
   }
 }
+
 @media (max-width: 600px) {
   .error-code {
     font-size: 100px;

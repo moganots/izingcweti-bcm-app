@@ -35,7 +35,7 @@
           <div class="text-body2">
             <h6>1. Acceptance of Terms</h6>
             <p>
-              By accessing and using Izingcweti BCM, you agree to be bound by these Terms of
+              By accessing and using Izingcweti BCM App, you agree to be bound by these Terms of
               Service...
             </p>
             <h6>2. User Accounts</h6>
