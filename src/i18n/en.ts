@@ -708,9 +708,9 @@ export default {
     monthsAgo: '{count}mo ago',
     yearsAgo: '{count}y ago',
     timeFormat: 'HH:mm',
-    dateFormat: 'MM/DD/YYYY',
-    dateTimeFormat: 'MM/DD/YYYY HH:mm',
-    longDateFormat: 'MMMM DD, YYYY',
+    dateFormat: 'MM/DD/yyyy',
+    dateTimeFormat: 'MM/DD/yyyy HH:mm',
+    longDateFormat: 'MMMM dd, yyyy',
   },
 
   // ============================================

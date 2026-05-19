@@ -88,7 +88,7 @@ export const useSettingsStore = defineStore('settings', () => {
   // Fixed: table_density property now exists on DisplaySettings
   const tableDensity = computed(() => displaySettings.value.table_density || 'normal')
   const itemsPerPageSetting = computed(() => userPreferences.value.items_per_page || 20)
-  const dateFormat = computed(() => userPreferences.value.date_format || 'YYYY-MM-DD')
+  const dateFormat = computed(() => userPreferences.value.date_format || 'yyyy-MM-DD')
   const timeFormat = computed(() => userPreferences.value.time_format || 'HH:mm')
   const timezone = computed(() => userPreferences.value.timezone || 'UTC')
 

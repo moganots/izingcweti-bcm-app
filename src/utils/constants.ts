@@ -690,14 +690,14 @@ export const FILE_UPLOAD = {
 // Date & Time Formats
 // ============================================
 export const DATE_FORMATS = {
-  DISPLAY: 'MMM DD, YYYY',
-  DISPLAY_WITH_TIME: 'MMM DD, YYYY HH:mm',
-  ISO: 'YYYY-MM-DD',
-  ISO_WITH_TIME: 'YYYY-MM-DDTHH:mm:ss.SSSZ',
+  DISPLAY: 'MMM dd, yyyy',
+  DISPLAY_WITH_TIME: 'MMM dd, yyyy HH:mm',
+  ISO: 'yyyy-MM-DD',
+  ISO_WITH_TIME: 'yyyy-MM-DDTHH:mm:ss.SSSZ',
   TIME: 'HH:mm',
   TIME_WITH_SECONDS: 'HH:mm:ss',
-  SHORT: 'DD/MM/YYYY',
-  LONG: 'DD MMMM YYYY',
+  SHORT: 'DD/MM/yyyy',
+  LONG: 'DD MMMM yyyy',
   RELATIVE: 'relative',
 } as const
 

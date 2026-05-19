@@ -18,8 +18,13 @@
         </div>
       </div>
 
-      <!-- Page Title (Centered - takes available space) -->
-      <div class="row justify-center" style="flex: 1">
+      <!-- Page Title with Back Button (Centered - takes available space) -->
+      <div class="row justify-center items-center" style="flex: 1">
+        <!-- Back Button -->
+        <q-btn v-if="canGoBack" flat dense round icon="arrow_back" class="q-mr-sm" @click="goBack">
+          <q-tooltip>Go Back</q-tooltip>
+        </q-btn>
+
         <div class="text-h6 text-weight-medium text-center">
           {{ pageTitle }}
         </div>
@@ -67,11 +72,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useSyncStore, useNotificationStore, useUiStore } from '../../stores'
 
 const route = useRoute()
+const router = useRouter()
 const $q = useQuasar()
 const syncStore = useSyncStore()
 const notificationStore = useNotificationStore()
@@ -85,6 +91,14 @@ const appShortName = 'BCM'
 const isOffline = computed(() => uiStore.isOffline)
 const headerClass = computed(() => ({ 'bg-primary text-white': true }))
 const pageTitle = computed(() => props.pageTitle || (route.meta?.title as string) || 'Dashboard')
+
+// Check if there's a previous page in navigation history
+const canGoBack = computed(() => window.history.length > 1)
+
+// Navigate back
+function goBack(): void {
+  router.back()
+}
 
 async function handleSync(): Promise<void> {
   if (syncStore.isSyncing) return
@@ -138,6 +152,13 @@ function openQRScanner(): void {
 
   .text-caption {
     font-size: 8px;
+  }
+
+  // Adjust back button size on mobile
+  .q-btn--round {
+    font-size: 20px;
+    width: 32px;
+    height: 32px;
   }
 }
 </style>

@@ -166,7 +166,7 @@ const settings = reactive({
   theme: 'light',
   language: 'en',
   timezone: 'Africa/Johannesburg',
-  dateFormat: 'YYYY-MM-DD',
+  dateFormat: 'yyyy-MM-DD',
   twoFactorAuth: false,
 })
 
@@ -200,9 +200,9 @@ const timezoneOptions = [
 ]
 
 const dateFormatOptions = [
-  { label: 'YYYY-MM-DD', value: 'YYYY-MM-DD' },
-  { label: 'DD/MM/YYYY', value: 'DD/MM/YYYY' },
-  { label: 'MM/DD/YYYY', value: 'MM/DD/YYYY' },
+  { label: 'yyyy-MM-DD', value: 'yyyy-MM-DD' },
+  { label: 'DD/MM/yyyy', value: 'DD/MM/yyyy' },
+  { label: 'MM/DD/yyyy', value: 'MM/DD/yyyy' },
 ]
 
 const sessions = ref([

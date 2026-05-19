@@ -24,7 +24,7 @@ import {
  */
 export function formatDate(
   date: string | Date | null | undefined,
-  formatStr: string = 'MMM DD, YYYY'
+  formatStr: string = 'MMM dd, yyyy'
 ): string {
   if (!date) return ''
 
@@ -41,7 +41,7 @@ export function formatDate(
  * Format date and time
  */
 export function formatDateTime(date: string | Date | null | undefined): string {
-  return formatDate(date, 'MMM DD, YYYY HH:mm')
+  return formatDate(date, 'MMM dd, yyyy HH:mm')
 }
 
 /**
@@ -104,7 +104,7 @@ export function formatTimeAgoDetailed(date: string | Date | null | undefined): s
     if (days < 365)
       return `${Math.floor(days / 30)} month${Math.floor(days / 30) !== 1 ? 's' : ''} ago`
 
-    return formatDate(dateObj, 'MMM DD, YYYY')
+    return formatDate(dateObj, 'MMM dd, yyyy')
   } catch {
     return ''
   }
@@ -228,7 +228,7 @@ export function addDaysToDate(date: string | Date, days: number): Date {
 }
 
 /**
- * Format date for input fields (YYYY-MM-DD)
+ * Format date for input fields (yyyy-MM-DD)
  */
 export function formatForInput(date: string | Date | null | undefined): string {
   return formatDate(date, 'yyyy-MM-dd')

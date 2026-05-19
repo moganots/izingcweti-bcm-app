@@ -120,7 +120,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   dashboard_layout: 'grid',
   default_view: 'dashboard',
   items_per_page: 20,
-  date_format: 'YYYY-MM-DD',
+  date_format: 'yyyy-MM-DD',
   time_format: 'HH:mm',
   timezone: 'UTC',
   start_of_week: 'monday',

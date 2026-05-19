@@ -89,7 +89,7 @@ const form = reactive({
   preventive_actions: '',
 })
 
-const currentTime = computed(() => formatDate(new Date(), 'MMM DD, YYYY HH:mm'))
+const currentTime = computed(() => formatDate(new Date(), 'MMM dd, yyyy HH:mm'))
 
 const severityOptions = [
   { label: 'Critical', value: 'Critical' },
