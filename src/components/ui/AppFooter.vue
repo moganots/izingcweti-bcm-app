@@ -84,11 +84,9 @@
                 :key="item.name"
                 clickable
                 v-ripple
-                :to="{ name: item.name }"
                 :active="route.name === item.name"
-                exact
                 active-class="text-primary"
-                @click="handleMenuItemClick"
+                @click="handleMenuItemClick(item.name)"
               >
                 <q-item-section avatar>
                   <q-icon :name="item.icon" size="20px" />
@@ -113,11 +111,9 @@
                 :key="item.name"
                 clickable
                 v-ripple
-                :to="{ name: item.name }"
                 :active="route.name === item.name"
-                exact
                 active-class="text-primary"
-                @click="handleMenuItemClick"
+                @click="handleMenuItemClick(item.name)"
               >
                 <q-item-section avatar>
                   <q-icon :name="item.icon" />
@@ -136,10 +132,9 @@
             <q-item
               clickable
               v-ripple
-              :to="{ name: 'Documents' }"
-              exact
+              :active="route.name === 'Documents'"
               active-class="text-primary"
-              @click="handleMenuItemClick"
+              @click="handleMenuItemClick('Documents')"
             >
               <q-item-section avatar>
                 <q-icon name="folder" />
@@ -150,10 +145,9 @@
             <q-item
               clickable
               v-ripple
-              :to="{ name: 'Settings' }"
-              exact
+              :active="route.name === 'Settings'"
               active-class="text-primary"
-              @click="handleMenuItemClick"
+              @click="handleMenuItemClick('Settings')"
             >
               <q-item-section avatar>
                 <q-icon name="settings" />
@@ -245,11 +239,9 @@
             :key="item.name"
             clickable
             v-ripple
-            :to="{ name: item.name }"
             :active="route.name === item.name"
-            exact
             active-class="text-primary"
-            @click="handleDrawerItemClick"
+            @click="handleDrawerItemClick(item.name)"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" size="20px" />
@@ -270,11 +262,9 @@
             :key="item.name"
             clickable
             v-ripple
-            :to="{ name: item.name }"
             :active="route.name === item.name"
-            exact
             active-class="text-primary"
-            @click="handleDrawerItemClick"
+            @click="handleDrawerItemClick(item.name)"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" />
@@ -292,10 +282,9 @@
         <q-item
           clickable
           v-ripple
-          :to="{ name: 'Documents' }"
-          exact
+          :active="route.name === 'Documents'"
           active-class="text-primary"
-          @click="handleDrawerItemClick"
+          @click="handleDrawerItemClick('Documents')"
         >
           <q-item-section avatar>
             <q-icon name="folder" />
@@ -306,10 +295,9 @@
         <q-item
           clickable
           v-ripple
-          :to="{ name: 'Settings' }"
-          exact
+          :active="route.name === 'Settings'"
           active-class="text-primary"
-          @click="handleDrawerItemClick"
+          @click="handleDrawerItemClick('Settings')"
         >
           <q-item-section avatar>
             <q-icon name="settings" />
@@ -344,7 +332,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue'
+import { ref, computed, watch, nextTick, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from '../../stores'
@@ -373,7 +361,6 @@ const uiStore = useUiStore()
 const selectedTab = ref('home')
 const menuDialogOpen = ref(false)
 const drawerOpen = ref(false)
-const isNavigating = ref(false)
 
 const unreadCount = computed(() => notificationStore.unreadCount || 0)
 const pendingCount = computed(() => syncStore.pendingCount || 0)
@@ -418,24 +405,45 @@ const adminItems = [
   { name: 'AuditLogs', label: 'Audit Logs', icon: 'history' },
 ]
 
+// Function to update selected tab based on current route
+function updateSelectedTab() {
+  const routeName = route.name as string
+
+  if (routeName === 'Dashboard') {
+    selectedTab.value = 'home'
+  } else if (routeName === 'Notifications') {
+    selectedTab.value = 'notifications'
+  } else if (routeName === 'Profile') {
+    selectedTab.value = 'profile'
+  } else if (routeName === 'SyncDashboard') {
+    selectedTab.value = 'sync'
+  } else {
+    selectedTab.value = 'menu'
+  }
+}
+
 // Watch route changes to update selected tab
 watch(
   () => route.name,
-  (newName) => {
-    // Don't update if we're in the middle of navigation from menu
-    if (isNavigating.value) return
-
-    if (newName === 'Dashboard') selectedTab.value = 'home'
-    else if (newName === 'Notifications') selectedTab.value = 'notifications'
-    else if (newName === 'Profile') selectedTab.value = 'profile'
-    else if (newName === 'SyncDashboard') selectedTab.value = 'sync'
-    // For other routes, keep the menu tab selected
-    else if (menuDialogOpen.value || drawerOpen.value) {
-      selectedTab.value = 'menu'
-    }
+  () => {
+    updateSelectedTab()
   },
   { immediate: true }
 )
+
+// Watch menu dialog state to update selected tab
+watch(menuDialogOpen, (isOpen) => {
+  if (!isOpen) {
+    updateSelectedTab()
+  }
+})
+
+// Watch drawer state to update selected tab
+watch(drawerOpen, (isOpen) => {
+  if (!isOpen) {
+    updateSelectedTab()
+  }
+})
 
 // Handle tab change from footer
 function handleTabChange(tab: string): void {
@@ -444,43 +452,50 @@ function handleTabChange(tab: string): void {
     return
   }
 
-  isNavigating.value = true
+  let routeName = ''
   switch (tab) {
     case 'home':
-      router.push({ name: 'Dashboard' })
+      routeName = 'Dashboard'
       break
     case 'notifications':
-      router.push({ name: 'Notifications' })
+      routeName = 'Notifications'
       break
     case 'sync':
-      router.push({ name: 'SyncDashboard' })
+      routeName = 'SyncDashboard'
       break
     case 'profile':
-      router.push({ name: 'Profile' })
+      routeName = 'Profile'
       break
   }
 
-  // Reset navigation flag after navigation
-  setTimeout(() => {
-    isNavigating.value = false
-  }, 500)
+  if (routeName) {
+    // Only navigate if not already on that route
+    if (route.name !== routeName) {
+      router.push({ name: routeName })
+    }
+  }
 }
 
 // Handle menu item click (mobile)
-function handleMenuItemClick(): void {
+function handleMenuItemClick(routeName: string): void {
   // Close the dialog
   menuDialogOpen.value = false
 
-  // Don't reset selectedTab immediately, let route watch handle it
-  // The route change will update the selected tab
+  // Navigate if not already on that route
+  if (route.name !== routeName) {
+    router.push({ name: routeName })
+  }
 }
 
 // Handle drawer item click (desktop)
-function handleDrawerItemClick(): void {
+function handleDrawerItemClick(routeName: string): void {
   // Close the drawer
   drawerOpen.value = false
 
-  // Don't reset selectedTab immediately, let route watch handle it
+  // Navigate if not already on that route
+  if (route.name !== routeName) {
+    router.push({ name: routeName })
+  }
 }
 
 // Open menu based on screen size
@@ -494,43 +509,20 @@ function openMenu(): void {
 
 // Handle mobile dialog hide
 function onMenuDialogHide(): void {
-  // After dialog closes, update selected tab based on current route
-  nextTick(() => {
-    if (route.name === 'Dashboard') {
-      selectedTab.value = 'home'
-    } else if (route.name === 'Notifications') {
-      selectedTab.value = 'notifications'
-    } else if (route.name === 'Profile') {
-      selectedTab.value = 'profile'
-    } else if (route.name === 'SyncDashboard') {
-      selectedTab.value = 'sync'
-    } else {
-      selectedTab.value = 'home'
-    }
-  })
+  // Update selected tab after dialog closes
+  updateSelectedTab()
 }
 
 // Handle drawer change
 function onDrawerChange(val: boolean): void {
   if (!val) {
-    nextTick(() => {
-      if (route.name === 'Dashboard') {
-        selectedTab.value = 'home'
-      } else if (route.name === 'Notifications') {
-        selectedTab.value = 'notifications'
-      } else if (route.name === 'Profile') {
-        selectedTab.value = 'profile'
-      } else if (route.name === 'SyncDashboard') {
-        selectedTab.value = 'sync'
-      } else {
-        selectedTab.value = 'home'
-      }
-    })
+    updateSelectedTab()
   }
 }
 
 // Sync functions
 async function handleSync(): Promise<void> {
+  if (syncStore.isSyncing) return
   try {
     await syncStore.fullSync()
     $q.notify({ type: 'positive', message: 'Sync completed', position: 'top', timeout: 2000 })
@@ -588,6 +580,10 @@ function formatTimeAgo(date: string | null): string {
   if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`
   return `${Math.floor(seconds / 86400)}d ago`
 }
+
+onMounted(() => {
+  updateSelectedTab()
+})
 </script>
 
 <style lang="scss" scoped>
