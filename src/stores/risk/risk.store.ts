@@ -104,6 +104,7 @@ export const useRiskStore = defineStore('risk', () => {
     try {
       const response = await riskService.getRisks({
         ...filters,
+        organisation_id: authStore.user!?.organisation_id,
         page: currentPage.value,
       })
 
