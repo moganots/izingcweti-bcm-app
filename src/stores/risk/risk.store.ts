@@ -187,7 +187,7 @@ export const useRiskStore = defineStore('risk', () => {
 
       const created = await riskService.createRisk(data)
       risks.value.unshift(created)
-      await loadStats()
+      await loadStats(data.organisation_id ?? authStore.user!?.organisation_id!)
       return created
     } catch (err: any) {
       console.error('Failed to create risk:', err)
@@ -234,7 +234,7 @@ export const useRiskStore = defineStore('risk', () => {
       if (selectedRisk.value?.uuid === id) {
         selectedRisk.value = reassessed
       }
-      await loadStats()
+      await loadStats(authStore.user!?.organisation_id!)
       return reassessed
     } catch (err: any) {
       console.error('Failed to reassess risk:', err)
@@ -255,7 +255,7 @@ export const useRiskStore = defineStore('risk', () => {
       if (selectedRisk.value?.uuid === id) {
         selectedRisk.value = null
       }
-      await loadStats()
+      await loadStats(authStore.user!?.organisation_id!)
     } catch (err: any) {
       console.error('Failed to delete risk:', err)
       error.value = err.response?.data?.message || err.message || 'Failed to delete risk'
