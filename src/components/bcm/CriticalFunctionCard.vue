@@ -54,6 +54,7 @@
 </template>
 
 <script setup lang="ts">
+import { getFunctionMto } from 'src/utils/formatters';
 import { computed } from 'vue'
 
 const props = defineProps<{ func: any }>()
@@ -79,18 +80,7 @@ function getPriorityColor(): string {
   }
 }
 
-const mto = computed(() =>
-  parseInt(
-    props.func?.max_tolerable_outage?.years ??
-      props.func?.max_tolerable_outage?.months ??
-      props.func?.max_tolerable_outage?.weeks ??
-      props.func?.max_tolerable_outage?.days ??
-      props.func?.max_tolerable_outage?.hours ??
-      props.func?.max_tolerable_outage?.minutes ??
-      props.func?.max_tolerable_outage?.seconds ??
-      props.func?.max_tolerable_outage?.milliseconds
-  )
-)
+const mto = computed(() => getFunctionMto(props.func))
 </script>
 
 <style lang="scss" scoped>

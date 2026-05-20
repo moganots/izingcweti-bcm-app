@@ -172,6 +172,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useBcmStore } from '../../stores/bcm/bcm.store'
+import { getFunctionMto } from 'src/utils/formatters'
 
 const route = useRoute()
 const router = useRouter()
@@ -195,7 +196,7 @@ const functionOptions = computed(() => {
   const functions = bcmStore.criticalFunctions || []
   return functions.map((f: any) => ({
     label: f.name,
-    description: `Department: ${f.department?.name || 'N/A'} | MTO: ${f.max_tolerable_outage}`,
+    description: `Department: ${f.department?.name || 'N/A'} | MTO: ${getFunctionMto(f)}`,
     value: f.uuid,
   }))
 })

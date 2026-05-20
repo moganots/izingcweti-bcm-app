@@ -429,6 +429,19 @@ export function getDocumentColor(docType: string): string {
   return colors[docType] || 'grey'
 }
 
+export function getFunctionMto(func: any) {
+  return parseInt(
+    func?.max_tolerable_outage?.years ??
+      func?.max_tolerable_outage?.months ??
+      func?.max_tolerable_outage?.weeks ??
+      func?.max_tolerable_outage?.days ??
+      func?.max_tolerable_outage?.hours ??
+      func?.max_tolerable_outage?.minutes ??
+      func?.max_tolerable_outage?.seconds ??
+      func?.max_tolerable_outage?.milliseconds
+  )
+}
+
 // ============================================
 // JSON Formatters
 // ============================================
@@ -492,6 +505,7 @@ export const Formatters = {
   getStatusColor,
   getDocumentIcon,
   getDocumentColor,
+  getFunctionMto,
   // JSON
   formatJSON,
   parseJSON,
