@@ -13,8 +13,12 @@
       <q-tab name="unread" :label="'Unread (' + unreadCount + ')'">
         <q-badge v-if="unreadCount > 0" floating color="red">{{ unreadCount }}</q-badge>
       </q-tab>
-      <q-tab name="read" label="Read" />
-      <q-tab name="archived" label="Archived" />
+      <q-tab name="read" :label="'Read (' + readCount + ')'">
+        <q-badge v-if="readCount > 0" floating color="green">{{ readCount }}</q-badge>
+      </q-tab>
+      <q-tab name="archived" :label="'Archived (' + archivedCount + ')'">
+        <q-badge v-if="archivedCount > 0" floating color="grey">{{ archivedCount }}</q-badge>
+      </q-tab>
     </q-tabs>
 
     <!-- Loading -->
@@ -88,10 +92,16 @@ defineEmits<{
 
 const activeTab = ref('all')
 
+const totalCount = computed(() => props.notifications.length)
 const unreadCount = computed(
   () => props.notifications.filter((n) => !n.is_read && n.status !== 'ARCHIVED').length
 )
-const totalCount = computed(() => props.notifications.length)
+const readCount = computed(
+  () => props.notifications.filter((n) => n.is_read && n.status !== 'ARCHIVED').length
+)
+const archivedCount = computed(
+  () => props.notifications.filter((n) => n.status === 'ARCHIVED').length
+)
 
 const filteredNotifications = computed(() => {
   switch (activeTab.value) {
