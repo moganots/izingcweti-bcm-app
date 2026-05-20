@@ -30,7 +30,7 @@
         <q-card flat bordered class="text-center"
           ><q-card-section
             ><q-icon name="attach_money" size="30px" color="green" />
-            <div class="text-h4 q-mt-sm">{{ formatCurrency(totalCost) }}</div>
+            <div class="text-h4 q-mt-sm">{{ totalCost }}</div>
             <div class="text-caption text-grey-7">Total Cost</div></q-card-section
           ></q-card
         >
@@ -138,11 +138,11 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
 import { useBcmStore } from '../../stores/bcm/bcm.store'
-import { formatCurrency } from '../../utils/formatters'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import EmptyState from '../../components/.common/EmptyState.vue'
 import RecoveryStrategyCard from '../../components/bcm/RecoveryStrategyCard.vue'
+import { formatCurrencyValue } from 'src/utils/number.utils'
 
 const $q = useQuasar()
 const bcmStore = useBcmStore()
@@ -156,7 +156,7 @@ const bcpOptions = [{ label: 'BCP-1', value: 'bcp-1' }]
 const requiredRule = (val: any) => !!val || 'Required'
 
 const totalCost = computed(() =>
-  strategies.value.reduce((s: number, r: any) => s + (r.estimated_recovery_cost || 0), 0)
+  formatCurrencyValue(strategies.value.reduce((s: number, r: any) => s + (r.estimated_recovery_cost || 0), 0))
 )
 const avgSuccessRate = computed(() => {
   const d = strategies.value
