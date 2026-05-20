@@ -20,7 +20,7 @@
         </q-badge>
       </q-tab>
       <q-tab name="profile" icon="person" label="Profile" />
-      <q-tab name="menu" icon="menu" label="Menu" />
+      <q-tab name="menu" icon="menu" />
     </q-tabs>
   </q-footer>
 

@@ -153,13 +153,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
         })
       )
 
-      riskTrends.value = (completeData.riskSummary?.risk_trends || []).map((trend) => ({
-        ...trend,
-        highRisks: Math.round(trend.high ?? 0),
-        mediumRisks: Math.round(trend.medium ?? 0),
-        lowRisks: Math.round(trend.low ?? 0),
-        total: Math.round(trend.total ?? 0),
-      }))
+      riskTrends.value = (completeData.riskSummary?.risk_trends || []).map(
+        (trend) =>
+        ({
+          ...trend,
+          highRisks: Math.round(trend.high ?? 0),
+          mediumRisks: Math.round(trend.medium ?? 0),
+          lowRisks: Math.round(trend.low ?? 0),
+          total: Math.round(trend.total ?? 0),
+        } as any)
+      )
 
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
@@ -185,13 +188,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
     try {
       const trends = await dashboardService.getRiskTrends(period)
-      riskTrends.value = (trends || []).map((trend) => ({
-        ...trend,
-        highRisks: Math.round(trend.high ?? 0),
-        mediumRisks: Math.round(trend.medium ?? 0),
-        lowRisks: Math.round(trend.low ?? 0),
-        total: Math.round(trend.total ?? 0),
-      }))
+      riskTrends.value = (trends || []).map(
+        (trend) =>
+        ({
+          ...trend,
+          highRisks: Math.round(trend.high ?? 0),
+          mediumRisks: Math.round(trend.medium ?? 0),
+          lowRisks: Math.round(trend.low ?? 0),
+          total: Math.round(trend.total ?? 0),
+        } as any)
+      )
     } catch (err: any) {
       console.error('Failed to load risk trends:', err)
       error.value = err.message || 'Failed to load risk trends'

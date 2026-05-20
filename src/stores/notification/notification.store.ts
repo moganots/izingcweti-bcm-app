@@ -1,15 +1,16 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type {
-  Notification,
-  NotificationCounts,
-  NotificationPreference,
+import {
+  NotificationStatus,
+  type Notification,
+  type NotificationCounts,
+  type NotificationPreference,
 } from './../../models/entities'
 import {
   notificationService,
   type UpdatePreferencesRequest,
-} from './../../services/api'
-import { useAuthStore } from './../../stores'
+} from './../../services/api/notification/NotificationService'
+import { useAuthStore } from './../../stores/auth/auth.store'
 
 export const useNotificationStore = defineStore('notification', () => {
   // ============================================
@@ -22,6 +23,8 @@ export const useNotificationStore = defineStore('notification', () => {
   const isSaving = ref(false)
   const error = ref<string | null>(null)
   const currentPage = ref(1)
+  const totalPages = ref(1)
+  const totalItems = ref(0)
   const hasMore = ref(false)
   const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null)
   const isPolling = ref(false)
@@ -86,7 +89,9 @@ export const useNotificationStore = defineStore('notification', () => {
       } else {
         notifications.value.push(...(response.data || []))
       }
-      hasMore.value = (response.data || []).length === 20
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
+      hasMore.value = response.hasMore || false
     } catch (err: any) {
       console.error('Failed to load notifications:', err)
       error.value = err.message || 'Failed to load notifications'
@@ -107,9 +112,41 @@ export const useNotificationStore = defineStore('notification', () => {
     try {
       const response = await notificationService.getUnreadNotifications()
       notifications.value = response.data || []
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
       hasMore.value = false
     } catch (err: any) {
       error.value = err.message || 'Failed to load unread notifications'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadNotificationsByStatus(status: string): Promise<void> {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await notificationService.getNotificationsByStatus(status)
+      notifications.value = response.data || []
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
+    } catch (err: any) {
+      error.value = err.message || `Failed to load ${status} notifications`
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadNotificationsByType(type: string): Promise<void> {
+    isLoading.value = true
+    error.value = null
+    try {
+      const response = await notificationService.getNotificationsByType(type)
+      notifications.value = response.data || []
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
+    } catch (err: any) {
+      error.value = err.message || `Failed to load ${type} notifications`
     } finally {
       isLoading.value = false
     }
@@ -159,7 +196,7 @@ export const useNotificationStore = defineStore('notification', () => {
       const notification = notifications.value.find((n) => n.uuid === notificationId)
       if (notification) {
         notification.is_read = true
-        notification.status = 'READ' as any
+        notification.status = NotificationStatus.READ
         notification.read_at = new Date().toISOString()
       }
       if (counts.value && counts.value.unread > 0) {
@@ -167,6 +204,23 @@ export const useNotificationStore = defineStore('notification', () => {
       }
     } catch (err: any) {
       console.error('Failed to mark as read:', err)
+    }
+  }
+
+  async function markAsUnread(notificationId: string): Promise<void> {
+    try {
+      await notificationService.markAsUnread(notificationId)
+      const notification = notifications.value.find((n) => n.uuid === notificationId)
+      if (notification) {
+        notification.is_read = false
+        notification.status = NotificationStatus.UNREAD
+        notification.read_at = null
+      }
+      if (counts.value) {
+        counts.value = { ...counts.value, unread: (counts.value.unread || 0) + 1 }
+      }
+    } catch (err: any) {
+      console.error('Failed to mark as unread:', err)
     }
   }
 
@@ -179,7 +233,7 @@ export const useNotificationStore = defineStore('notification', () => {
       notifications.value.forEach((n) => {
         if (!n.is_read) {
           n.is_read = true
-          n.status = 'READ' as any
+          n.status = NotificationStatus.READ
           n.read_at = new Date().toISOString()
         }
       })
@@ -200,7 +254,7 @@ export const useNotificationStore = defineStore('notification', () => {
       await notificationService.archive(notificationId)
       const notification = notifications.value.find((n) => n.uuid === notificationId)
       if (notification) {
-        notification.status = 'ARCHIVED' as any
+        notification.status = NotificationStatus.ARCHIVED
       }
     } catch (err: any) {
       console.error('Failed to archive:', err)
@@ -212,7 +266,7 @@ export const useNotificationStore = defineStore('notification', () => {
       await notificationService.dismiss(notificationId)
       const notification = notifications.value.find((n) => n.uuid === notificationId)
       if (notification) {
-        notification.status = 'DISMISSED' as any
+        notification.status = NotificationStatus.DISMISSED
       }
     } catch (err: any) {
       console.error('Failed to dismiss:', err)
@@ -230,6 +284,20 @@ export const useNotificationStore = defineStore('notification', () => {
       }
     } catch (err: any) {
       console.error('Failed to delete:', err)
+    }
+  }
+
+  async function permanentDeleteNotification(notificationId: string): Promise<void> {
+    try {
+      await notificationService.permanentDelete(notificationId)
+      const wasUnread =
+        notifications.value.find((n) => n.uuid === notificationId)?.is_read === false
+      notifications.value = notifications.value.filter((n) => n.uuid !== notificationId)
+      if (wasUnread && counts.value && counts.value.unread > 0) {
+        counts.value = { ...counts.value, unread: counts.value.unread - 1 }
+      }
+    } catch (err: any) {
+      console.error('Failed to permanently delete:', err)
     }
   }
 
@@ -267,7 +335,14 @@ export const useNotificationStore = defineStore('notification', () => {
     counts.value = null
     error.value = null
     currentPage.value = 1
+    totalPages.value = 1
+    totalItems.value = 0
     hasMore.value = false
+  }
+
+  function resetFilters(): void {
+    currentPage.value = 1
+    loadNotifications(true)
   }
 
   return {
@@ -279,8 +354,11 @@ export const useNotificationStore = defineStore('notification', () => {
     isSaving,
     error,
     currentPage,
+    totalPages,
+    totalItems,
     hasMore,
     isPolling,
+
     // Getters
     unreadNotifications,
     unreadCount,
@@ -292,20 +370,26 @@ export const useNotificationStore = defineStore('notification', () => {
     dismissedNotifications,
     notificationsByType,
     highPriorityUnread,
+
     // Actions
     loadNotifications,
     loadMore,
     loadUnread,
+    loadNotificationsByStatus,
+    loadNotificationsByType,
     loadCounts,
     loadPreferences,
     updatePreference,
     markAsRead,
+    markAsUnread,
     markAllAsRead,
     archiveNotification,
     dismissNotification,
     removeNotification,
+    permanentDeleteNotification,
     startPolling,
     stopPolling,
     clearAll,
+    resetFilters,
   }
 })
