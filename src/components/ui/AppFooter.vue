@@ -20,7 +20,7 @@
         </q-badge>
       </q-tab>
       <q-tab name="profile" icon="person" label="Profile" />
-      <q-tab name="menu" icon="menu" />
+      <q-tab name="menu" icon="menu" label="Menu" />
     </q-tabs>
   </q-footer>
 
@@ -332,7 +332,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from '../../stores'
@@ -361,6 +361,9 @@ const uiStore = useUiStore()
 const selectedTab = ref('home')
 const menuDialogOpen = ref(false)
 const drawerOpen = ref(false)
+
+// Screen size detection
+const isMobile = ref(window.innerWidth < 1024)
 
 const unreadCount = computed(() => notificationStore.unreadCount || 0)
 const pendingCount = computed(() => syncStore.pendingCount || 0)
@@ -409,16 +412,31 @@ const adminItems = [
 function updateSelectedTab() {
   const routeName = route.name as string
 
-  if (routeName === 'Dashboard') {
-    selectedTab.value = 'home'
-  } else if (routeName === 'Notifications') {
-    selectedTab.value = 'notifications'
-  } else if (routeName === 'Profile') {
-    selectedTab.value = 'profile'
-  } else if (routeName === 'SyncDashboard') {
-    selectedTab.value = 'sync'
-  } else {
-    selectedTab.value = 'menu'
+  // Only update if we're not in menu mode (menu dialog/drawer closed)
+  if (!menuDialogOpen.value && !drawerOpen.value) {
+    if (routeName === 'Dashboard') {
+      selectedTab.value = 'home'
+    } else if (routeName === 'Notifications') {
+      selectedTab.value = 'notifications'
+    } else if (routeName === 'Profile') {
+      selectedTab.value = 'profile'
+    } else if (routeName === 'SyncDashboard') {
+      selectedTab.value = 'sync'
+    } else {
+      selectedTab.value = 'menu'
+    }
+  }
+}
+
+// Handle window resize
+function handleResize() {
+  isMobile.value = window.innerWidth < 1024
+  // Close menu if screen size changes while open
+  if (menuDialogOpen.value && !isMobile.value) {
+    menuDialogOpen.value = false
+  }
+  if (drawerOpen.value && isMobile.value) {
+    drawerOpen.value = false
   }
 }
 
@@ -431,14 +449,14 @@ watch(
   { immediate: true }
 )
 
-// Watch menu dialog state to update selected tab
+// Watch menu dialog state
 watch(menuDialogOpen, (isOpen) => {
   if (!isOpen) {
     updateSelectedTab()
   }
 })
 
-// Watch drawer state to update selected tab
+// Watch drawer state
 watch(drawerOpen, (isOpen) => {
   if (!isOpen) {
     updateSelectedTab()
@@ -451,6 +469,10 @@ function handleTabChange(tab: string): void {
     openMenu()
     return
   }
+
+  // Close any open menus first
+  if (menuDialogOpen.value) menuDialogOpen.value = false
+  if (drawerOpen.value) drawerOpen.value = false
 
   let routeName = ''
   switch (tab) {
@@ -468,11 +490,8 @@ function handleTabChange(tab: string): void {
       break
   }
 
-  if (routeName) {
-    // Only navigate if not already on that route
-    if (route.name !== routeName) {
-      router.push({ name: routeName })
-    }
+  if (routeName && route.name !== routeName) {
+    router.push({ name: routeName })
   }
 }
 
@@ -500,9 +519,12 @@ function handleDrawerItemClick(routeName: string): void {
 
 // Open menu based on screen size
 function openMenu(): void {
-  if (window.innerWidth < 1024) {
+  // Close the other menu if open
+  if (isMobile.value) {
+    if (drawerOpen.value) drawerOpen.value = false
     menuDialogOpen.value = true
   } else {
+    if (menuDialogOpen.value) menuDialogOpen.value = false
     drawerOpen.value = true
   }
 }
@@ -581,8 +603,23 @@ function formatTimeAgo(date: string | null): string {
   return `${Math.floor(seconds / 86400)}d ago`
 }
 
+// Close menu on escape key
+function handleEscapeKey(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    if (menuDialogOpen.value) menuDialogOpen.value = false
+    if (drawerOpen.value) drawerOpen.value = false
+  }
+}
+
 onMounted(() => {
   updateSelectedTab()
+  window.addEventListener('resize', handleResize)
+  window.addEventListener('keydown', handleEscapeKey)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', handleResize)
+  window.removeEventListener('keydown', handleEscapeKey)
 })
 </script>
 
