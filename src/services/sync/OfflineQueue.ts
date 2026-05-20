@@ -14,7 +14,7 @@ export class OfflineQueue {
   private removeListener: (() => void) | null = null
 
   constructor() {
-    this.networkMonitor = new NetworkMonitor()
+    this.networkMonitor = NetworkMonitor.getInstance()
     this.syncEngine = new SyncEngine()
 
     // Listen for online status to process queue

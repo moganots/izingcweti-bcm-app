@@ -1,4 +1,4 @@
-import { BaseService } from '../BaseService'
+import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../utils/constants'
 import { useAuthStore } from '../../../stores/auth/auth.store'
 import type {
@@ -316,36 +316,55 @@ export class DashboardService extends BaseService {
   }
 
   /**
-   * Get recent activity feed
-   */
-  async getRecentActivity(
-    limit: number = 10,
-    organisationId?: string
-  ): Promise<RecentActivityResponse> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const url = `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?limit=${limit}`
-    const response = await this.get<{ data: { activities: any[] } }>(url)
-    const activities = (this.extractData(response) ?? { data: { activities: [] } })?.data
-      ?.activities
-    return { activities: activities || [] }
-  }
-
-  /**
    * Get upcoming tasks
    */
   async getUpcomingTasks(
     limit: number = 10,
     organisationId?: string
   ): Promise<UpcomingTasksResponse> {
-    const orgId = organisationId || this.getCurrentOrganisationId()
-    const url = `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?limit=${limit}`
-    const response = await this.get<{ data: { tasks: any[] } }>(url)
-    const tasks = (this.extractData(response) ?? { data: { tasks: [] } })?.data?.tasks
-    return {
-      tasks: (tasks || []).map((task) => ({
-        ...task,
-        days_remaining: Math.round(task.days_remaining ?? 0),
-      })),
+    try {
+      const orgId = organisationId || this.getCurrentOrganisationId()
+      const url = `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?limit=${limit}`
+      const response = await this.get<{ data: { tasks: any[] } }>(url)
+
+      // Safely extract data with fallback
+      const responseData = this.extractData(response) as any
+      const tasks = responseData?.data?.tasks || responseData?.tasks || []
+
+      return {
+        tasks: (tasks || []).map((task: any) => ({
+          ...task,
+          days_remaining: Math.round(task.days_remaining ?? 0),
+        })),
+      }
+    } catch (error) {
+      console.error('Failed to get upcoming tasks:', error)
+      // Return empty tasks array on error
+      return { tasks: [] }
+    }
+  }
+
+  /**
+   * Get recent activity feed
+   */
+  async getRecentActivity(
+    limit: number = 10,
+    organisationId?: string
+  ): Promise<RecentActivityResponse> {
+    try {
+      const orgId = organisationId || this.getCurrentOrganisationId()
+      const url = `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?limit=${limit}`
+      const response = await this.get<{ data: { activities: any[] } }>(url)
+
+      // Safely extract data with fallback
+      const responseData = this.extractData(response) as any
+      const activities = responseData?.data?.activities || responseData?.activities || []
+
+      return { activities: activities || [] }
+    } catch (error) {
+      console.error('Failed to get recent activity:', error)
+      // Return empty activities array on error
+      return { activities: [] }
     }
   }
 

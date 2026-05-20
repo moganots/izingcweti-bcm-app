@@ -1,4 +1,4 @@
-import { BaseService } from '../BaseService'
+import { BaseService } from '../../BaseService'
 import type { PendingChange, SyncConflict, SyncMetadata } from './../../../models/entities'
 import { API_ENDPOINTS } from './../../../utils/constants'
 import type { PaginatedResponse } from './../../../types'

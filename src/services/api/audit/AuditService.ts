@@ -1,4 +1,4 @@
-import { BaseService } from '../BaseService'
+import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../utils/constants'
 import type { AuditQueryParams, PaginatedResponse } from './../../../types'
 

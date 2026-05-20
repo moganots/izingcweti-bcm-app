@@ -1,6 +1,6 @@
 import type { AxiosRequestConfig } from 'axios'
-import { apiClient } from './../../boot/axios'
-import type { ApiResponse, PaginatedResponse, PaginationParams } from './../../types'
+import { apiClient } from '../boot/axios'
+import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types'
 
 /**
  * Raw API response format from backend

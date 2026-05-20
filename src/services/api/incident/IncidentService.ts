@@ -1,4 +1,4 @@
-import { BaseService } from '../BaseService'
+import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from './../../../utils/constants'
 import type { IncidentQueryParams, PaginatedResponse, QueryParams } from './../../../types'
 import type { Incident, IncidentSeverity, IncidentStats } from './../../../models/entities'

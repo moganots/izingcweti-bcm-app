@@ -27,7 +27,7 @@ export class SyncEngine {
 
   constructor(db?: BCMDatabase) {
     this.db = db || BCMDatabase.getInstance()
-    this.networkMonitor = new NetworkMonitor()
+    this.networkMonitor = NetworkMonitor.getInstance()
     this.conflictResolver = new ConflictResolver()
     this.maxRetries = parseInt(import.meta.env.VITE_SYNC_MAX_RETRIES || '5')
     this.batchSize = parseInt(import.meta.env.VITE_SYNC_BATCH_SIZE || '50')

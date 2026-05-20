@@ -1,5 +1,5 @@
 // Base Service
-export { BaseService } from './BaseService'
+export { BaseService } from '../BaseService'
 
 // Core Services
 export { ApiService, apiService } from './ApiService'
