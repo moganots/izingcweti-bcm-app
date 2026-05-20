@@ -2,11 +2,7 @@
   <q-card class="function-card cursor-pointer" flat bordered @click="$emit('click', func)">
     <q-card-section>
       <div class="row items-center justify-between q-mb-sm">
-        <q-badge
-          :color="getPriorityColor(func.max_tolerable_outage)"
-          :label="'MTO: ' + func.max_tolerable_outage"
-          class="q-px-sm q-py-xs"
-        />
+        <q-badge :color="getPriorityColor()" :label="'MTO: ' + mto" class="q-px-sm q-py-xs" />
         <q-btn flat round size="sm" icon="more_vert" @click.stop>
           <q-menu>
             <q-list dense>
@@ -58,7 +54,9 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ func: any }>()
+import { computed } from 'vue'
+
+const props = defineProps<{ func: any }>()
 defineEmits<{
   click: [func: any]
   edit: [func: any]
@@ -66,14 +64,33 @@ defineEmits<{
   delete: [func: any]
 }>()
 
-function getPriorityColor(mto: string): string {
-  if (!mto) return 'grey'
-  const hours = parseInt(mto)
-  if (hours <= 1) return 'red'
-  if (hours <= 4) return 'orange'
-  if (hours <= 8) return 'yellow'
-  return 'green'
+function getPriorityColor(): string {
+  switch (mto.value) {
+    case 0:
+      return 'grey'
+    case 1:
+      return 'red'
+    case 4:
+      return 'orange'
+    case 8:
+      return 'yellow'
+    default:
+      return 'green'
+  }
 }
+
+const mto = computed(() =>
+  parseInt(
+    props.func?.max_tolerable_outage?.years ??
+      props.func?.max_tolerable_outage?.months ??
+      props.func?.max_tolerable_outage?.weeks ??
+      props.func?.max_tolerable_outage?.days ??
+      props.func?.max_tolerable_outage?.hours ??
+      props.func?.max_tolerable_outage?.minutes ??
+      props.func?.max_tolerable_outage?.seconds ??
+      props.func?.max_tolerable_outage?.milliseconds
+  )
+)
 </script>
 
 <style lang="scss" scoped>

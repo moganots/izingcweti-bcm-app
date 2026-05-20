@@ -422,8 +422,6 @@ function updateSelectedTab() {
       selectedTab.value = 'profile'
     } else if (routeName === 'SyncDashboard') {
       selectedTab.value = 'sync'
-    } else {
-      selectedTab.value = 'menu'
     }
   }
 }
