@@ -24,7 +24,7 @@
     </q-tabs>
   </q-footer>
 
-  <!-- Popup Menu Drawer -->
+  <!-- Popup Menu Dialog for Mobile -->
   <q-dialog
     v-model="menuDialogOpen"
     position="bottom"
@@ -32,7 +32,7 @@
     transition-hide="slide-down"
     :maximized="false"
     full-width
-    @update:model-value="handleDialogClose"
+    @hide="onMenuDialogHide"
   >
     <q-card class="menu-dialog-card" :class="{ 'bg-dark text-white': isDarkMode }">
       <q-card-section class="q-pa-sm">
@@ -62,7 +62,7 @@
                   <img src="/default-avatar.png" alt="Avatar" />
                 </q-avatar>
                 <div>
-                  <div class="text-subtitle1 text-weight-bold">{{ userFullName }}</div>
+                  <div class="text-subtitle1 text-weight-bold">{{ userFullName || 'User' }}</div>
                   <div class="text-caption text-grey-6">{{ userEmail }}</div>
                   <q-badge :color="userRole === 'Admin' ? 'primary' : 'info'" class="q-mt-xs">
                     {{ userRole || 'User' }}
@@ -88,7 +88,7 @@
                 :active="route.name === item.name"
                 exact
                 active-class="text-primary"
-                @click="closeMenu"
+                @click="handleMenuItemClick"
               >
                 <q-item-section avatar>
                   <q-icon :name="item.icon" size="20px" />
@@ -117,7 +117,7 @@
                 :active="route.name === item.name"
                 exact
                 active-class="text-primary"
-                @click="closeMenu"
+                @click="handleMenuItemClick"
               >
                 <q-item-section avatar>
                   <q-icon :name="item.icon" />
@@ -139,7 +139,7 @@
               :to="{ name: 'Documents' }"
               exact
               active-class="text-primary"
-              @click="closeMenu"
+              @click="handleMenuItemClick"
             >
               <q-item-section avatar>
                 <q-icon name="folder" />
@@ -153,7 +153,7 @@
               :to="{ name: 'Settings' }"
               exact
               active-class="text-primary"
-              @click="closeMenu"
+              @click="handleMenuItemClick"
             >
               <q-item-section avatar>
                 <q-icon name="settings" />
@@ -195,7 +195,7 @@
     </q-card>
   </q-dialog>
 
-  <!-- Full Screen Drawer for Desktop -->
+  <!-- Drawer for Desktop -->
   <q-drawer
     v-model="drawerOpen"
     side="right"
@@ -203,9 +203,8 @@
     :breakpoint="1024"
     bordered
     :class="{ 'bg-dark text-white': isDarkMode }"
-    @update:model-value="handleDrawerChange"
+    @update:model-value="onDrawerChange"
   >
-    <!-- Drawer content -->
     <div class="drawer-header q-pa-md">
       <div class="row items-center">
         <q-avatar size="48px" class="q-mr-sm">
@@ -220,7 +219,7 @@
       </div>
 
       <div class="q-mt-sm">
-        <div class="text-subtitle2">{{ userFullName }}</div>
+        <div class="text-subtitle2">{{ userFullName || 'User' }}</div>
         <div class="text-caption text-grey-4">{{ userEmail }}</div>
       </div>
 
@@ -236,7 +235,6 @@
 
     <q-scroll-area class="fit">
       <q-list padding>
-        <!-- Same menu content as dialog -->
         <template v-for="group in menuGroups" :key="group.label">
           <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
             {{ group.label }}
@@ -251,7 +249,7 @@
             :active="route.name === item.name"
             exact
             active-class="text-primary"
-            @click="closeDrawer"
+            @click="handleDrawerItemClick"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" size="20px" />
@@ -276,7 +274,7 @@
             :active="route.name === item.name"
             exact
             active-class="text-primary"
-            @click="closeDrawer"
+            @click="handleDrawerItemClick"
           >
             <q-item-section avatar>
               <q-icon :name="item.icon" />
@@ -297,7 +295,7 @@
           :to="{ name: 'Documents' }"
           exact
           active-class="text-primary"
-          @click="closeDrawer"
+          @click="handleDrawerItemClick"
         >
           <q-item-section avatar>
             <q-icon name="folder" />
@@ -311,7 +309,7 @@
           :to="{ name: 'Settings' }"
           exact
           active-class="text-primary"
-          @click="closeDrawer"
+          @click="handleDrawerItemClick"
         >
           <q-item-section avatar>
             <q-icon name="settings" />
@@ -334,7 +332,7 @@
           </q-item-section>
         </q-item>
 
-        <q-item clickable v-ripple @click="handleLogout">
+        <q-item clickable v-ripple @click="handleLogoutFromDrawer">
           <q-item-section avatar>
             <q-icon name="logout" color="negative" />
           </q-item-section>
@@ -346,7 +344,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from '../../stores'
@@ -364,11 +362,6 @@ interface MenuGroup {
   items: MenuItem[]
 }
 
-// Define emits
-const emit = defineEmits<{
-  toggleDrawer: []
-}>()
-
 const router = useRouter()
 const route = useRoute()
 const $q = useQuasar()
@@ -380,6 +373,7 @@ const uiStore = useUiStore()
 const selectedTab = ref('home')
 const menuDialogOpen = ref(false)
 const drawerOpen = ref(false)
+const isNavigating = ref(false)
 
 const unreadCount = computed(() => notificationStore.unreadCount || 0)
 const pendingCount = computed(() => syncStore.pendingCount || 0)
@@ -390,7 +384,7 @@ const userFullName = computed(() => authStore.fullName)
 const userEmail = computed(() => authStore.userEmail)
 const userRole = computed(() => authStore.userRole)
 
-// Menu Groups (All navigation not in footer)
+// Menu Groups
 const menuGroups: MenuGroup[] = [
   {
     label: 'Business Continuity',
@@ -428,17 +422,29 @@ const adminItems = [
 watch(
   () => route.name,
   (newName) => {
+    // Don't update if we're in the middle of navigation from menu
+    if (isNavigating.value) return
+
     if (newName === 'Dashboard') selectedTab.value = 'home'
     else if (newName === 'Notifications') selectedTab.value = 'notifications'
     else if (newName === 'Profile') selectedTab.value = 'profile'
     else if (newName === 'SyncDashboard') selectedTab.value = 'sync'
-    // Don't change selectedTab to 'menu' for other routes
-    // Keep the current selection
+    // For other routes, keep the menu tab selected
+    else if (menuDialogOpen.value || drawerOpen.value) {
+      selectedTab.value = 'menu'
+    }
   },
   { immediate: true }
 )
 
+// Handle tab change from footer
 function handleTabChange(tab: string): void {
+  if (tab === 'menu') {
+    openMenu()
+    return
+  }
+
+  isNavigating.value = true
   switch (tab) {
     case 'home':
       router.push({ name: 'Dashboard' })
@@ -452,12 +458,78 @@ function handleTabChange(tab: string): void {
     case 'profile':
       router.push({ name: 'Profile' })
       break
-    case 'menu':
-      openMenu()
-      break
+  }
+
+  // Reset navigation flag after navigation
+  setTimeout(() => {
+    isNavigating.value = false
+  }, 500)
+}
+
+// Handle menu item click (mobile)
+function handleMenuItemClick(): void {
+  // Close the dialog
+  menuDialogOpen.value = false
+
+  // Don't reset selectedTab immediately, let route watch handle it
+  // The route change will update the selected tab
+}
+
+// Handle drawer item click (desktop)
+function handleDrawerItemClick(): void {
+  // Close the drawer
+  drawerOpen.value = false
+
+  // Don't reset selectedTab immediately, let route watch handle it
+}
+
+// Open menu based on screen size
+function openMenu(): void {
+  if (window.innerWidth < 1024) {
+    menuDialogOpen.value = true
+  } else {
+    drawerOpen.value = true
   }
 }
 
+// Handle mobile dialog hide
+function onMenuDialogHide(): void {
+  // After dialog closes, update selected tab based on current route
+  nextTick(() => {
+    if (route.name === 'Dashboard') {
+      selectedTab.value = 'home'
+    } else if (route.name === 'Notifications') {
+      selectedTab.value = 'notifications'
+    } else if (route.name === 'Profile') {
+      selectedTab.value = 'profile'
+    } else if (route.name === 'SyncDashboard') {
+      selectedTab.value = 'sync'
+    } else {
+      selectedTab.value = 'home'
+    }
+  })
+}
+
+// Handle drawer change
+function onDrawerChange(val: boolean): void {
+  if (!val) {
+    nextTick(() => {
+      if (route.name === 'Dashboard') {
+        selectedTab.value = 'home'
+      } else if (route.name === 'Notifications') {
+        selectedTab.value = 'notifications'
+      } else if (route.name === 'Profile') {
+        selectedTab.value = 'profile'
+      } else if (route.name === 'SyncDashboard') {
+        selectedTab.value = 'sync'
+      } else {
+        selectedTab.value = 'home'
+      }
+    })
+  }
+}
+
+// Sync functions
 async function handleSync(): Promise<void> {
   try {
     await syncStore.fullSync()
@@ -470,66 +542,33 @@ async function handleSync(): Promise<void> {
 async function handleSyncFromMenu(): Promise<void> {
   if (syncStore.isSyncing) return
   await handleSync()
-  closeMenu()
+  menuDialogOpen.value = false
 }
 
 async function handleSyncFromDrawer(): Promise<void> {
   if (syncStore.isSyncing) return
   await handleSync()
-  closeDrawer()
-}
-
-function openMenu(): void {
-  if (window.innerWidth < 1024) {
-    menuDialogOpen.value = true
-  } else {
-    drawerOpen.value = true
-  }
-}
-
-function closeMenu(): void {
-  menuDialogOpen.value = false
-  // Don't reset selectedTab here
-}
-
-function closeDrawer(): void {
   drawerOpen.value = false
-  // Don't reset selectedTab here
 }
 
-function handleDialogClose(val: boolean): void {
-  if (!val) {
-    // Dialog was closed, reset selectedTab to home or current route
-    if (route.name === 'Dashboard') {
-      selectedTab.value = 'home'
-    } else if (route.name === 'Notifications') {
-      selectedTab.value = 'notifications'
-    } else if (route.name === 'Profile') {
-      selectedTab.value = 'profile'
-    } else {
-      selectedTab.value = 'home'
-    }
-  }
-}
-
-function handleDrawerChange(val: boolean): void {
-  if (!val) {
-    // Drawer was closed, reset selectedTab to home or current route
-    if (route.name === 'Dashboard') {
-      selectedTab.value = 'home'
-    } else if (route.name === 'Notifications') {
-      selectedTab.value = 'notifications'
-    } else if (route.name === 'Profile') {
-      selectedTab.value = 'profile'
-    } else {
-      selectedTab.value = 'home'
-    }
-  }
-}
-
+// Logout functions
 async function handleLogout(): Promise<void> {
-  closeMenu()
-  closeDrawer()
+  menuDialogOpen.value = false
+
+  $q.dialog({
+    title: 'Logout',
+    message: 'Are you sure you want to logout?',
+    cancel: true,
+    persistent: true,
+  }).onOk(async () => {
+    await authStore.logout()
+    await router.push('/auth/login')
+  })
+}
+
+async function handleLogoutFromDrawer(): Promise<void> {
+  drawerOpen.value = false
+
   $q.dialog({
     title: 'Logout',
     message: 'Are you sure you want to logout?',
@@ -569,13 +608,13 @@ function formatTimeAgo(date: string | null): string {
 // Adjust for different footer heights
 @media (max-width: 600px) {
   :deep(.q-dialog__inner--bottom) {
-    padding-bottom: 56px; // Mobile footer height
+    padding-bottom: 56px;
   }
 }
 
 @media (min-width: 601px) and (max-width: 1023px) {
   :deep(.q-dialog__inner--bottom) {
-    padding-bottom: 60px; // Tablet footer height (tabs with labels)
+    padding-bottom: 60px;
   }
 }
 
