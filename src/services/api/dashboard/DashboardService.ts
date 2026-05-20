@@ -1,3 +1,4 @@
+// src/services/api/dashboard/DashboardService.ts
 import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../utils/constants'
 import { useAuthStore } from '../../../stores/auth/auth.store'
@@ -9,7 +10,7 @@ import type {
   IncidentTrend,
 } from './../../../types'
 
-// Helper function to round numbers
+// Helper function to round numbers with configurable decimal places
 function roundNumber(value: number, decimals: number = 0): number {
   if (typeof value !== 'number' || isNaN(value)) return 0
   const multiplier = Math.pow(10, decimals)
@@ -46,13 +47,22 @@ export interface KpiMetricsResponse {
   maturityScore: number
 }
 
+export interface RiskTrendItem {
+  period: string
+  label: string
+  high: number
+  medium: number
+  low: number
+  total: number
+}
+
 export interface RiskSummaryResponse {
   total_risks: number
   critical_risks: number
   high_risks: number
   medium_risks: number
   low_risks: number
-  risk_trends: RiskTrend[]
+  risk_trends: RiskTrendItem[]
   top_risk_categories: Array<{ category: string; count: number; percentage: number }>
 }
 
@@ -70,6 +80,17 @@ export interface BcmSummaryResponse {
   exercise_tests_pending: number
 }
 
+export interface IncidentTrendItem {
+  period: string
+  label: string
+  critical: number
+  high: number
+  medium: number
+  low: number
+  total: number
+  avgResolutionTime: number
+}
+
 export interface IncidentSummaryResponse {
   total_incidents: number
   active_incidents: number
@@ -79,8 +100,17 @@ export interface IncidentSummaryResponse {
   high_incidents: number
   medium_incidents: number
   low_incidents: number
-  incident_trends: IncidentTrend[]
+  incident_trends: IncidentTrendItem[]
   average_resolution_time_hours: number
+}
+
+export interface ComplianceStandardItem {
+  standard: string
+  compliant: number
+  partially: number
+  nonCompliant: number
+  total: number
+  complianceRate: number
 }
 
 export interface ComplianceSummaryResponse {
@@ -90,7 +120,7 @@ export interface ComplianceSummaryResponse {
   non_compliant_count: number
   overdue_audits: number
   upcoming_audits: number
-  compliance_by_standard: ComplianceOverview[]
+  compliance_by_standard: ComplianceStandardItem[]
 }
 
 export interface WorkflowSummaryResponse {
@@ -104,33 +134,38 @@ export interface WorkflowSummaryResponse {
   recent_workflows: DashboardWorkflow[]
 }
 
+export interface ActivityItem {
+  id: string
+  action: string
+  user: string
+  entity_type: string
+  entity_name: string
+  timestamp: string
+  icon: string
+  color: string
+}
+
 export interface RecentActivityResponse {
-  activities: Array<{
-    id: string
-    action: string
-    user: string
-    entity_type: string
-    entity_name: string
-    timestamp: string
-    icon: string
-    color: string
-  }>
+  activities: ActivityItem[]
+}
+
+export interface TaskItem {
+  id: string
+  title: string
+  type: string
+  due_date: string
+  priority: 'high' | 'medium' | 'low'
+  status: string
+  days_remaining: number
 }
 
 export interface UpcomingTasksResponse {
-  tasks: Array<{
-    id: string
-    title: string
-    type: string
-    due_date: string
-    priority: 'high' | 'medium' | 'low'
-    status: string
-    days_remaining: number
-  }>
+  tasks: TaskItem[]
 }
 
 /**
  * Dashboard API Service
+ * All numeric values are rounded to appropriate decimal places
  */
 export class DashboardService extends BaseService {
   /**
@@ -143,13 +178,13 @@ export class DashboardService extends BaseService {
     )
     const data = this.extractData(response) as unknown as KpiMetricsResponse
 
-    // Round all numeric values to whole numbers
+    // Round all numeric values
     return {
       activeBCPs: Math.round(data.activeBCPs ?? 0),
       activeIncidents: Math.round(data.activeIncidents ?? 0),
       highRisks: Math.round(data.highRisks ?? 0),
       pendingApprovals: Math.round(data.pendingApprovals ?? 0),
-      complianceRate: Math.round(data.complianceRate ?? 0),
+      complianceRate: roundNumber(data.complianceRate ?? 0, 0),
       maturityScore: roundNumber(data.maturityScore ?? 0, 1),
     }
   }
@@ -172,16 +207,15 @@ export class DashboardService extends BaseService {
       medium_risks: Math.round(data.medium_risks ?? 0),
       low_risks: Math.round(data.low_risks ?? 0),
       risk_trends: (data.risk_trends || []).map((trend) => ({
-        ...trend,
         period: trend.period,
         label: trend.label,
-        highRisks: Math.round(trend.high ?? 0),
-        mediumRisks: Math.round(trend.medium ?? 0),
-        lowRisks: Math.round(trend.low ?? 0),
+        high: Math.round(trend.high ?? 0),
+        medium: Math.round(trend.medium ?? 0),
+        low: Math.round(trend.low ?? 0),
         total: Math.round(trend.total ?? 0),
       })),
       top_risk_categories: (data.top_risk_categories || []).map((cat) => ({
-        ...cat,
+        category: cat.category,
         count: Math.round(cat.count ?? 0),
         percentage: roundNumber(cat.percentage ?? 0, 1),
       })),
@@ -198,6 +232,7 @@ export class DashboardService extends BaseService {
     )
     const data = this.extractData(response) as unknown as BcmSummaryResponse
 
+    // Round all numeric values
     return {
       total_bcp_plans: Math.round(data.total_bcp_plans ?? 0),
       active_plans: Math.round(data.active_plans ?? 0),
@@ -228,6 +263,7 @@ export class DashboardService extends BaseService {
     )
     const data = this.extractData(response) as unknown as IncidentSummaryResponse
 
+    // Round all numeric values
     return {
       total_incidents: Math.round(data.total_incidents ?? 0),
       active_incidents: Math.round(data.active_incidents ?? 0),
@@ -238,7 +274,6 @@ export class DashboardService extends BaseService {
       medium_incidents: Math.round(data.medium_incidents ?? 0),
       low_incidents: Math.round(data.low_incidents ?? 0),
       incident_trends: (data.incident_trends || []).map((trend) => ({
-        ...trend,
         period: trend.period,
         label: trend.label,
         critical: Math.round(trend.critical ?? 0),
@@ -262,6 +297,7 @@ export class DashboardService extends BaseService {
     )
     const data = this.extractData(response) as unknown as ComplianceSummaryResponse
 
+    // Round all numeric values
     return {
       overall_compliance_rate: roundNumber(data.overall_compliance_rate ?? 0, 1),
       compliant_count: Math.round(data.compliant_count ?? 0),
@@ -270,7 +306,6 @@ export class DashboardService extends BaseService {
       overdue_audits: Math.round(data.overdue_audits ?? 0),
       upcoming_audits: Math.round(data.upcoming_audits ?? 0),
       compliance_by_standard: (data.compliance_by_standard || []).map((standard) => ({
-        ...standard,
         standard: standard.standard,
         compliant: Math.round(standard.compliant ?? 0),
         partially: Math.round(standard.partially ?? 0),
@@ -291,6 +326,7 @@ export class DashboardService extends BaseService {
     )
     const data = this.extractData(response) as unknown as WorkflowSummaryResponse
 
+    // Round all numeric values
     return {
       total_workflows: Math.round(data.total_workflows ?? 0),
       pending_approvals: Math.round(data.pending_approvals ?? 0),
@@ -299,19 +335,10 @@ export class DashboardService extends BaseService {
       rejected: Math.round(data.rejected ?? 0),
       overdue: Math.round(data.overdue ?? 0),
       average_completion_days: roundNumber(data.average_completion_days ?? 0, 1),
-      recent_workflows: (data.recent_workflows || []).map(
-        (wf) =>
-        ({
-          ...wf,
-          uuid: wf.uuid,
-          workflow_type: wf.workflow_type,
-          workflow_state: wf.workflow_state,
-          priority: Math.round(wf.priority ?? 0),
-          title: wf.title,
-          due_date: wf.due_date,
-          assigned_to: wf.assigned_to,
-        } as unknown as DashboardWorkflow)
-      ),
+      recent_workflows: (data.recent_workflows || []).map((wf) => ({
+        ...wf,
+        priority: Math.round(wf.priority ?? 0),
+      })) as DashboardWorkflow[],
     }
   }
 
@@ -327,7 +354,6 @@ export class DashboardService extends BaseService {
       const url = `${API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(orgId)}?limit=${limit}`
       const response = await this.get<{ data: { tasks: any[] } }>(url)
 
-      // Safely extract data with fallback
       const responseData = this.extractData(response) as any
       const tasks = responseData?.data?.tasks || responseData?.tasks || []
 
@@ -339,7 +365,6 @@ export class DashboardService extends BaseService {
       }
     } catch (error) {
       console.error('Failed to get upcoming tasks:', error)
-      // Return empty tasks array on error
       return { tasks: [] }
     }
   }
@@ -356,14 +381,12 @@ export class DashboardService extends BaseService {
       const url = `${API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(orgId)}?limit=${limit}`
       const response = await this.get<{ data: { activities: any[] } }>(url)
 
-      // Safely extract data with fallback
       const responseData = this.extractData(response) as any
       const activities = responseData?.data?.activities || responseData?.activities || []
 
       return { activities: activities || [] }
     } catch (error) {
       console.error('Failed to get recent activity:', error)
-      // Return empty activities array on error
       return { activities: [] }
     }
   }
@@ -371,19 +394,18 @@ export class DashboardService extends BaseService {
   /**
    * Get risk trends
    */
-  async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
+  async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrendItem[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()
     const url = `${API_ENDPOINTS.DASHBOARD.RISK_TRENDS(orgId)}?period=${period}`
-    const response = await this.get<{ data: RiskTrend[] }>(url)
-    const trends = (this.extractData(response) || []) as unknown as RiskTrend[]
+    const response = await this.get<{ data: RiskTrendItem[] }>(url)
+    const trends = (this.extractData(response) || []) as unknown as RiskTrendItem[]
 
     return trends.map((trend) => ({
-      ...trend,
       period: trend.period,
       label: trend.label,
-      highRisks: Math.round(trend.high ?? 0),
-      mediumRisks: Math.round(trend.medium ?? 0),
-      lowRisks: Math.round(trend.low ?? 0),
+      high: Math.round(trend.high ?? 0),
+      medium: Math.round(trend.medium ?? 0),
+      low: Math.round(trend.low ?? 0),
       total: Math.round(trend.total ?? 0),
     }))
   }
@@ -391,15 +413,14 @@ export class DashboardService extends BaseService {
   /**
    * Get compliance overview
    */
-  async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
+  async getComplianceOverview(organisationId?: string): Promise<ComplianceStandardItem[]> {
     const orgId = organisationId || this.getCurrentOrganisationId()
-    const response = await this.get<{ data: ComplianceOverview[] }>(
+    const response = await this.get<{ data: ComplianceStandardItem[] }>(
       API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(orgId)
     )
-    const overview = (this.extractData(response) || []) as unknown as ComplianceOverview[]
+    const overview = (this.extractData(response) || []) as unknown as ComplianceStandardItem[]
 
     return overview.map((item) => ({
-      ...item,
       standard: item.standard,
       compliant: Math.round(item.compliant ?? 0),
       partially: Math.round(item.partially ?? 0),
@@ -410,7 +431,7 @@ export class DashboardService extends BaseService {
   }
 
   /**
-   * Get complete dashboard data in one call with error handling for individual endpoints
+   * Get complete dashboard data in one call with error handling
    */
   async getCompleteDashboard(organisationId?: string): Promise<{
     kpis: KpiMetricsResponse
@@ -436,7 +457,7 @@ export class DashboardService extends BaseService {
       this.getUpcomingTasks(10, orgId),
     ])
 
-    // Create default empty responses for failed endpoints (with rounded values)
+    // Default empty responses with properly rounded values
     const defaultKpis: KpiMetricsResponse = {
       activeBCPs: 0,
       activeIncidents: 0,
