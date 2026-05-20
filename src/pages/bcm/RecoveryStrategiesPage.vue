@@ -158,7 +158,7 @@ const requiredRule = (val: any) => !!val || 'Required'
 
 const totalCost = computed(() =>
   useLocale.formatCurrency(
-    strategies.value.reduce((s: number, r: any) => s + (r.estimated_recovery_cost || 0), 0)
+    strategies.value.reduce((s: number, r: any) => s + parseInt(r.estimated_recovery_cost || 0), 0)
   )
 )
 const avgSuccessRate = computed(() => {
