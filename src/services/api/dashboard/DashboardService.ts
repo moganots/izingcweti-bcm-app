@@ -1,14 +1,7 @@
-// src/services/api/dashboard/DashboardService.ts
 import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../utils/constants'
 import { useAuthStore } from '../../../stores/auth/auth.store'
-import type {
-  DashboardWorkflow,
-  ComplianceOverview,
-  RiskTrend,
-  MaturityProgress,
-  IncidentTrend,
-} from './../../../types'
+import type { DashboardWorkflow, MaturityProgress } from './../../../types'
 
 // Helper function to round numbers with configurable decimal places
 function roundNumber(value: number, decimals: number = 0): number {
