@@ -52,13 +52,7 @@
         <div class="text-caption text-grey-6 q-mb-xs">Success Rate</div>
         <q-linear-progress
           :value="roundedRate / 100"
-          :color="
-            roundedRate >= 80
-              ? 'green'
-              : roundedRate >= 50
-              ? 'orange'
-              : 'red'
-          "
+          :color="roundedRate >= 80 ? 'green' : roundedRate >= 50 ? 'orange' : 'red'"
           size="15px"
           rounded
         >
@@ -86,12 +80,15 @@
 </template>
 
 <script setup lang="ts">
-import { round, getValidPercentage, formatCurrencyValue } from '../../utils/number.utils'
+import { useLocaleStore } from 'src/stores/locale.store'
+import { round, getValidPercentage } from '../../utils/number.utils'
 
 const props = defineProps<{ strategy: any }>()
 defineEmits<{ edit: [strategy: any]; delete: [strategy: any] }>()
 
-const estimatedCost = formatCurrencyValue(props.strategy.estimated_recovery_cost)
+const useLocale = useLocaleStore()
+
+const estimatedCost = useLocale.formatCurrency(props.strategy.estimated_recovery_cost)
 const successRate = getValidPercentage(props.strategy.test_success_rate, 0)
 const roundedRate = round(successRate, 0)
 

@@ -142,9 +142,10 @@ import PageHeader from '../../components/.common/PageHeader.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import EmptyState from '../../components/.common/EmptyState.vue'
 import RecoveryStrategyCard from '../../components/bcm/RecoveryStrategyCard.vue'
-import { formatCurrencyValue } from 'src/utils/number.utils'
+import { useLocaleStore } from 'src/stores/locale.store'
 
 const $q = useQuasar()
+const useLocale = useLocaleStore()
 const bcmStore = useBcmStore()
 const strategies = computed(() => bcmStore.recoveryStrategies)
 const isLoading = computed(() => bcmStore.isLoadingStrategies)
@@ -156,7 +157,9 @@ const bcpOptions = [{ label: 'BCP-1', value: 'bcp-1' }]
 const requiredRule = (val: any) => !!val || 'Required'
 
 const totalCost = computed(() =>
-  formatCurrencyValue(strategies.value.reduce((s: number, r: any) => s + (r.estimated_recovery_cost || 0), 0))
+  useLocale.formatCurrency(
+    strategies.value.reduce((s: number, r: any) => s + (r.estimated_recovery_cost || 0), 0)
+  )
 )
 const avgSuccessRate = computed(() => {
   const d = strategies.value
