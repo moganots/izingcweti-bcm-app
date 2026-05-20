@@ -34,16 +34,16 @@
         <div class="col-6">
           <div class="text-caption text-grey-6">Est. Recovery Cost</div>
           <div class="text-body2 text-weight-bold text-primary">
-            {{ formatCurrency(strategy.estimated_recovery_cost) }}
+            {{ estimatedCost }}
           </div>
         </div>
         <div class="col-6">
           <div class="text-caption text-grey-6">Test Success Rate</div>
           <div
             class="text-body2 text-weight-bold"
-            :class="strategy.test_success_rate >= 80 ? 'text-green' : 'text-orange'"
+            :class="roundedRate >= 80 ? 'text-green' : 'text-orange'"
           >
-            {{ strategy.test_success_rate }}%
+            {{ roundedRate }}%
           </div>
         </div>
       </div>
@@ -51,11 +51,11 @@
       <div class="q-mb-sm">
         <div class="text-caption text-grey-6 q-mb-xs">Success Rate</div>
         <q-linear-progress
-          :value="strategy.test_success_rate / 100"
+          :value="roundedRate / 100"
           :color="
-            strategy.test_success_rate >= 80
+            roundedRate >= 80
               ? 'green'
-              : strategy.test_success_rate >= 50
+              : roundedRate >= 50
               ? 'orange'
               : 'red'
           "
@@ -63,7 +63,7 @@
           rounded
         >
           <div class="absolute-full flex flex-center">
-            <q-badge :label="strategy.test_success_rate + '%'" color="white" text-color="black" />
+            <q-badge :label="roundedRate + '%'" color="white" text-color="black" />
           </div>
         </q-linear-progress>
       </div>
@@ -86,10 +86,14 @@
 </template>
 
 <script setup lang="ts">
-import { formatCurrency } from '../../utils/formatters'
+import { round, getValidPercentage, formatCurrencyValue } from '../../utils/number.utils'
 
-defineProps<{ strategy: any }>()
+const props = defineProps<{ strategy: any }>()
 defineEmits<{ edit: [strategy: any]; delete: [strategy: any] }>()
+
+const estimatedCost = formatCurrencyValue(props.strategy.estimated_recovery_cost)
+const successRate = getValidPercentage(props.strategy.test_success_rate, 0)
+const roundedRate = round(successRate, 0)
 
 function getTypeColor(type: string): string {
   const colors: Record<string, string> = {
