@@ -172,13 +172,13 @@ export const API_ENDPOINTS = {
   RISKS: {
     BASE: '/risks',
     BY_ID: (id: string) => `/risks/${id}`,
-    BY_ORGANISATION: (organisationId: string) => `/organisations/${organisationId}/risks`,
+    BY_ORGANISATION: (organisationId: string) => `/risks/organisation/${organisationId}`,
     BY_CATEGORY: (category: string) => `/risks/category/${category}`,
-    MATRIX: (organisationId: string) => `/organisations/${organisationId}/risks/matrix`,
-    STATS: (organisationId: string) => `/organisations/${organisationId}/risks/stats`,
+    MATRIX: (organisationId: string) => `/risks/organisation/${organisationId}/matrix`,
+    STATS: (organisationId: string) => `/risks/organisation/${organisationId}/stats`,
     ASSESS: (id: string) => `/risks/${id}/assess`,
     MITIGATE: (id: string) => `/risks/${id}/mitigate`,
-    EXPORT: (organisationId: string) => `/organisations/${organisationId}/risks/export`,
+    EXPORT: (organisationId: string) => `/risks/organisation/${organisationId}/export`,
     SEARCH: '/risks/search',
   },
 

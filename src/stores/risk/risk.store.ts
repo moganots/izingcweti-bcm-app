@@ -8,8 +8,11 @@ import type {
   UpdateRiskRequest,
   ReassessRiskRequest,
 } from '../../types'
+import { useAuthStore } from '../auth/auth.store'
 
 export const useRiskStore = defineStore('risk', () => {
+  const authStore = useAuthStore()
+
   // ============================================
   // State
   // ============================================
@@ -27,23 +30,18 @@ export const useRiskStore = defineStore('risk', () => {
   // Getters
   // ============================================
   const criticalRisks = computed(() => risks.value.filter((r) => r.inherent_risk_score >= 8.5))
-
   const highRisks = computed(() =>
     risks.value.filter((r) => r.inherent_risk_score >= 7 && r.inherent_risk_score < 8.5)
   )
-
   const mediumRisks = computed(() =>
     risks.value.filter((r) => r.inherent_risk_score >= 5 && r.inherent_risk_score < 7)
   )
-
   const lowRisks = computed(() => risks.value.filter((r) => r.inherent_risk_score < 5))
-
   const mitigatedRisks = computed(() =>
     risks.value.filter(
       (r) => Array.isArray(r.mitigation_control_ids) && r.mitigation_control_ids.length > 0
     )
   )
-
   const unmitigatedRisks = computed(() =>
     risks.value.filter(
       (r) => !Array.isArray(r.mitigation_control_ids) || r.mitigation_control_ids.length === 0
@@ -99,9 +97,6 @@ export const useRiskStore = defineStore('risk', () => {
   // Actions
   // ============================================
 
-  /**
-   * Load risks with optional filters
-   */
   async function loadRisks(filters?: RiskQueryParams): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -123,9 +118,6 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Load a single risk by ID
-   */
   async function loadRisk(id: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -142,9 +134,6 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Load risk statistics
-   */
   async function loadStats(organisationId?: string): Promise<void> {
     try {
       const data = await riskService.getStats(organisationId)
@@ -154,9 +143,6 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Load high risks only
-   */
   async function loadHighRisks(threshold?: number): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -173,9 +159,6 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Load critical risks only
-   */
   async function loadCriticalRisks(): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -192,18 +175,18 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Create a new risk
-   */
   async function createRisk(data: CreateRiskRequest): Promise<Risk> {
     isSaving.value = true
     error.value = null
 
     try {
+      // Fix: Ensure organisation_id is set from auth store
+      if (!data.organisation_id && authStore.user?.organisation_id) {
+        data.organisation_id = authStore.user.organisation_id
+      }
+
       const created = await riskService.createRisk(data)
-      // Add to local list
       risks.value.unshift(created)
-      // Refresh stats
       await loadStats()
       return created
     } catch (err: any) {
@@ -215,21 +198,16 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Update a risk
-   */
   async function updateRisk(id: string, data: UpdateRiskRequest): Promise<Risk> {
     isSaving.value = true
     error.value = null
 
     try {
       const updated = await riskService.updateRisk(id, data)
-      // Update in local list
       const index = risks.value.findIndex((r) => r.uuid === id)
       if (index !== -1) {
         risks.value[index] = updated
       }
-      // Update selected if viewing
       if (selectedRisk.value?.uuid === id) {
         selectedRisk.value = updated
       }
@@ -243,25 +221,19 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Reassess a risk
-   */
   async function reassessRisk(id: string, data: ReassessRiskRequest): Promise<Risk> {
     isSaving.value = true
     error.value = null
 
     try {
       const reassessed = await riskService.reassessRisk(id, data)
-      // Update in local list
       const index = risks.value.findIndex((r) => r.uuid === id)
       if (index !== -1) {
         risks.value[index] = reassessed
       }
-      // Update selected if viewing
       if (selectedRisk.value?.uuid === id) {
         selectedRisk.value = reassessed
       }
-      // Refresh stats after reassessment
       await loadStats()
       return reassessed
     } catch (err: any) {
@@ -273,22 +245,16 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Delete a risk
-   */
   async function deleteRisk(id: string): Promise<void> {
     isSaving.value = true
     error.value = null
 
     try {
       await riskService.deleteRisk(id)
-      // Remove from local list
       risks.value = risks.value.filter((r) => r.uuid !== id)
-      // Clear selection if deleted
       if (selectedRisk.value?.uuid === id) {
         selectedRisk.value = null
       }
-      // Refresh stats
       await loadStats()
     } catch (err: any) {
       console.error('Failed to delete risk:', err)
@@ -299,16 +265,12 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Add mitigation controls to a risk
-   */
   async function addMitigationControls(id: string, controlIds: string[]): Promise<Risk> {
     isSaving.value = true
     error.value = null
 
     try {
       const updated = await riskService.addMitigationControls(id, controlIds)
-      // Update in local list
       const index = risks.value.findIndex((r) => r.uuid === id)
       if (index !== -1) {
         risks.value[index] = updated
@@ -326,16 +288,12 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Remove a mitigation control from a risk
-   */
   async function removeMitigationControl(id: string, controlId: string): Promise<Risk> {
     isSaving.value = true
     error.value = null
 
     try {
       const updated = await riskService.removeMitigationControl(id, controlId)
-      // Update in local list
       const index = risks.value.findIndex((r) => r.uuid === id)
       if (index !== -1) {
         risks.value[index] = updated
@@ -353,24 +311,15 @@ export const useRiskStore = defineStore('risk', () => {
     }
   }
 
-  /**
-   * Set current page and reload
-   */
   async function setPage(page: number): Promise<void> {
     currentPage.value = page
     await loadRisks()
   }
 
-  /**
-   * Clear selected risk
-   */
   function clearSelection(): void {
     selectedRisk.value = null
   }
 
-  /**
-   * Clear all risk data
-   */
   function clearAll(): void {
     risks.value = []
     selectedRisk.value = null
@@ -382,7 +331,6 @@ export const useRiskStore = defineStore('risk', () => {
   }
 
   return {
-    // State
     risks,
     selectedRisk,
     stats,
@@ -392,7 +340,6 @@ export const useRiskStore = defineStore('risk', () => {
     currentPage,
     totalPages,
     totalItems,
-    // Getters
     criticalRisks,
     highRisks,
     mediumRisks,
@@ -406,7 +353,6 @@ export const useRiskStore = defineStore('risk', () => {
     riskReduction,
     hasCriticalRisks,
     hasHighRisks,
-    // Actions
     loadRisks,
     loadRisk,
     loadStats,
