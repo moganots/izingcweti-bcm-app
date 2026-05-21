@@ -359,7 +359,6 @@ const syncStore = useSyncStore()
 const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
 
-const companyName = AppConfig.app.company.name || 'Izingcweti'
 const appFullName = AppConfig.app.fullName || 'Izingcweti - BCM App'
 const appShortName = AppConfig.app.shortName || 'BCM App'
 
@@ -372,8 +371,6 @@ const isMobile = ref(window.innerWidth < 1024)
 
 const unreadCount = computed(() => notificationStore.unreadCount || 0)
 const pendingCount = computed(() => syncStore.pendingCount || 0)
-const isSyncing = computed(() => syncStore.isSyncing)
-const syncLabel = computed(() => (isSyncing.value ? 'Syncing' : 'Sync'))
 const isDarkMode = computed(() => uiStore.isDarkMode)
 const userFullName = computed(() => authStore.fullName)
 const userEmail = computed(() => authStore.userEmail)

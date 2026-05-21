@@ -39,7 +39,7 @@
           round
           :icon="isOffline ? 'wifi_off' : 'wifi'"
           :color="isOffline ? 'red' : 'green'"
-          size="0.9em"
+          size="0.7em"
           @click="toggleNetworkInfo"
         >
           <q-tooltip>{{
@@ -47,43 +47,8 @@
           }}</q-tooltip>
         </q-btn>
 
-        <!-- Notifications Button -->
-        <q-btn
-          flat
-          dense
-          round
-          icon="notifications"
-          @click="$router.push('/notifications')"
-          size="0.9em"
-        >
-          <q-badge v-if="notificationStore.unreadCount > 0" floating color="red">
-            {{ notificationStore.unreadCount > 99 ? '99+' : notificationStore.unreadCount }}
-          </q-badge>
-          <q-tooltip>Notifications</q-tooltip>
-        </q-btn>
-
-        <!-- Sync Button with Badge -->
-        <q-btn
-          flat
-          dense
-          round
-          icon="sync"
-          :color="syncStore.isSyncing ? 'orange' : 'white'"
-          :class="{ 'rotate-animation': syncStore.isSyncing }"
-          :loading="syncStore.isSyncing"
-          size="0.9em"
-          @click="handleSync"
-        >
-          <q-badge v-if="syncStore.pendingCount > 0 && !syncStore.isSyncing" floating color="red">
-            {{ syncStore.pendingCount > 99 ? '99+' : syncStore.pendingCount }}
-          </q-badge>
-          <q-tooltip>{{
-            syncStore.isSyncing ? 'Syncing...' : `Sync Now (${syncStore.pendingCount} pending)`
-          }}</q-tooltip>
-        </q-btn>
-
         <!-- QR Code Scanner Button -->
-        <q-btn flat dense round icon="qr_code_scanner" @click="openQRScanner" size="0.9em">
+        <q-btn flat dense round icon="qr_code_scanner" @click="openQRScanner" size="0.7em">
           <q-tooltip>Scan QR Code</q-tooltip>
         </q-btn>
       </div>
@@ -95,15 +60,12 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useSyncStore, useNotificationStore, useUiStore } from '../../stores'
-import { capitalizeFirstLettersAdvanced } from 'src/utils/formatters'
+import { useUiStore } from '../../stores'
 import AppConfig from 'src/utils/config'
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-const syncStore = useSyncStore()
-const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
 
 const props = defineProps<{ pageTitle?: string }>()
@@ -123,37 +85,6 @@ function goBack(): void {
   router.back()
 }
 
-async function handleSync(): Promise<void> {
-  if (syncStore.isSyncing) return
-
-  // Check if online
-  if (isOffline.value) {
-    $q.notify({
-      type: 'warning',
-      message: 'Cannot sync while offline. Please check your connection.',
-      position: 'top',
-      timeout: 3000,
-    })
-    return
-  }
-
-  try {
-    await syncStore.fullSync()
-    $q.notify({
-      type: 'positive',
-      message: 'Sync completed successfully',
-      position: 'top',
-      timeout: 2000,
-    })
-  } catch (e: any) {
-    $q.notify({
-      type: 'negative',
-      message: e.message || 'Sync failed',
-      position: 'top',
-      timeout: 3000,
-    })
-  }
-}
 
 function toggleNetworkInfo(): void {
   const connectionType = uiStore.networkType || 'unknown'
