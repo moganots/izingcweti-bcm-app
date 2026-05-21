@@ -1,6 +1,6 @@
-import { User } from '.'
-import { AuditAction } from './bcm.entity'
-import { SyncStatus } from './sync.entity'
+import { User } from './../user/user.entity'
+import { AuditAction } from './../bcm/bcm.entity'
+import { SyncStatus } from './../sync/sync.entity'
 
 /**
  * Audit Severity Enum

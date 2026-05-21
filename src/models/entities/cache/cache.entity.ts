@@ -1,5 +1,3 @@
-// src/models/entities/cache.entity.ts
-
 /**
  * Cache Entity
  */

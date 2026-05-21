@@ -1,5 +1,5 @@
-import { Organisation } from '.'
-import { SyncStatus } from './sync.entity'
+import { Organisation } from './../organisation/organisation.entity'
+import { SyncStatus } from './../sync/sync.entity'
 
 /**
  * Risk Category Enum

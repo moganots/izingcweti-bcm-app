@@ -1,11 +1,18 @@
-// src/services/sync/NetworkMonitor.ts
 import { Network } from '@capacitor/network'
 import { BaseService } from '../BaseService'
 import { ConnectionType, getConnectionType, CONNECTION_TYPE_LABELS } from './../../types'
-import type { NetworkStatus, ConnectionQuality } from './../../types'
+import type { NetworkStatus, ConnectionQuality, ApiResponse } from './../../types'
 import type { NetworkInfo } from './../../models/entities'
 import { useUiStore } from './../../stores/ui/ui.store'
 import { API_ENDPOINTS } from 'src/utils/constants'
+
+// Health check response interface
+interface HealthCheckResponse extends ApiResponse {
+  database?: string
+}
+
+// Ping response interface
+interface PingResponse extends ApiResponse { }
 
 /**
  * Network Monitor Service
@@ -105,6 +112,7 @@ export class NetworkMonitor extends BaseService {
         window.addEventListener('offline', () => this.updateStatus(false, ConnectionType.NONE))
       }
 
+      // Check health every 60 seconds (matches app.ts health check interval)
       this._checkInterval = setInterval(() => {
         this.performHealthCheck()
       }, 60000)
@@ -183,8 +191,7 @@ export class NetworkMonitor extends BaseService {
     // Log changes
     if (previousOnline !== connected) {
       console.log(
-        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${
-          CONNECTION_TYPE_LABELS[connectionType]
+        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${CONNECTION_TYPE_LABELS[connectionType]
         })`
       )
     } else if (previousType !== connectionType) {
@@ -244,11 +251,6 @@ export class NetworkMonitor extends BaseService {
       const startTime = Date.now()
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      await fetch(`${import.meta.env.VITE_API_BASE_URL}/ping`, {
-        method: 'HEAD',
-        signal: controller.signal,
-      })
 
       clearTimeout(timeoutId)
       const latency = Date.now() - startTime
@@ -332,16 +334,104 @@ export class NetworkMonitor extends BaseService {
   // ============================================
 
   /**
-   * Check server connectivity via API endpoint
+   * Check server connectivity via ping endpoint
+   * Uses /api/ping for lightweight connectivity check
    */
   async checkServerConnectivity(): Promise<boolean> {
     try {
-      const response = await this.get<{ status: string }>(API_ENDPOINTS.HEALTH.HEALTH)
-      const data = this.extractData(response)
-      return data.status === 'ok' || data.status === 'healthy'
+      const response = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
+      const validStatuses = ['ok', 'success', 'connected', 'running', 'up', 'alive']
+      const isValid = response && validStatuses.includes(response?.status?.toLowerCase()!)
+
+      if (isValid) {
+        console.debug('✓ Server connectivity verified')
+      }
+      return isValid || false
     } catch (error) {
-      console.error('Server connectivity check failed:', error)
+      console.debug('Server connectivity check failed:', error)
       return false
+    }
+  }
+
+  /**
+   * Get detailed server health information
+   * Uses /api/health for comprehensive health check including database status
+   */
+  async getServerHealth(): Promise<HealthCheckResponse | null> {
+    try {
+      return (await this.get<HealthCheckResponse>(API_ENDPOINTS.API.HEALTH)) || {}
+    } catch (error) {
+      console.error('Server health check failed:', error)
+      return null
+    }
+  }
+
+  /**
+   * Get detailed server ping information
+   * Uses /api/ping for comprehensive ping check including database status
+   */
+  async getServerPing(): Promise<HealthCheckResponse | null> {
+    try {
+      return (await this.get<HealthCheckResponse>(API_ENDPOINTS.API.PING)) || {}
+    } catch (error) {
+      console.error('Server health check failed:', error)
+      return null
+    }
+  }
+
+  /**
+   * Check if server database is healthy
+   */
+  async isDatabaseHealthy(): Promise<boolean> {
+    try {
+      const health = await this.getServerHealth()
+      return health?.database === 'connected' || health?.status === 'healthy'
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Get server uptime information
+   */
+  async getServerUptime(): Promise<number | null> {
+    try {
+      const ping = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
+      return ping?.uptime || null
+    } catch {
+      return null
+    }
+  }
+
+  /**
+   * Perform comprehensive health check
+   * Checks both network connectivity and server health
+   */
+  async performFullHealthCheck(): Promise<{
+    isOnline: boolean
+    serverReachable: boolean
+    databaseHealthy: boolean
+    latency: number
+    serverStatus: HealthCheckResponse | null
+    timestamp: string
+  }> {
+    const startTime = Date.now()
+
+    const serverReachable = await this.checkServerConnectivity()
+    const databaseHealthy = await this.isDatabaseHealthy()
+    const serverStatus = await this.getServerHealth()
+
+    const latency = Date.now() - startTime
+
+    return {
+      isOnline: this._isOnline,
+      serverReachable:
+        serverReachable ||
+        ['ok', 'success', 'healthy', 'up', 'running'].includes(serverStatus?.status!),
+      databaseHealthy,
+      latency,
+      serverStatus,
+      timestamp: new Date().toISOString(),
     }
   }
 
@@ -353,24 +443,32 @@ export class NetworkMonitor extends BaseService {
     connectionType: string
     latency: number
     serverReachable: boolean
+    databaseHealthy: boolean
     signalStrength: number
     isMetered: boolean
     isHighBandwidth: boolean
+    serverVersion?: string
+    serverEnvironment?: string
+    serverUptime?: number
     timestamp: string
   }> {
     const quality = await this.checkConnectionQuality()
-    const serverReachable = await this.checkServerConnectivity()
+    const health = await this.performFullHealthCheck()
 
     return {
       isOnline: this._isOnline,
       connectionType: CONNECTION_TYPE_LABELS[this._connectionType],
       latency: quality.latency,
-      serverReachable,
+      serverReachable: health.serverReachable,
+      databaseHealthy: health.databaseHealthy,
       signalStrength: this._signalStrength,
       isMetered: this.isMeteredConnection(),
       isHighBandwidth: this.isHighBandwidth(),
+      serverVersion: health.serverStatus?.apiVersion,
+      serverEnvironment: health.serverStatus?.environment,
+      serverUptime: health.serverStatus?.uptime!,
       timestamp: new Date().toISOString(),
-    }
+    } as any
   }
 
   /**
@@ -416,33 +514,37 @@ export class NetworkMonitor extends BaseService {
 
   /**
    * Perform health check to verify connectivity
+   * Uses /api/ping for lightweight check and updates status accordingly
    */
   private async performHealthCheck(): Promise<void> {
     try {
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 5000)
 
-      // Use the health endpoint from constants
-      const healthUrl = API_ENDPOINTS.HEALTH?.HEALTH || '/api/health'
-      const response = await fetch(healthUrl, {
-        method: 'HEAD',
-        signal: controller.signal,
-      }).catch(() => null)
+      // Use ping endpoint for lightweight check
+      const isServerReachable = await this.checkServerConnectivity()
 
       clearTimeout(timeoutId)
 
-      if (response?.ok && !this._isOnline) {
+      if (isServerReachable && !this._isOnline) {
+        // Server is reachable but we thought we were offline - update status
         this.updateStatus(true, this._connectionType)
-      } else if ((!response || !response.ok) && this._isOnline) {
-        // Don't go offline just because endpoint returns error
-        // Only go offline if we get a network error
-        if (response === null) {
+      } else if (!isServerReachable && this._isOnline) {
+        // Server is not reachable but we thought we were online
+        // Check if it's a network error or server error
+        try {
+          const pingResult = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
+          if (!pingResult) {
+            this.updateStatus(false, ConnectionType.NONE)
+          }
+        } catch (error) {
+          // Network error - go offline
           this.updateStatus(false, ConnectionType.NONE)
         }
       }
     } catch {
+      // Only mark offline on actual network errors
       if (this._isOnline) {
-        // Only mark offline on actual network errors, not HTTP errors
         this.updateStatus(false, ConnectionType.NONE)
       }
     }

@@ -56,10 +56,10 @@ async function handleRefresh() {
 <style lang="scss" scoped>
 .page-header {
   .text-h4 {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
 
     @media (max-width: 600px) {
-      font-size: 1.5rem;
+      font-size: 1rem;
     }
   }
 }

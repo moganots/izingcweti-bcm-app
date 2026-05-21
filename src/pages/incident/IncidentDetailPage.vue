@@ -159,18 +159,17 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useIncidentStore } from '../../stores/incident.store'
-import { formatDateTime } from '../../utils/date.utils'
-import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
-import IncidentSeverityBadge from '../../components/incident/IncidentSeverityBadge.vue'
-import IncidentStatusBadge from '../../components/incident/IncidentStatusBadge.vue'
-import IncidentTimeline from '../../components/incident/IncidentTimeline.vue'
-import IncidentResolutionForm from '../../components/incident/IncidentResolutionForm.vue'
+import { useIncidentStore } from './../../stores'
+import { formatDateTime } from './../../utils/date.utils'
+import LoadingSpinner from './../../components/.common/LoadingSpinner.vue'
+import IncidentSeverityBadge from './../../components/incident/IncidentSeverityBadge.vue'
+import IncidentStatusBadge from './../../components/incident/IncidentStatusBadge.vue'
+import IncidentTimeline from './../../components/incident/IncidentTimeline.vue'
+import IncidentResolutionForm from './../../components/incident/IncidentResolutionForm.vue'
 
 const route = useRoute()
-const router = useRouter()
 const $q = useQuasar()
 const incidentStore = useIncidentStore()
 

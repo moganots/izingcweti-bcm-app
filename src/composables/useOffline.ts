@@ -1,6 +1,6 @@
 import { computed } from 'vue';
 import { useNetwork } from './useNetwork';
-import { useSyncStore } from '../stores/sync.store';
+import { useSyncStore } from './../stores';
 import { db } from '../services/db/Database';
 
 /**

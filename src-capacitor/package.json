@@ -1,8 +1,8 @@
 {
   "name": "izingcweti-bcm-app",
-  "version": "26.0514.1",
-  "description": "Business Continuity Management System",
-  "author": "BCM Info <info@bcm.izingcweti.co.za>",
+  "version": "26.0520.1",
+  "description": "Izingcweti Business Continuity Management Mobile App",
+  "author": "thabang.mogano@gmail.com",
   "private": true,
   "dependencies": {
     "@capacitor-community/camera-preview": "^6.0.1",

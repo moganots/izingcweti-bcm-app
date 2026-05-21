@@ -1,5 +1,5 @@
-import { Department, Organisation } from './organisation.entity'
-import { SyncStatus } from './sync.entity'
+import { Department, Organisation } from './../organisation/organisation.entity'
+import { SyncStatus } from './../sync/sync.entity'
 
 /**
  * BCM Enums

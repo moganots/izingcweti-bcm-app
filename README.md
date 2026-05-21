@@ -627,7 +627,7 @@ Copy .env.example to .env and configure:
 ```bash
 # Application
 VITE_APP_NAME="Business Continuity Management System"
-VITE_APP_VERSION=25.0514.1
+VITE_APP_VERSION=26.0520.1
 VITE_APP_DESCRIPTION="Business Continuity Management Mobile Application"
 
 # Environment (Local, Development, Staging, Production)

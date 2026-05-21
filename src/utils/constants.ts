@@ -8,11 +8,11 @@
 // ============================================
 export const API_ENDPOINTS = {
   // ============================================
-  // Health Endpoints
+  // Health & System Endpoints
   // ============================================
-  HEALTH: {
-    PING: '/api/ping',
-    HEALTH: '/api/health',
+  API: {
+    PING: '/ping', // Detailed ping check with DB status
+    HEALTH: '/health', // Detailed health check with DB status
   },
 
   // ============================================
@@ -78,7 +78,8 @@ export const API_ENDPOINTS = {
       SEARCH: '/business-units/search',
       BULK_IMPORT: (organisationId: string) =>
         `/organisations/${organisationId}/business-units/bulk-import`,
-      EXPORT: (organisationId: string) => `/organisations/${organisationId}/business-units/export`,
+      EXPORT: (organisationId: string) =>
+        `/organisations/${organisationId}/business-units/export`,
     },
 
     // Departments
@@ -90,7 +91,8 @@ export const API_ENDPOINTS = {
       SEARCH: '/departments/search',
       BULK_IMPORT: (businessUnitId: string) =>
         `/business-units/${businessUnitId}/departments/bulk-import`,
-      EXPORT: (businessUnitId: string) => `/business-units/${businessUnitId}/departments/export`,
+      EXPORT: (businessUnitId: string) =>
+        `/business-units/${businessUnitId}/departments/export`,
     },
   },
 
@@ -124,7 +126,8 @@ export const API_ENDPOINTS = {
     CRITICAL_FUNCTIONS: {
       BASE: '/critical-functions',
       BY_ID: (id: string) => `/critical-functions/${id}`,
-      BY_DEPARTMENT: (departmentId: string) => `/departments/${departmentId}/critical-functions`,
+      BY_DEPARTMENT: (departmentId: string) =>
+        `/departments/${departmentId}/critical-functions`,
       BY_ORGANISATION: (organisationId: string) =>
         `/organisations/${organisationId}/critical-functions`,
       SEARCH: '/critical-functions/search',
@@ -201,21 +204,21 @@ export const API_ENDPOINTS = {
   // Workflow Endpoints
   // ============================================
   WORKFLOWS: {
-    BASE: '/workflows',
-    BY_ID: (id: string) => `/workflows/${id}`,
-    MY_WORKFLOWS: '/workflows/my',
-    PENDING_APPROVALS: '/workflows/pending-approvals',
-    STATS: '/workflows/stats',
-    SUBMIT: (id: string) => `/workflows/${id}/submit`,
-    APPROVE: (id: string) => `/workflows/${id}/approve`,
-    REJECT: (id: string) => `/workflows/${id}/reject`,
-    ESCALATE: (id: string) => `/workflows/${id}/escalate`,
-    REASSIGN: (id: string) => `/workflows/${id}/reassign`,
-    ADD_COMMENT: (id: string) => `/workflows/${id}/comments`,
+    BASE: '/workflow',
+    BY_ID: (id: string) => `/workflow/${id}`,
+    MY_WORKFLOWS: '/workflow/my',
+    PENDING_APPROVALS: '/workflow/pending-approvals',
+    STATS: '/workflow/stats',
+    SUBMIT: (id: string) => `/workflow/${id}/submit`,
+    APPROVE: (id: string) => `/workflow/${id}/approve`,
+    REJECT: (id: string) => `/workflow/${id}/reject`,
+    ESCALATE: (id: string) => `/workflow/${id}/escalate`,
+    REASSIGN: (id: string) => `/workflow/${id}/reassign`,
+    ADD_COMMENT: (id: string) => `/workflow/${id}/comments`,
     BY_ENTITY: (entityType: string, entityId: string) =>
-      `/workflows/entity/${entityType}/${entityId}`,
-    SEARCH: '/workflows/search',
-    EXPORT: '/workflows/export',
+      `/workflow/entity/${entityType}/${entityId}`,
+    SEARCH: '/workflow/search',
+    EXPORT: '/workflow/export',
   },
 
   // ============================================
@@ -238,16 +241,16 @@ export const API_ENDPOINTS = {
   // Audit Endpoints
   // ============================================
   AUDIT: {
-    BASE: '/audit-logs',
-    BY_ID: (id: string) => `/audit-logs/${id}`,
-    BY_USER: (userId: string) => `/audit-logs/user/${userId}`,
-    BY_ORGANISATION: (organisationId: string) => `/audit-logs/organisation/${organisationId}`,
+    BASE: '/audit',
+    BY_ID: (id: string) => `/audit/${id}`,
+    BY_USER: (userId: string) => `/audit/user/${userId}`,
+    BY_ORGANISATION: (organisationId: string) => `/audit/organisation/${organisationId}`,
     BY_ENTITY: (entityType: string, entityId: string) =>
-      `/audit-logs/entity/${entityType}/${entityId}`,
-    STATS: '/audit-logs/stats',
-    EXPORT: '/audit-logs/export',
-    RETENTION_POLICIES: '/audit-logs/retention-policies',
-    RETENTION_POLICY_BY_ID: (id: string) => `/audit-logs/retention-policies/${id}`,
+      `/audit/entity/${entityType}/${entityId}`,
+    STATS: '/audit/stats',
+    EXPORT: '/audit/export',
+    RETENTION_POLICIES: '/audit/retention-policies',
+    RETENTION_POLICY_BY_ID: (id: string) => `/audit/retention-policies/${id}`,
   },
 
   // ============================================
@@ -285,7 +288,8 @@ export const API_ENDPOINTS = {
     PREFERENCES_BULK: (userId: string) => `/settings/user/${userId}/preferences/bulk`,
     NOTIFICATION_SETTINGS: (userId: string, type: string) =>
       `/settings/user/${userId}/notifications/${type}`,
-    NOTIFICATION_SETTINGS_BULK: (userId: string) => `/settings/user/${userId}/notifications/bulk`,
+    NOTIFICATION_SETTINGS_BULK: (userId: string) =>
+      `/settings/user/${userId}/notifications/bulk`,
     THEME_SETTINGS: (userId: string) => `/settings/user/${userId}/theme`,
     LANGUAGE_SETTINGS: (userId: string) => `/settings/user/${userId}/language`,
     SECURITY_SETTINGS: (userId: string) => `/settings/user/${userId}/security`,
@@ -308,35 +312,35 @@ export const API_ENDPOINTS = {
   // Rules Endpoints
   // ============================================
   RULES: {
-    BASE: '/rules',
-    BY_ID: (id: string) => `/rules/${id}`,
-    BY_TYPE: (type: string) => `/rules/type/${type}`,
-    BY_ENTITY: (entityType: string) => `/rules/entity/${entityType}`,
-    ACTIVE: '/rules/active',
-    STATS: '/rules/stats',
-    TEST: '/rules/test',
-    EXECUTE: (id: string) => `/rules/${id}/execute`,
-    TOGGLE: (id: string) => `/rules/${id}/toggle`,
-    EXECUTION_LOGS: (id: string) => `/rules/${id}/logs`,
-    VALIDATE: '/rules/validate',
-    SEARCH: '/rules/search',
-    EXPORT: '/rules/export',
-    IMPORT: '/rules/import',
+    BASE: '/rule',
+    BY_ID: (id: string) => `/rule/${id}`,
+    BY_TYPE: (type: string) => `/rule/type/${type}`,
+    BY_ENTITY: (entityType: string) => `/rule/entity/${entityType}`,
+    ACTIVE: '/rule/active',
+    STATS: '/rule/stats',
+    TEST: '/rule/test',
+    EXECUTE: (id: string) => `/rule/${id}/execute`,
+    TOGGLE: (id: string) => `/rule/${id}/toggle`,
+    EXECUTION_LOGS: (id: string) => `/rule/${id}/logs`,
+    VALIDATE: '/rule/validate',
+    SEARCH: '/rule/search',
+    EXPORT: '/rule/export',
+    IMPORT: '/rule/import',
   },
 
   // ============================================
   // Sync Endpoints
   // ============================================
   SYNC: {
-    PULL: '/sync/pull',
-    PUSH: '/sync/push',
-    CONFLICTS: '/sync/conflicts',
-    RESOLVE_CONFLICT: (id: string) => `/sync/conflicts/${id}/resolve`,
-    PENDING_CHANGES: '/sync/pending-changes',
-    CLEAR_PENDING: '/sync/pending-changes/clear',
-    STATUS: '/sync/status',
-    METADATA: '/sync/metadata',
-    METADATA_BY_KEY: (key: string) => `/sync/metadata/${key}`,
+    PULL: '/pending-changes/pull',
+    PUSH: '/pending-changes/push',
+    CONFLICTS: '/sync-conflicts',
+    RESOLVE_CONFLICT: (id: string) => `/sync-conflicts/${id}/resolve`,
+    PENDING_CHANGES: '/pending-changes',
+    CLEAR_PENDING: '/pending-changes/clear',
+    STATUS: '/sync-metadata/status',
+    METADATA: '/sync-metadata',
+    METADATA_BY_KEY: (key: string) => `/sync-metadata/${key}`,
   },
 
   // ============================================
@@ -410,237 +414,6 @@ export const API_ENDPOINTS = {
     QUIZZES: (courseId: string) => `/training/courses/${courseId}/quizzes`,
     SUBMIT_QUIZ: (courseId: string, quizId: string) =>
       `/training/courses/${courseId}/quizzes/${quizId}/submit`,
-  },
-
-  // ============================================
-  // Services Endpoints (Microservices)
-  // ============================================
-  SERVICES: {
-    // File Service
-    FILES: {
-      BASE: '/services/files',
-      UPLOAD: '/services/files/upload',
-      UPLOAD_CHUNK: '/services/files/upload-chunk',
-      DOWNLOAD: (fileId: string) => `/services/files/${fileId}/download`,
-      DELETE: (fileId: string) => `/services/files/${fileId}`,
-      METADATA: (fileId: string) => `/services/files/${fileId}/metadata`,
-      PROCESS: (fileId: string) => `/services/files/${fileId}/process`,
-      CONVERT: (fileId: string) => `/services/files/${fileId}/convert`,
-      THUMBNAIL: (fileId: string) => `/services/files/${fileId}/thumbnail`,
-      OPTIMIZE: (fileId: string) => `/services/files/${fileId}/optimize`,
-      SCAN_VIRUS: (fileId: string) => `/services/files/${fileId}/scan`,
-    },
-
-    // Email Service
-    EMAIL: {
-      BASE: '/services/email',
-      SEND: '/services/email/send',
-      SEND_BULK: '/services/email/send-bulk',
-      SEND_TEMPLATE: '/services/email/send-template',
-      TEMPLATES: '/services/email/templates',
-      TEMPLATE_BY_ID: (id: string) => `/services/email/templates/${id}`,
-      TRACK: (messageId: string) => `/services/email/track/${messageId}`,
-      STATUS: (messageId: string) => `/services/email/status/${messageId}`,
-      QUEUE: '/services/email/queue',
-      QUEUE_BY_ID: (id: string) => `/services/email/queue/${id}`,
-    },
-
-    // SMS Service
-    SMS: {
-      BASE: '/services/sms',
-      SEND: '/services/sms/send',
-      SEND_BULK: '/services/sms/send-bulk',
-      STATUS: (messageId: string) => `/services/sms/status/${messageId}`,
-      BALANCE: '/services/sms/balance',
-      SENDER_IDS: '/services/sms/sender-ids',
-      LOGS: '/services/sms/logs',
-      QUEUE: '/services/sms/queue',
-    },
-
-    // Push Notification Service
-    PUSH: {
-      BASE: '/services/push',
-      SEND: '/services/push/send',
-      SEND_BULK: '/services/push/send-bulk',
-      REGISTER: '/services/push/register',
-      UNREGISTER: (deviceId: string) => `/services/push/devices/${deviceId}`,
-      DEVICES: '/services/push/devices',
-      TOPICS: '/services/push/topics',
-      SUBSCRIBE: (topic: string) => `/services/push/topics/${topic}/subscribe`,
-      UNSUBSCRIBE: (topic: string) => `/services/push/topics/${topic}/unsubscribe`,
-    },
-
-    // PDF Service
-    PDF: {
-      BASE: '/services/pdf',
-      GENERATE: '/services/pdf/generate',
-      GENERATE_FROM_HTML: '/services/pdf/generate-from-html',
-      GENERATE_FROM_TEMPLATE: '/services/pdf/generate-from-template',
-      MERGE: '/services/pdf/merge',
-      SPLIT: '/services/pdf/split',
-      EXTRACT_TEXT: (pdfId: string) => `/services/pdf/${pdfId}/extract-text`,
-      CONVERT: (pdfId: string) => `/services/pdf/${pdfId}/convert`,
-      WATERMARK: (pdfId: string) => `/services/pdf/${pdfId}/watermark`,
-      SIGN: (pdfId: string) => `/services/pdf/${pdfId}/sign`,
-      VERIFY_SIGNATURE: (pdfId: string) => `/services/pdf/${pdfId}/verify`,
-      COMPRESS: (pdfId: string) => `/services/pdf/${pdfId}/compress`,
-      TEMPLATES: '/services/pdf/templates',
-      TEMPLATE_BY_ID: (id: string) => `/services/pdf/templates/${id}`,
-    },
-
-    // Export Service
-    EXPORT: {
-      BASE: '/services/export',
-      CSV: '/services/export/csv',
-      EXCEL: '/services/export/excel',
-      JSON: '/services/export/json',
-      STATUS: (jobId: string) => `/services/export/status/${jobId}`,
-      DOWNLOAD: (jobId: string) => `/services/export/download/${jobId}`,
-      CANCEL: (jobId: string) => `/services/export/cancel/${jobId}`,
-      JOBS: '/services/export/jobs',
-    },
-
-    // Import Service
-    IMPORT: {
-      BASE: '/services/import',
-      UPLOAD: '/services/import/upload',
-      VALIDATE: '/services/import/validate',
-      PROCESS: (jobId: string) => `/services/import/process/${jobId}`,
-      STATUS: (jobId: string) => `/services/import/status/${jobId}`,
-      MAPPING: '/services/import/mapping',
-      MAPPING_BY_ID: (id: string) => `/services/import/mapping/${id}`,
-      TEMPLATES: '/services/import/templates',
-      JOBS: '/services/import/jobs',
-      JOB_BY_ID: (jobId: string) => `/services/import/jobs/${jobId}`,
-    },
-
-    // Search Service
-    SEARCH: {
-      BASE: '/services/search',
-      INDEX: '/services/search/index',
-      QUERY: '/services/search/query',
-      ADVANCED: '/services/search/advanced',
-      SUGGEST: '/services/search/suggest',
-      FILTERS: '/services/search/filters',
-      REINDEX: '/services/search/reindex',
-      STATUS: '/services/search/status',
-      DOCUMENT: (documentId: string) => `/services/search/documents/${documentId}`,
-      BULK_INDEX: '/services/search/bulk-index',
-    },
-
-    // Analytics Service
-    ANALYTICS: {
-      BASE: '/services/analytics',
-      EVENTS: '/services/analytics/events',
-      TRACK: '/services/analytics/track',
-      PAGE_VIEW: '/services/analytics/page-view',
-      USER_SESSION: '/services/analytics/session',
-      DASHBOARD: '/services/analytics/dashboard',
-      METRICS: '/services/analytics/metrics',
-      REPORTS: '/services/analytics/reports',
-      EXPORT: '/services/analytics/export',
-      FUNNEL: '/services/analytics/funnel',
-      RETENTION: '/services/analytics/retention',
-    },
-
-    // Geo Service
-    GEO: {
-      BASE: '/services/geo',
-      IP_LOOKUP: '/services/geo/ip',
-      LOCATION: '/services/geo/location',
-      REVERSE_GEOCODE: '/services/geo/reverse',
-      DISTANCE: '/services/geo/distance',
-      BOUNDING_BOX: '/services/geo/bounding-box',
-      NEARBY: '/services/geo/nearby',
-      TIMEZONE: '/services/geo/timezone',
-      COUNTRY_INFO: (countryCode: string) => `/services/geo/countries/${countryCode}`,
-      COUNTRIES: '/services/geo/countries',
-      CITIES: '/services/geo/cities',
-    },
-
-    // Notification Service (Aggregator)
-    NOTIFICATION_SERVICE: {
-      BASE: '/services/notification-service',
-      SEND: '/services/notification-service/send',
-      SEND_BULK: '/services/notification-service/send-bulk',
-      PREFERENCES: '/services/notification-service/preferences',
-      CHANNELS: '/services/notification-service/channels',
-      TEMPLATES: '/services/notification-service/templates',
-      LOGS: '/services/notification-service/logs',
-      STATS: '/services/notification-service/stats',
-      QUEUE: '/services/notification-service/queue',
-      BROADCAST: '/services/notification-service/broadcast',
-    },
-
-    // Webhook Service
-    WEBHOOK: {
-      BASE: '/services/webhooks',
-      REGISTER: '/services/webhooks/register',
-      UNREGISTER: (webhookId: string) => `/services/webhooks/${webhookId}`,
-      EVENTS: '/services/webhooks/events',
-      DELIVERY_LOGS: '/services/webhooks/delivery-logs',
-      RETRY: (deliveryId: string) => `/services/webhooks/delivery-logs/${deliveryId}/retry`,
-      SECRETS: '/services/webhooks/secrets',
-      STATS: '/services/webhooks/stats',
-    },
-
-    // Audit Service (Centralized)
-    AUDIT_SERVICE: {
-      BASE: '/services/audit-service',
-      LOG: '/services/audit-service/log',
-      BULK_LOG: '/services/audit-service/bulk-log',
-      QUERY: '/services/audit-service/query',
-      EXPORT: '/services/audit-service/export',
-      STATS: '/services/audit-service/stats',
-      RETENTION: '/services/audit-service/retention',
-      SCHEMA: '/services/audit-service/schema',
-    },
-
-    // Report Service (Advanced)
-    REPORT_SERVICE: {
-      BASE: '/services/report-service',
-      GENERATE: '/services/report-service/generate',
-      SCHEDULE: '/services/report-service/schedule',
-      TEMPLATES: '/services/report-service/templates',
-      DATA_SOURCES: '/services/report-service/data-sources',
-      VISUALIZATIONS: '/services/report-service/visualizations',
-      EXPORT: '/services/report-service/export',
-      DASHBOARDS: '/services/report-service/dashboards',
-      DASHBOARD_BY_ID: (id: string) => `/services/report-service/dashboards/${id}`,
-      WIDGETS: '/services/report-service/widgets',
-      SCHEDULED_JOBS: '/services/report-service/scheduled-jobs',
-    },
-
-    // Workflow Service (Orchestration)
-    WORKFLOW_SERVICE: {
-      BASE: '/services/workflow-service',
-      DEFINITIONS: '/services/workflow-service/definitions',
-      DEFINITION_BY_ID: (id: string) => `/services/workflow-service/definitions/${id}`,
-      INSTANCES: '/services/workflow-service/instances',
-      INSTANCE_BY_ID: (id: string) => `/services/workflow-service/instances/${id}`,
-      TASKS: '/services/workflow-service/tasks',
-      TASK_BY_ID: (id: string) => `/services/workflow-service/tasks/${id}`,
-      COMPLETE_TASK: (taskId: string) => `/services/workflow-service/tasks/${taskId}/complete`,
-      CLAIM_TASK: (taskId: string) => `/services/workflow-service/tasks/${taskId}/claim`,
-      VARIABLES: (instanceId: string) =>
-        `/services/workflow-service/instances/${instanceId}/variables`,
-      HISTORY: '/services/workflow-service/history',
-    },
-
-    // Integration Service
-    INTEGRATION: {
-      BASE: '/services/integrations',
-      LIST: '/services/integrations',
-      BY_ID: (id: string) => `/services/integrations/${id}`,
-      CONNECT: (id: string) => `/services/integrations/${id}/connect`,
-      DISCONNECT: (id: string) => `/services/integrations/${id}/disconnect`,
-      SYNC: (id: string) => `/services/integrations/${id}/sync`,
-      WEBHOOKS: (id: string) => `/services/integrations/${id}/webhooks`,
-      CREDENTIALS: (id: string) => `/services/integrations/${id}/credentials`,
-      STATUS: (id: string) => `/services/integrations/${id}/status`,
-      LOGS: (id: string) => `/services/integrations/${id}/logs`,
-      AVAILABLE: '/services/integrations/available',
-    },
   },
 } as const
 

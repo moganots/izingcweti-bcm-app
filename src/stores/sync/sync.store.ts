@@ -5,6 +5,7 @@ import type {
   PendingChange,
   SyncConflict,
   NetworkInfo,
+  ConflictResolutionStrategy,
 } from './../../models/entities'
 import { db } from './../../services/db'
 import { SyncEngine } from './../../services/sync'
@@ -417,11 +418,11 @@ export const useSyncStore = defineStore('sync', () => {
       }
 
       await syncEngine.value.resolveConflict(conflictId, {
-        strategy: mappedStrategy,
+        strategy: mappedStrategy as ConflictResolutionStrategy,
         resolvedData: resolution.resolvedData,
         userId: resolution.userId || 'system',
         notes: resolution.notes,
-      })
+      } as any)
       await loadConflicts()
       await loadPendingChanges()
     } catch (err: any) {

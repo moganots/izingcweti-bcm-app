@@ -1,6 +1,6 @@
-import { BusinessContinuityPlan } from './bcm.entity'
-import { Organisation } from '../organisation/organisation.entity'
-import { SyncStatus } from '../sync/sync.entity'
+import { BusinessContinuityPlan } from './../bcm/bcm.entity'
+import { Organisation } from './../organisation/organisation.entity'
+import { SyncStatus } from './../sync/sync.entity'
 
 /**
  * Incident Severity Enum

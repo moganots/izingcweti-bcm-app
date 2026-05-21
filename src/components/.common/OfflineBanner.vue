@@ -10,7 +10,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import { useSyncStore } from '../../stores/sync.store'
+import { useSyncStore } from './../../stores'
 
 const syncStore = useSyncStore()
 const pendingCount = computed(() => syncStore.pendingCount)

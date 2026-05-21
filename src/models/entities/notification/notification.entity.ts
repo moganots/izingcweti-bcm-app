@@ -1,5 +1,5 @@
-import { User } from '.'
-import { SyncStatus } from './sync.entity'
+import { User } from './../user/user.entity'
+import { SyncStatus } from './../sync/sync.entity'
 
 /**
  * Notification Type Enum

@@ -1,5 +1,3 @@
-// src/models/entities/sync.entity.ts
-
 /**
  * Sync Status Enum
  */

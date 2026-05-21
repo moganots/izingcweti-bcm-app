@@ -11,11 +11,24 @@
  * Standard API Response wrapper
  */
 export interface ApiResponse<T = any> {
-  success: boolean
+  environment?: string
+  apiVersion: string | null
+  apiName?: string
   data: T
   message?: string
   count?: number
   errors?: ApiError[]
+  success: boolean
+  status: 'healthy' | 'ok' | string
+  statusCode?: number
+  statusText?: string
+  timestamp: string | null
+  uptime: number | null
+  memory?: {
+    heapUsed: number
+    heapTotal: number
+    rss?: number
+  }
 }
 
 /**
@@ -191,15 +204,15 @@ export interface FormField {
   name: string
   label: string
   type:
-    | 'text'
-    | 'email'
-    | 'password'
-    | 'number'
-    | 'select'
-    | 'date'
-    | 'textarea'
-    | 'toggle'
-    | 'file'
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'select'
+  | 'date'
+  | 'textarea'
+  | 'toggle'
+  | 'file'
   required?: boolean
   disabled?: boolean
   placeholder?: string
@@ -285,10 +298,10 @@ export type Nullable<T> = T | null | undefined
  */
 export type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
-    ? RecursivePartial<U>[]
-    : T[P] extends object
-    ? RecursivePartial<T[P]>
-    : T[P]
+  ? RecursivePartial<U>[]
+  : T[P] extends object
+  ? RecursivePartial<T[P]>
+  : T[P]
 }
 
 /**

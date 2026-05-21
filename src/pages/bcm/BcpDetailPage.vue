@@ -160,7 +160,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useBcmStore } from '../../stores/bcm/bcm.store'
 import { formatDate } from '../../utils/date.utils'
@@ -168,7 +168,6 @@ import { formatCurrency } from '../../utils/formatters'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 
 const route = useRoute()
-const router = useRouter()
 const $q = useQuasar()
 const bcmStore = useBcmStore()
 const bcp = computed(() => bcmStore.selectedBCP)
