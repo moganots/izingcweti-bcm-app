@@ -6,12 +6,12 @@
         <q-card-section>
           <div class="text-h6 q-mb-md">Quick Actions</div>
           <div class="row q-col-gutter-sm">
-            <div v-for="action in quickActions" :key="action.name" >
+            <div v-for="action in quickActions" :key="action.name">
               <q-btn
-              size="0.7em"
-              round
+                size="0.85em"
+                round
                 :outline="action.outline !== false"
-                :flat="action.flat || false"
+                dense
                 :color="action.color || 'primary'"
                 :icon="action.icon"
                 :loading="loadingStates[action.name] || false"
