@@ -11,9 +11,9 @@
         <slot name="actions" />
         <q-btn
           v-if="showRefresh"
-          flat
-          round
           dense
+          round
+          color="primary"
           icon="refresh"
           :loading="refreshing"
           @click="handleRefresh"

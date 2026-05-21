@@ -7,7 +7,7 @@
       @refresh="loadRecords"
     >
       <template #actions>
-        <q-btn color="primary" icon="add" label="Add Record" unelevated @click="openCreateDialog" />
+        <q-btn dense round color="primary" icon="note_add" @click="openCreateDialog" />
       </template>
     </PageHeader>
 

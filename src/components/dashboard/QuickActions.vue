@@ -85,13 +85,18 @@ const defaultQuickActions: QuickAction[] = [
     icon: 'crisis_alert',
     color: 'primary',
     outline: true,
+    disabled: false,
     tooltip: 'Create a new risk assessment',
     requiresConfirmation: false,
-    successMessage: 'Risk created successfully',
-    errorMessage: 'Failed to create risk',
     action: async () => {
-      // Navigate to risk creation page or open dialog
-      router.push('/risks/new')
+      $q.dialog({
+    title: 'Create New Risk',
+    message: 'Risk creation dialog would open here',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    router.push('/risks/create')
+  })
     },
   },
   {
@@ -100,12 +105,18 @@ const defaultQuickActions: QuickAction[] = [
     icon: 'assignment_add',
     color: 'primary',
     outline: true,
+    disabled: false,
     tooltip: 'Create a new Business Continuity Plan',
     requiresConfirmation: false,
-    successMessage: 'BCP Plan created successfully',
-    errorMessage: 'Failed to create BCP Plan',
     action: async () => {
-      router.push('/bcp/new')
+      $q.dialog({
+    title: 'Create BCP Plan',
+    message: 'BCP plan creation dialog would open here',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    router.push('/bcp/create')
+  })
     },
   },
   {
@@ -114,13 +125,19 @@ const defaultQuickActions: QuickAction[] = [
     icon: 'warning',
     color: 'orange',
     outline: true,
+    disabled: false,
     tooltip: 'Report a new incident',
-    requiresConfirmation: true,
+    requiresConfirmation: false,
     confirmationMessage: 'Are you sure you want to report an incident?',
-    successMessage: 'Incident reported successfully',
-    errorMessage: 'Failed to report incident',
     action: async () => {
-      router.push('/incidents/new')
+      $q.dialog({
+    title: 'Report Incident',
+    message: 'Incident reporting dialog would open here',
+    cancel: true,
+    persistent: true,
+  }).onOk(() => {
+    router.push('/incidents/report')
+  })
     },
   },
   {
@@ -129,12 +146,34 @@ const defaultQuickActions: QuickAction[] = [
     icon: 'picture_as_pdf',
     color: 'primary',
     outline: true,
+    disabled: false,
     tooltip: 'Generate a compliance or risk report',
     requiresConfirmation: false,
-    successMessage: 'Report generated successfully',
-    errorMessage: 'Failed to generate report',
     action: async () => {
-      router.push('/reports/new')
+       $q.dialog({
+    title: 'Generate Report',
+    message: 'Select report type:',
+    options: {
+      type: 'radio',
+      model: 'risk',
+      items: [
+        { label: 'Risk Assessment Report', value: 'risk' },
+        { label: 'Compliance Report', value: 'compliance' },
+        { label: 'Incident Summary', value: 'incident' },
+        { label: 'BCM Maturity Report', value: 'maturity' },
+      ],
+    },
+    cancel: true,
+    persistent: true,
+  }).onOk(async (data: any) => {
+    $q.notify({
+      message: `Generating ${data} report...`,
+      type: 'info',
+      position: 'top',
+    })
+    // Navigate to report generation
+    router.push(`/reports/generate?type=${data}`)
+  })
     },
   },
 ]
@@ -147,6 +186,7 @@ const additionalQuickActions: QuickAction[] = [
     icon: 'upload_file',
     color: 'primary',
     outline: true,
+    disabled: false,
     tooltip: 'Upload a new document',
     action: async () => {
       router.push('/documents/upload')
@@ -158,6 +198,7 @@ const additionalQuickActions: QuickAction[] = [
     icon: 'verified_user',
     color: 'green',
     outline: true,
+    disabled: false,
     tooltip: 'Add a new compliance record',
     action: async () => {
       router.push('/compliance/new')
@@ -169,6 +210,7 @@ const additionalQuickActions: QuickAction[] = [
     icon: 'play_circle',
     color: 'purple',
     outline: true,
+    disabled: true,
     tooltip: 'Run a BCP exercise/test',
     action: async () => {
       router.push('/exercises/new')
@@ -180,6 +222,7 @@ const additionalQuickActions: QuickAction[] = [
     icon: 'download',
     color: 'primary',
     outline: true,
+    disabled: true,
     tooltip: 'Export data to CSV/Excel',
     action: async () => {
       router.push('/export')

@@ -8,17 +8,15 @@
     >
       <template #actions>
         <q-btn
-          outline
+          dense round
           color="primary"
           icon="filter_list"
-          label="Filters"
           @click="showFilters = !showFilters"
         />
         <q-btn
+          dense round
           color="primary"
-          icon="add"
-          label="New BCP"
-          unelevated
+          icon="assignment_add"
           @click="$router.push('/bcm/bcp/create')"
         />
       </template>

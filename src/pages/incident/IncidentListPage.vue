@@ -8,10 +8,9 @@
     >
       <template #actions>
         <q-btn
+        dense round
           color="negative"
-          icon="add"
-          label="Report Incident"
-          unelevated
+          icon="add_alert"
           @click="showCreateDialog = true"
         />
       </template>

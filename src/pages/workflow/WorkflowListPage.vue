@@ -8,10 +8,9 @@
     >
       <template #actions>
         <q-btn
+        dense round
           color="primary"
-          icon="add"
-          label="Create Workflow"
-          unelevated
+          icon="account_tree"
           @click="openCreateDialog"
         />
       </template>

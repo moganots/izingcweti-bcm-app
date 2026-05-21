@@ -8,10 +8,9 @@
     >
       <template #actions
         ><q-btn
+        dense round
           color="primary"
-          icon="add"
-          label="Schedule Test"
-          unelevated
+          icon="event"
           @click="showCreateDialog = true"
       /></template>
     </PageHeader>

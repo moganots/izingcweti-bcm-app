@@ -8,10 +8,9 @@
     >
       <template #actions
         ><q-btn
+        dense round
           color="primary"
-          icon="add"
-          label="Add Strategy"
-          unelevated
+          icon="data_saver_on"
           @click="showCreateDialog = true"
       /></template>
     </PageHeader>

@@ -7,13 +7,7 @@
       @refresh="loadFunctions"
     >
       <template #actions>
-        <q-btn
-          color="primary"
-          icon="add"
-          label="Add Function"
-          unelevated
-          @click="showCreateDialog = true"
-        />
+        <q-btn dense round color="primary" icon="post_add" @click="showCreateDialog = true" />
       </template>
     </PageHeader>
 

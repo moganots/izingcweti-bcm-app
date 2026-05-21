@@ -11,7 +11,7 @@
     <KpiOverview :kpis="kpiList" :loading="dashboardStore.isLoading" class="q-mb-md" />
 
     <!-- Quick Actions -->
-    <QuickActions :actions="[]" :loading="dashboardStore.isLoading" class="q-mb-md" />
+    <QuickActions :loading="dashboardStore.isLoading" class="q-mb-md" />
 
     <!-- Main Dashboard Content -->
     <div class="row q-col-gutter-md">
@@ -73,7 +73,6 @@ import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
 import { useDashboardStore } from 'src/stores/dashboard/dashboard.store'
 import KpiOverview from 'src/components/dashboard/KpiOverview.vue'
-import QuickActions from 'src/components/dashboard/QuickActions.vue'
 import RiskHeatMap from 'src/components/dashboard/RiskHeatMap.vue'
 import ComplianceChart from 'src/components/dashboard/ComplianceChart.vue'
 import IncidentTrendChart from 'src/components/dashboard/IncidentTrendChart.vue'
@@ -84,6 +83,7 @@ import type { KPI } from 'src/components/dashboard/KpiOverview.vue'
 import type { RiskData } from 'src/components/dashboard/RiskHeatMap.vue'
 import type { IncidentTrendData } from 'src/components/dashboard/IncidentTrendChart.vue'
 import type { Workflow } from 'src/models/entities'
+import QuickActions from 'src/components/dashboard/QuickActions.vue'
 
 const router = useRouter()
 const $q = useQuasar()
@@ -178,66 +178,6 @@ const pendingWorkflowsData = computed<Workflow[]>(() => {
     sync_status: workflow.sync_status || 'SYNCED',
   }))
 })
-
-function openRiskDialog() {
-  $q.dialog({
-    title: 'Create New Risk',
-    message: 'Risk creation dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/risks/create')
-  })
-}
-
-function openBCPDialog() {
-  $q.dialog({
-    title: 'Create BCP Plan',
-    message: 'BCP plan creation dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/bcp/create')
-  })
-}
-
-function openIncidentDialog() {
-  $q.dialog({
-    title: 'Report Incident',
-    message: 'Incident reporting dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/incidents/report')
-  })
-}
-
-function openReportDialog() {
-  $q.dialog({
-    title: 'Generate Report',
-    message: 'Select report type:',
-    options: {
-      type: 'radio',
-      model: 'risk',
-      items: [
-        { label: 'Risk Assessment Report', value: 'risk' },
-        { label: 'Compliance Report', value: 'compliance' },
-        { label: 'Incident Summary', value: 'incident' },
-        { label: 'BCM Maturity Report', value: 'maturity' },
-      ],
-    },
-    cancel: true,
-    persistent: true,
-  }).onOk(async (data: any) => {
-    $q.notify({
-      message: `Generating ${data} report...`,
-      type: 'info',
-      position: 'top',
-    })
-    // Navigate to report generation
-    router.push(`/reports/generate?type=${data}`)
-  })
-}
 
 function handleHeatMapClick(cell: { impact: string; likelihood: number }) {
   $q.notify({

@@ -4,7 +4,7 @@
       <!-- Logo and App Name (Left Aligned) -->
       <div
         class="row items-center cursor-pointer"
-        style="min-width: 95px"
+        style="min-width: 80px"
         @click="$router.push('/dashboard')"
       >
         <q-avatar size="36px" class="q-mr-sm">
@@ -34,12 +34,13 @@
         </q-btn>
 
         <div class="text-h6 text-weight-medium text-center" style="font-size: 0.8em">
+          <q-icon v-if="pageIcon" :name="pageIcon" size="2em" class="q-mr-xs" />
           {{ pageTitle }}
         </div>
       </div>
 
       <!-- Right Aligned Buttons -->
-      <div class="row items-center q-gutter-sm" style="min-width: 95px; justify-content: flex-end">
+      <div class="row items-center q-gutter-sm" style="min-width: 70px; justify-content: flex-end">
         <!-- Connectivity Status Indicator -->
         <q-btn
           dense
@@ -75,7 +76,7 @@ const router = useRouter()
 const $q = useQuasar()
 const uiStore = useUiStore()
 
-const props = defineProps<{ pageTitle?: string }>()
+const props = defineProps<{ pageIcon?: string; pageTitle?: string }>()
 
 const companyName = AppConfig.app.company.name || 'Izingcweti'
 const appName = AppConfig.app.shortName || 'BCM App'

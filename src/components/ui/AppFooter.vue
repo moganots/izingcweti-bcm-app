@@ -407,7 +407,7 @@ const menuGroups: MenuGroup[] = [
 const adminItems = [
   { name: 'Users', label: 'User Management', icon: 'people' },
   { name: 'Organisations', label: 'Organisations', icon: 'business' },
-  { name: 'AuditLogs', label: 'Audit Logs', icon: 'history' },
+  { name: 'AuditLogs', label: 'Audit Logs', icon: 'fact_check' },
 ]
 
 // Function to update selected tab based on current route
@@ -424,6 +424,8 @@ function updateSelectedTab() {
       selectedTab.value = 'profile'
     } else if (routeName === 'SyncDashboard') {
       selectedTab.value = 'sync'
+    }else{
+      selectedTab.value = 'home'
     }
   }
 }

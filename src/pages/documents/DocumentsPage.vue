@@ -7,7 +7,7 @@
       @refresh="loadDocuments"
     >
       <template #actions>
-        <q-btn color="primary" icon="upload" label="Upload" unelevated @click="triggerUpload" />
+        <q-btn dense round color="primary" icon="upload" @click="triggerUpload" />
         <input
           ref="fileInputRef"
           type="file"

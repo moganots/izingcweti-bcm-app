@@ -7,7 +7,7 @@
       @refresh="loadRisks"
     >
       <template #actions>
-        <q-btn color="primary" icon="add" label="Add Risk" unelevated @click="openCreateDialog" />
+        <q-btn dense round color="primary" icon="alarm_add"  @click="openCreateDialog" />
       </template>
     </PageHeader>
 

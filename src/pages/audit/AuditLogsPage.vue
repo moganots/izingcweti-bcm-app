@@ -8,10 +8,9 @@
     >
       <template #actions>
         <q-btn
+        dense round
           color="primary"
           icon="download"
-          label="Export"
-          outline
           @click="showExportDialog = true"
         />
       </template>

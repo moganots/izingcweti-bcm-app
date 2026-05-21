@@ -8,10 +8,9 @@
     >
       <template #actions>
         <q-btn
+        dense round
           color="primary"
-          icon="add"
-          label="New BIA"
-          unelevated
+          icon="add_home_work"
           @click="$router.push('/bcm/bia/create')"
         />
       </template>

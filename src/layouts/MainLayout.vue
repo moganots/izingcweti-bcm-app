@@ -1,7 +1,7 @@
 <template>
   <q-layout view="lHh Lpr lFf">
     <!-- Header (Sticky) -->
-    <AppHeader :page-title="pageTitle" />
+    <AppHeader :page-icon="pageIcon" :page-title="pageTitle" />
 
     <!-- Footer Navigation (Sticky - always at bottom) -->
     <AppFooter />
@@ -27,6 +27,7 @@ import AppFooter from 'src/components/ui/AppFooter.vue'
 
 const route = useRoute()
 
+const pageIcon = computed(() => (route.meta?.icon as string))
 const pageTitle = computed(() => (route.meta?.title as string) || 'Dashboard')
 </script>
 
