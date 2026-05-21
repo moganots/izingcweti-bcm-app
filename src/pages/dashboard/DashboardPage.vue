@@ -1,9 +1,8 @@
 <template>
   <div class="dashboard-page q-pa-md">
     <!-- Welcome Section -->
-    <div class="welcome-section q-mb-lg">
-      <div class="text-h4 text-weight-bold q-mt-sm">Welcome back, {{ authStore.fullName }}</div>
-      <div class="text-subtitle1 text-grey-7">
+    <div class="welcome-section q-mb-lg" style="padding-bottom: 0.1em;">
+      <div class="text-subtitle1 text-grey-7" style="font-size: 0.9em; font-weight: bold;">
         Here's what's happening with your BCM program today
       </div>
     </div>
@@ -12,57 +11,7 @@
     <KpiOverview :kpis="kpiList" :loading="dashboardStore.isLoading" class="q-mb-md" />
 
     <!-- Quick Actions -->
-    <div class="row q-col-gutter-md q-mb-md">
-      <div class="col-12">
-        <q-card flat bordered>
-          <q-card-section>
-            <div class="text-h6 q-mb-md">Quick Actions</div>
-            <div class="row q-col-gutter-sm">
-              <div class="col-6 col-sm-3">
-                <q-btn
-                  outline
-                  color="primary"
-                  icon="add"
-                  label="New Risk"
-                  class="full-width"
-                  @click="openRiskDialog"
-                />
-              </div>
-              <div class="col-6 col-sm-3">
-                <q-btn
-                  outline
-                  color="primary"
-                  icon="add"
-                  label="BCP Plan"
-                  class="full-width"
-                  @click="openBCPDialog"
-                />
-              </div>
-              <div class="col-6 col-sm-3">
-                <q-btn
-                  outline
-                  color="primary"
-                  icon="add"
-                  label="Report Incident"
-                  class="full-width"
-                  @click="openIncidentDialog"
-                />
-              </div>
-              <div class="col-6 col-sm-3">
-                <q-btn
-                  outline
-                  color="primary"
-                  icon="picture_as_pdf"
-                  label="Generate Report"
-                  class="full-width"
-                  @click="openReportDialog"
-                />
-              </div>
-            </div>
-          </q-card-section>
-        </q-card>
-      </div>
-    </div>
+    <QuickActions :actions="[]" :loading="dashboardStore.isLoading" class="q-mb-md" />
 
     <!-- Main Dashboard Content -->
     <div class="row q-col-gutter-md">
@@ -122,9 +71,9 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from 'src/stores/auth/auth.store'
 import { useDashboardStore } from 'src/stores/dashboard/dashboard.store'
 import KpiOverview from 'src/components/dashboard/KpiOverview.vue'
+import QuickActions from 'src/components/dashboard/QuickActions.vue'
 import RiskHeatMap from 'src/components/dashboard/RiskHeatMap.vue'
 import ComplianceChart from 'src/components/dashboard/ComplianceChart.vue'
 import IncidentTrendChart from 'src/components/dashboard/IncidentTrendChart.vue'
@@ -138,7 +87,6 @@ import type { Workflow } from 'src/models/entities'
 
 const router = useRouter()
 const $q = useQuasar()
-const authStore = useAuthStore()
 const dashboardStore = useDashboardStore()
 
 // Transform store KPIs to component format

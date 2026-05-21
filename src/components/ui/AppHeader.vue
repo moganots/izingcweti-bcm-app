@@ -4,7 +4,7 @@
       <!-- Logo and App Name (Left Aligned) -->
       <div
         class="row items-center cursor-pointer"
-        style="min-width: 120px"
+        style="min-width: 95px"
         @click="$router.push('/dashboard')"
       >
         <q-avatar size="36px" class="q-mr-sm">
@@ -21,20 +21,27 @@
       <!-- Page Title with Back Button (Centered - takes available space) -->
       <div class="row justify-center items-center" style="flex: 1">
         <!-- Back Button -->
-        <q-btn v-if="canGoBack" flat dense round icon="arrow_back" class="q-mr-sm" @click="goBack">
+        <q-btn
+          size="0.6em"
+          v-if="canGoBack"
+          dense
+          round
+          icon="keyboard_arrow_left"
+          class="q-mr-sm"
+          @click="goBack"
+        >
           <q-tooltip>Go Back</q-tooltip>
         </q-btn>
 
-        <div class="text-h6 text-weight-medium text-center">
+        <div class="text-h6 text-weight-medium text-center" style="font-size: 0.8em">
           {{ pageTitle }}
         </div>
       </div>
 
       <!-- Right Aligned Buttons -->
-      <div class="row items-center q-gutter-sm" style="min-width: 120px; justify-content: flex-end">
+      <div class="row items-center q-gutter-sm" style="min-width: 95px; justify-content: flex-end">
         <!-- Connectivity Status Indicator -->
         <q-btn
-          flat
           dense
           round
           :icon="isOffline ? 'wifi_off' : 'wifi'"
@@ -48,7 +55,7 @@
         </q-btn>
 
         <!-- QR Code Scanner Button -->
-        <q-btn flat dense round icon="qr_code_scanner" @click="openQRScanner" size="0.7em">
+        <q-btn round icon="qr_code_scanner" @click="openQRScanner" size="0.7em">
           <q-tooltip>Scan QR Code</q-tooltip>
         </q-btn>
       </div>
@@ -84,7 +91,6 @@ const canGoBack = computed(() => window.history.length > 1)
 function goBack(): void {
   router.back()
 }
-
 
 function toggleNetworkInfo(): void {
   const connectionType = uiStore.networkType || 'unknown'
@@ -319,7 +325,7 @@ async function handleScannedData(data: string): Promise<void> {
 
   // Reduce gutter on mobile for more space
   .q-gutter-sm {
-    gap: 4px;
+    gap: 0.2em;
   }
 }
 
