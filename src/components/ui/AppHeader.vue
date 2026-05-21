@@ -34,7 +34,6 @@
         </q-btn>
 
         <div class="text-h6 text-weight-medium text-center" style="font-size: 0.8em">
-          <q-icon v-if="pageIcon" :name="pageIcon" size="2em" class="q-mr-xs" />
           {{ pageTitle }}
         </div>
       </div>

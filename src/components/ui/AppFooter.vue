@@ -425,7 +425,7 @@ function updateSelectedTab() {
     } else if (routeName === 'SyncDashboard') {
       selectedTab.value = 'sync'
     }else{
-      selectedTab.value = 'home'
+      selectedTab.value = ''
     }
   }
 }

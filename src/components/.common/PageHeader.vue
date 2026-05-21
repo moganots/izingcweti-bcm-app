@@ -2,7 +2,10 @@
   <div class="page-header q-mb-lg">
     <div class="row items-center justify-between">
       <div>
-        <div class="text-h4 text-weight-bold">{{ title }}</div>
+        <div class="text-h4 text-weight-bold">
+          <q-icon v-if="pageIcon" :name="pageIcon" size="2em" class="q-mr-xs" />
+          {{ title }}
+        </div>
         <div v-if="subtitle" class="text-subtitle1 text-grey-7 q-mt-sm">
           {{ subtitle }}
         </div>
@@ -27,7 +30,10 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute } from 'vue-router';
+
+const route = useRoute()
 
 const props = defineProps<{
   title: string
@@ -40,6 +46,7 @@ const emit = defineEmits<{
 }>()
 
 const refreshing = ref(false)
+const pageIcon = computed(() => (route.meta?.icon as string))
 
 async function handleRefresh() {
   refreshing.value = true
