@@ -8,19 +8,19 @@
       indicator-color="yellow"
       @update:model-value="handleTabChange"
     >
-      <q-tab name="home" icon="home" label="Home" />
-      <q-tab name="notifications" icon="notifications" label="Notifications">
+      <q-tab name="home" icon="home" />
+      <q-tab name="notifications" icon="notifications">
         <q-badge v-if="unreadCount > 0" color="red" floating>
           {{ unreadCount > 99 ? '99+' : unreadCount }}
         </q-badge>
       </q-tab>
-      <q-tab name="sync" icon="sync" :label="syncLabel">
+      <q-tab name="sync" icon="sync">
         <q-badge v-if="pendingCount > 0" color="orange" floating>
           {{ pendingCount > 99 ? '99+' : pendingCount }}
         </q-badge>
       </q-tab>
-      <q-tab name="profile" icon="person" label="Profile" />
-      <q-tab name="menu" icon="menu" label="Menu" />
+      <q-tab name="profile" icon="person" />
+      <q-tab name="menu" icon="menu" />
     </q-tabs>
   </q-footer>
 
@@ -42,7 +42,7 @@
               <img src="/izingcweti-logo-icon-no-bg.png" alt="Logo" />
             </q-avatar>
             <div>
-              <div class="text-subtitle1 text-weight-bold">{{appFullName}}</div>
+              <div class="text-subtitle1 text-weight-bold">{{ appFullName }}</div>
               <div class="text-caption text-grey-6">Navigate to any section</div>
             </div>
           </div>
@@ -449,7 +449,7 @@ watch(
   () => {
     updateSelectedTab()
   },
-  { immediate: true },
+  { immediate: true }
 )
 
 // Watch menu dialog state
@@ -673,13 +673,9 @@ onUnmounted(() => {
 }
 
 .drawer-header {
-  background: linear-gradient(
-    135deg,
-    var(--q-white, #ffffff) 0%,
-    var(--q-grey-2, #f5f5f5) 100%
-  );
+  background: linear-gradient(135deg, var(--q-white, #ffffff) 0%, var(--q-grey-2, #f5f5f5) 100%);
   border-bottom: 1px solid var(--q-separator-color, rgba(0, 0, 0, 0.12));
-  
+
   /* For dark mode support */
   body.body--dark & {
     background: linear-gradient(
