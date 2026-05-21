@@ -47,6 +47,7 @@
     "build:serve": "cp -f .env_files/.env.local .env && yarn build && npx serve dist/spa"
   },
   "dependencies": {
+    "@capacitor-community/barcode-scanner": "^4.0.1",
     "@capacitor/android": "^5.7.8",
     "@capacitor/app": "^5.0.8",
     "@capacitor/camera": "^8.2.0",

@@ -1,18 +1,31 @@
+import { capitalizeFirstLettersAdvanced } from './formatters'
+
+const companyName = import.meta.env.VITE_COMPANY_APP_NAME || 'Izingcweti'
+const appName = import.meta.env.VITE_APP_NAME || 'Business Continuity Management'
+const fullName =
+  `${companyName} - ${capitalizeFirstLettersAdvanced(appName)} App` || `Izingcweti - BCM App`
+const shortName = `${capitalizeFirstLettersAdvanced(appName)} App` || `BCM App`
+
 /**
  * Application configuration helper
  * Provides typed access to environment variables with defaults
  */
 export const AppConfig = {
-  // Application
-  appName: import.meta.env.VITE_APP_NAME || 'Business Continuity Management System',
-  appVersion: import.meta.env.VITE_APP_VERSION || '0.0.1',
-  appDescription: import.meta.env.VITE_APP_DESCRIPTION || 'Business Continuity Management Systemlication',
-
   // Environment
   envName: import.meta.env.VITE_ENV_NAME || 'Local',
   nodeEnv: import.meta.env.VITE_NODE_ENV || 'development',
   port: import.meta.env.VITE_PORT,
   capacitorPort: import.meta.env.VITE_CAPACITOR_PORT,
+
+  // Application
+  app: {
+    company: { name: companyName },
+    name: `${appName} App`,
+    fullName: fullName,
+    shortName: shortName,
+    description: import.meta.env.VITE_APP_DESCRIPTION || 'Business Continuity Management System',
+    version: import.meta.env.VITE_APP_VERSION || '26.0520.1',
+  },
 
   // API
   api: {

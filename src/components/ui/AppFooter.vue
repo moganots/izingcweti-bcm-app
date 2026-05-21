@@ -42,7 +42,7 @@
               <img src="/izingcweti-logo-icon-no-bg.png" alt="Logo" />
             </q-avatar>
             <div>
-              <div class="text-subtitle1 text-weight-bold">Menu</div>
+              <div class="text-subtitle1 text-weight-bold">{{appFullName}}</div>
               <div class="text-caption text-grey-6">Navigate to any section</div>
             </div>
           </div>
@@ -205,7 +205,7 @@
           <img src="/izingcweti-logo-icon-no-bg.png" alt="Logo" />
         </q-avatar>
         <div>
-          <div class="text-h6">Izingcweti BCM</div>
+          <div class="text-h6">{{ appShortName }}</div>
           <div class="text-caption text-grey-4">
             {{ userRole || 'User' }}
           </div>
@@ -335,7 +335,8 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from '../../stores'
+import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from './../../stores'
+import AppConfig from 'src/utils/config'
 
 interface MenuItem {
   name: string
@@ -357,6 +358,10 @@ const authStore = useAuthStore()
 const syncStore = useSyncStore()
 const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
+
+const companyName = AppConfig.app.company.name || 'Izingcweti'
+const appFullName = AppConfig.app.fullName || 'Izingcweti - BCM App'
+const appShortName = AppConfig.app.shortName || 'BCM App'
 
 const selectedTab = ref('home')
 const menuDialogOpen = ref(false)
@@ -444,7 +449,7 @@ watch(
   () => {
     updateSelectedTab()
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 // Watch menu dialog state
@@ -670,8 +675,19 @@ onUnmounted(() => {
 .drawer-header {
   background: linear-gradient(
     135deg,
-    var(--q-primary) 0%,
-    color-mix(in srgb, var(--q-primary) 70%, black) 100%
+    var(--q-white, #ffffff) 0%,
+    var(--q-grey-2, #f5f5f5) 100%
   );
+  border-bottom: 1px solid var(--q-separator-color, rgba(0, 0, 0, 0.12));
+  
+  /* For dark mode support */
+  body.body--dark & {
+    background: linear-gradient(
+      135deg,
+      var(--q-grey-10, #1e1e1e) 0%,
+      var(--q-grey-9, #242424) 100%
+    );
+    border-bottom-color: rgba(255, 255, 255, 0.12);
+  }
 }
 </style>
