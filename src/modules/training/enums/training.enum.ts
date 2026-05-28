@@ -1,0 +1,20 @@
+export enum TrainingStatus {
+  NOT_STARTED = 'NOT_STARTED',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  EXPIRED = 'EXPIRED',
+}
+
+export enum TrainingType {
+  MANDATORY = 'MANDATORY',
+  OPTIONAL = 'OPTIONAL',
+  REFRESHER = 'REFRESHER',
+}
+
+export enum QuestionType {
+  MULTIPLE_CHOICE = 'MULTIPLE_CHOICE',
+  SINGLE_CHOICE = 'SINGLE_CHOICE',
+  TRUE_FALSE = 'TRUE_FALSE',
+  TEXT = 'TEXT',
+  ESSAY = 'ESSAY',
+}

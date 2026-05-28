@@ -5,6 +5,7 @@ import {
   ExerciseTestType,
   ReputationalImpact,
   RecoveryPriority,
+  BCMLifecyclePhase,
 } from '../enums/bcm.enum'
 import { Department } from '../../organisation/types/organisation.types'
 
@@ -169,4 +170,253 @@ export interface RecordTestResultRequest {
   lessons_learned?: string
   corrective_actions?: string
   executed_date: string
+}
+
+// BIA Summary Types
+export interface BIASummary {
+  totalFunctions: number
+  assessedFunctions: number
+  unassessedFunctions: number
+  criticalImpactCount: number
+  highImpactCount: number
+  mediumImpactCount: number
+  lowImpactCount: number
+  totalFinancialImpact: number
+  averageFinancialImpact: number
+}
+
+// BCP Progress Types
+export interface BCPProgress {
+  bcpId: string
+  functionName: string
+  status: string
+  version: number
+  hasStrategies: boolean
+  hasTests: boolean
+  overallProgress: number
+}
+
+// Test Statistics Types
+export interface TestStatistics {
+  totalTests: number
+  passedTests: number
+  failedTests: number
+  passRate: number
+  upcomingTests: number
+  overdueTests: number
+  byType: Record<string, number>
+}
+
+// Strategy Comparison Types
+export interface StrategyComparison {
+  strategyId: string
+  type: string
+  cost: number
+  successRate: number
+  resourceRequirements: Record<string, any>
+  effectiveness: number
+}
+
+// Compliance Gap Types
+export interface ComplianceGap {
+  requirement: string
+  currentStatus: string
+  targetStatus: string
+  actionItems: string[]
+  priority: 'high' | 'medium' | 'low'
+}
+
+// Maturity Assessment Types
+export interface MaturityAssessment {
+  domain: string
+  currentLevel: number
+  targetLevel: number
+  gap: number
+  recommendations: string[]
+}
+
+// Lifecycle Progress Types
+export interface LifecycleProgress {
+  phase: string
+  completed: boolean
+  completionDate?: string
+  documents: string[]
+  nextActions: string[]
+}
+
+// Query Parameter Types
+export interface CriticalFunctionQueryParams {
+  department_id?: string
+  name?: string
+  max_tolerable_outage?: string
+  has_dependencies?: boolean
+  bia_completed?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface BIAQueryParams {
+  function_id?: string
+  impact_level?: 'Low' | 'Med' | 'High'
+  department_id?: string
+  min_financial_impact?: number
+  max_financial_impact?: number
+  assessed_after?: string
+  assessed_before?: string
+  organisation_id?: string
+  page?: number
+  limit?: number
+}
+
+export interface BCPQueryParams {
+  plan_status?: string
+  function_id?: string
+  organisation_id?: string
+  review_due_before?: string
+  review_due_after?: string
+  min_version?: number
+  has_strategies?: boolean
+  has_tests?: boolean
+  has_documents?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface RecoveryStrategyQueryParams {
+  bcp_id?: string
+  strategy_type?: string
+  min_success_rate?: number
+  max_success_rate?: number
+  min_cost?: number
+  max_cost?: number
+  organisation_id?: string
+  page?: number
+  limit?: number
+}
+
+export interface ExerciseTestQueryParams {
+  test_type?: string
+  bcp_id?: string
+  passed?: boolean
+  date_after?: string
+  date_before?: string
+  organisation_id?: string
+  participant?: string
+  upcoming_only?: boolean
+  overdue_only?: boolean
+  page?: number
+  limit?: number
+}
+
+export interface BCMMetrics {
+  total_critical_functions: number
+  assessed_functions: number
+  plans_approved: number
+  plans_active: number
+  tests_passed: number
+  tests_failed: number
+  average_rto_achievement: number
+  average_rpo_achievement: number
+  overall_maturity_score: number
+}
+
+export interface BCMLifecycleStatus extends BaseEntity {
+  organisation_id: string
+  phase: BCMLifecyclePhase
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
+  progress_percentage: number
+  started_at?: string
+  completed_at?: string
+  blocked_reason?: string
+  assigned_to?: string
+  dependencies?: string[]
+  tasks: LifecycleTask[]
+  documents: string[]
+  metadata?: Record<string, any>
+}
+
+export interface LifecycleTask {
+  id: string
+  title: string
+  description?: string
+  status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED' | 'BLOCKED'
+  due_date?: string
+  completed_at?: string
+  assigned_to?: string
+  depends_on?: string[]
+}
+
+export interface BCMDashboardData {
+  metrics: BCMMetrics
+  recent_activities: RecentActivity[]
+  upcoming_reviews: UpcomingReview[]
+  pending_approvals: number
+  expiring_plans: ExpiringPlan[]
+  compliance_gaps: ComplianceGap[]
+}
+
+export interface RecentActivity {
+  id: string
+  action: string
+  entity_type: string
+  entity_name: string
+  user: string
+  timestamp: string
+}
+
+export interface UpcomingReview {
+  plan_id: string
+  plan_name: string
+  review_due_date: string
+  days_until_due: number
+  status: 'UPCOMING' | 'OVERDUE' | 'DUE_SOON'
+}
+
+export interface ExpiringPlan {
+  plan_id: string
+  plan_name: string
+  expiry_date: string
+  days_until_expiry: number
+}
+
+export interface ValidateBCPRequest {
+  plan_id: string
+  check_strategies: boolean
+  check_tests: boolean
+  check_documents: boolean
+  check_approvals: boolean
+}
+
+export interface BCPValidationResult {
+  valid: boolean
+  errors: string[]
+  warnings: string[]
+  missing_strategies: string[]
+  missing_tests: string[]
+  missing_documents: string[]
+  missing_approvals: string[]
+}
+
+export interface BIAAnalysisRequest {
+  organisation_id: string
+  include_financial: boolean
+  include_operational: boolean
+  include_dependencies: boolean
+}
+
+export interface BIAAnalysisResult {
+  total_financial_impact: number
+  average_financial_impact: number
+  critical_functions: number
+  functions_with_dependencies: number
+  third_party_risks: ThirdPartyRisk[]
+  recovery_priorities: Record<string, number>
+}
+
+export interface ThirdPartyRisk {
+  provider_name: string
+  service: string
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL'
+  impact_description: string
+  mitigation_strategy?: string
 }

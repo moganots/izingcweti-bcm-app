@@ -1,0 +1,36 @@
+export enum SettingCategory {
+  PREFERENCES = 'PREFERENCES',
+  NOTIFICATIONS = 'NOTIFICATIONS',
+  THEME = 'THEME',
+  LANGUAGE = 'LANGUAGE',
+  DISPLAY = 'DISPLAY',
+  SECURITY = 'SECURITY',
+  SYNC = 'SYNC',
+  PRIVACY = 'PRIVACY',
+  SYSTEM = 'SYSTEM',
+}
+
+export enum NotificationSettingType {
+  EMAIL = 'EMAIL',
+  PUSH = 'PUSH',
+  SMS = 'SMS',
+  IN_APP = 'IN_APP',
+  WORKFLOW_UPDATES = 'WORKFLOW_UPDATES',
+  INCIDENT_ALERTS = 'INCIDENT_ALERTS',
+  RISK_ALERTS = 'RISK_ALERTS',
+  COMPLIANCE_REMINDERS = 'COMPLIANCE_REMINDERS',
+  TRAINING_NOTIFICATIONS = 'TRAINING_NOTIFICATIONS',
+  SYSTEM_NOTIFICATIONS = 'SYSTEM_NOTIFICATIONS',
+}
+
+export enum ThemeMode {
+  LIGHT = 'light',
+  DARK = 'dark',
+  SYSTEM = 'system',
+}
+
+export enum SyncMode {
+  AUTO = 'auto',
+  MANUAL = 'manual',
+  WIFI_ONLY = 'wifi_only',
+}

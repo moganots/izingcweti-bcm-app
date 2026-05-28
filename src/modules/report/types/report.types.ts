@@ -54,3 +54,84 @@ export interface GenerateReportRequest {
   parameters?: Record<string, any>
   format?: ReportFormat
 }
+
+export interface ReportDataSource {
+  id: string
+  name: string
+  type: 'DATABASE' | 'API' | 'FILE' | 'CUSTOM'
+  connection_config: Record<string, any>
+  is_active: boolean
+}
+
+export interface ReportQuery {
+  report_id: string
+  query: string
+  parameters: Record<string, any>
+  data_source_id: string
+  compiled_at?: string
+}
+
+export interface ReportVisualization {
+  id: string
+  report_id: string
+  type: 'TABLE' | 'CHART' | 'KPI' | 'MAP' | 'CUSTOM'
+  title: string
+  config: Record<string, any>
+  data_mapping: Record<string, string>
+  position: { x: number; y: number; w: number; h: number }
+}
+
+export interface ReportDashboard extends BaseEntity {
+  name: string
+  description?: string
+  organisation_id: string
+  visualizations: ReportVisualization[]
+  layout: string
+  is_public: boolean
+  shared_with: string[]
+  created_by: string
+  refresh_interval_minutes?: number
+}
+
+export interface ReportSubscription {
+  id: string
+  report_id: string
+  user_id: string
+  frequency: ReportFrequency
+  format: ReportFormat
+  recipients: string[]
+  is_active: boolean
+  last_sent_at?: string
+  next_send_at?: string
+  filters?: Record<string, any>
+}
+
+export interface ReportGenerationJob {
+  id: string
+  report_id: string
+  status: 'QUEUED' | 'PROCESSING' | 'COMPLETED' | 'FAILED' | 'CANCELLED'
+  priority: number
+  queued_at: string
+  started_at?: string
+  completed_at?: string
+  error_message?: string
+  output_url?: string
+  output_size_bytes?: number
+  parameters: Record<string, any>
+}
+
+export interface ReportComparison {
+  name: string
+  period1: { start: string; end: string }
+  period2: { start: string; end: string }
+  metrics: Record<string, ComparisonMetric>
+  visualization_data: any
+}
+
+export interface ComparisonMetric {
+  period1_value: number
+  period2_value: number
+  absolute_change: number
+  percentage_change: number
+  trend: 'UP' | 'DOWN' | 'STABLE'
+}
