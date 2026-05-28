@@ -1,0 +1,38 @@
+export enum ReportType {
+  WORKFLOW = 'WORKFLOW',
+  RISK = 'RISK',
+  COMPLIANCE = 'COMPLIANCE',
+  INCIDENT = 'INCIDENT',
+  AUDIT = 'AUDIT',
+  PERFORMANCE = 'PERFORMANCE',
+  USER = 'USER',
+  DOCUMENT = 'DOCUMENT',
+  EXERCISE = 'EXERCISE',
+  FINANCIAL = 'FINANCIAL',
+  CUSTOM = 'CUSTOM',
+}
+
+export enum ReportFormat {
+  PDF = 'PDF',
+  CSV = 'CSV',
+  JSON = 'JSON',
+  EXCEL = 'EXCEL',
+  HTML = 'HTML',
+}
+
+export enum ReportStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
+  CANCELLED = 'CANCELLED',
+}
+
+export enum ReportFrequency {
+  ONCE = 'ONCE',
+  DAILY = 'DAILY',
+  WEEKLY = 'WEEKLY',
+  MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  YEARLY = 'YEARLY',
+}
