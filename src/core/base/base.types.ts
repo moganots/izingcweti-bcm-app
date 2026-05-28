@@ -1,5 +1,3 @@
-import { BaseEntity } from './base.entity'
-
 export interface ApiResponse<T = any> {
   success: boolean
   data: T

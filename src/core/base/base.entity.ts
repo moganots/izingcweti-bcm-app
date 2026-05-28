@@ -29,10 +29,10 @@ export abstract class BaseEntityImpl implements BaseEntity {
     this.created_at = data.created_at || new Date().toISOString()
     this.version = data.version || 1
     this.sync_status = data.sync_status || SyncStatus.PENDING
-    this.updated_by = data.updated_by
-    this.updated_at = data.updated_at
-    this.deleted_by = data.deleted_by
-    this.deleted_at = data.deleted_at
+    this.updated_by = data.updated_by!
+    this.updated_at = data.updated_at!
+    this.deleted_by = data.deleted_by!
+    this.deleted_at = data.deleted_at!
   }
 
   toJSON(): Record<string, unknown> {

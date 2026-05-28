@@ -1,6 +1,5 @@
 import { BaseEntity } from '../../../core/base/base.entity'
 import {
-  SyncStatus,
   PendingChangeStatus,
   ConflictType,
   ResolutionStrategy,

@@ -1,5 +1,6 @@
 import { User } from '../../user/types/user.types'
 import { BaseEntity } from '../../../core/base/base.entity'
+import { AuthTokenStatus, AuthTokenType } from '../enums/auth.enum'
 
 export interface AuthTokens {
   access_token: string
