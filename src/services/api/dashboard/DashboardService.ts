@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   DashboardRole,
   type DashboardConfig,
@@ -20,7 +21,10 @@ import { PaginatedResponse } from 'src/core/base/base.types'
 export class DashboardService extends BaseService {
   async getKPIs(organisationId?: string): Promise<DashboardKPIs> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<DashboardKPIs>('/dashboard/kpis', params)
+    const response = await this.get<DashboardKPIs>(
+      API_ENDPOINTS.DASHBOARD.KPIS(organisationId || ''),
+      params
+    )
     return this.extractData(response)
   }
 
@@ -42,7 +46,7 @@ export class DashboardService extends BaseService {
       low_risks: number
       risk_trends: RiskTrend[]
       top_risk_categories: Array<{ category: string; count: number; percentage: number }>
-    }>('/dashboard/risk-summary', params)
+    }>(API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(organisationId || ''), params)
     return this.extractData(response)
   }
 
@@ -72,7 +76,7 @@ export class DashboardService extends BaseService {
       recovery_strategies_count: number
       exercise_tests_completed: number
       exercise_tests_pending: number
-    }>('/dashboard/bcm-summary', params)
+    }>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(organisationId || ''), params)
     return this.extractData(response)
   }
 
@@ -100,7 +104,7 @@ export class DashboardService extends BaseService {
       low_incidents: number
       incident_trends: IncidentTrend[]
       average_resolution_time_hours: number
-    }>('/dashboard/incident-summary', params)
+    }>(API_ENDPOINTS.DASHBOARD.INCIDENT_SUMMARY(organisationId || ''), params)
     return this.extractData(response)
   }
 
@@ -122,7 +126,7 @@ export class DashboardService extends BaseService {
       overdue_audits: number
       upcoming_audits: number
       compliance_by_standard: ComplianceOverview[]
-    }>('/dashboard/compliance-summary', params)
+    }>(API_ENDPOINTS.DASHBOARD.COMPLIANCE_SUMMARY(organisationId || ''), params)
     return this.extractData(response)
   }
 
@@ -146,7 +150,7 @@ export class DashboardService extends BaseService {
       overdue: number
       average_completion_days: number
       recent_workflows: DashboardWorkflow[]
-    }>('/dashboard/workflow-summary', params)
+    }>(API_ENDPOINTS.DASHBOARD.WORKFLOW_SUMMARY(organisationId || ''), params)
     return this.extractData(response)
   }
 
@@ -157,7 +161,7 @@ export class DashboardService extends BaseService {
     try {
       const params = { limit, ...(organisationId ? { organisation_id: organisationId } : {}) }
       const response = await this.get<{ tasks: UpcomingTask[] }>(
-        '/dashboard/upcoming-tasks',
+        API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(organisationId || ''),
         params
       )
       return this.extractData(response)
@@ -174,7 +178,7 @@ export class DashboardService extends BaseService {
     try {
       const params = { limit, ...(organisationId ? { organisation_id: organisationId } : {}) }
       const response = await this.get<{ activities: RecentActivity[] }>(
-        '/dashboard/recent-activity',
+        API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(organisationId || ''),
         params
       )
       return this.extractData(response)
@@ -186,13 +190,19 @@ export class DashboardService extends BaseService {
 
   async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
     const params = { period, ...(organisationId ? { organisation_id: organisationId } : {}) }
-    const response = await this.get<RiskTrend[]>('/dashboard/risk-trends', params)
+    const response = await this.get<RiskTrend[]>(
+      API_ENDPOINTS.DASHBOARD.RISK_TRENDS(organisationId || ''),
+      params
+    )
     return this.extractData(response)
   }
 
   async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<ComplianceOverview[]>('/dashboard/compliance-overview', params)
+    const response = await this.get<ComplianceOverview[]>(
+      API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(organisationId || ''),
+      params
+    )
     return this.extractData(response)
   }
 
@@ -202,25 +212,27 @@ export class DashboardService extends BaseService {
     return this.extractData(response)
   }
 
-  // Dashboard Configuration Methods
   async getDashboardConfigs(params?: DashboardQueryParams): Promise<any> {
-    const response = await this.getPaginated<DashboardConfig>('/dashboard/configs', params)
+    const response = await this.getPaginated<DashboardConfig>(
+      API_ENDPOINTS.DASHBOARD.CONFIGS,
+      params
+    )
     return response
   }
 
   async getDashboardConfig(id: string): Promise<DashboardConfig> {
-    const response = await this.get<DashboardConfig>(`/dashboard/configs/${id}`)
+    const response = await this.get<DashboardConfig>(API_ENDPOINTS.DASHBOARD.CONFIG_BY_ID(id))
     return this.extractData(response)
   }
 
   async getUserDashboardConfig(organisationId?: string): Promise<DashboardConfig> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<DashboardConfig>('/dashboard/user-config', params)
+    const response = await this.get<DashboardConfig>(API_ENDPOINTS.DASHBOARD.USER_CONFIG, params)
     return this.extractData(response)
   }
 
   async createDashboardConfig(data: CreateDashboardConfigRequest): Promise<DashboardConfig> {
-    const response = await this.post<DashboardConfig>('/dashboard/configs', data)
+    const response = await this.post<DashboardConfig>(API_ENDPOINTS.DASHBOARD.CONFIGS, data)
     return this.extractData(response)
   }
 
@@ -228,18 +240,20 @@ export class DashboardService extends BaseService {
     id: string,
     data: UpdateDashboardConfigRequest
   ): Promise<DashboardConfig> {
-    const response = await this.put<DashboardConfig>(`/dashboard/configs/${id}`, data)
+    const response = await this.put<DashboardConfig>(API_ENDPOINTS.DASHBOARD.CONFIG_BY_ID(id), data)
     return this.extractData(response)
   }
 
   async deleteDashboardConfig(id: string): Promise<void> {
-    await this.delete(`/dashboard/configs/${id}`)
+    await this.delete(API_ENDPOINTS.DASHBOARD.CONFIG_BY_ID(id))
   }
 
   async getOrganisationDashboardConfigs(
     organisationId: string
   ): Promise<PaginatedResponse<DashboardConfig>> {
-    return this.getPaginated<DashboardConfig>(`/dashboard/organisations/${organisationId}/configs`)
+    return this.getPaginated<DashboardConfig>(
+      API_ENDPOINTS.DASHBOARD.ORGANISATION_CONFIGS(organisationId)
+    )
   }
 
   async getRoleDashboardConfigs(
@@ -247,7 +261,7 @@ export class DashboardService extends BaseService {
     role: DashboardRole
   ): Promise<DashboardConfig[]> {
     const response = await this.get<DashboardConfig[]>(
-      `/dashboard/organisations/${organisationId}/roles/${role}/configs`
+      API_ENDPOINTS.DASHBOARD.ROLE_CONFIGS(organisationId, role)
     )
     return this.extractData(response)
   }

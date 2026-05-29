@@ -106,6 +106,15 @@ export const DATE_FORMATS = {
 } as const
 
 export const API_ENDPOINTS = {
+  // API (general)
+  API: {
+    PING: '/api/ping',
+    VERSION: '/api/version',
+    SEARCH: '/api/search',
+    SERVER_TIME: '/api/server-time',
+    HEALTH: '/api/health',
+  },
+
   // Auth
   AUTH: {
     LOGIN: '/auth/login',
@@ -114,8 +123,12 @@ export const API_ENDPOINTS = {
     REFRESH: '/auth/refresh',
     VALIDATE: '/auth/validate',
     CHANGE_PASSWORD: '/auth/change-password',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_RESET_TOKEN: (token: string) => `/auth/verify-reset-token/${token}`,
     SESSIONS: '/auth/sessions',
-    SESSION: (tokenId: string) => `/auth/sessions/${tokenId}`,
+    SESSION: (sessionId: string) => `/auth/sessions/${sessionId}`,
+    REVOKE_OTHER_SESSIONS: '/auth/sessions/revoke-others',
     CLEANUP: '/auth/cleanup',
   },
 
@@ -149,6 +162,19 @@ export const API_ENDPOINTS = {
     DEACTIVATE: (uuid: string) => `/users/users/${uuid}/deactivate`,
     ACTIVATE: (uuid: string) => `/users/users/${uuid}/activate`,
     DELETE: (uuid: string) => `/users/users/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/users/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/users/${uuid}/restore`,
+    CHANGE_MY_PASSWORD: '/users/change-password',
+    BULK_IMPORT: '/users/bulk-import',
+    EXPORT: '/users/export',
+    RESEND_INVITATION: (id: string) => `/users/${id}/resend-invitation`,
+    PREFERENCES: (userId: string) => `/users/${userId}/preferences`,
+    MY_SESSIONS: '/users/sessions',
+    REVOKE_SESSION: (sessionId: string) => `/users/sessions/${sessionId}`,
+    REVOKE_OTHER_MY_SESSIONS: '/users/sessions/revoke-others',
+    ROLES: '/users/roles',
+    VERIFY_EMAIL: '/users/verify-email',
+    RESEND_VERIFICATION: '/users/resend-verification',
   },
 
   // Tenants
@@ -161,6 +187,8 @@ export const API_ENDPOINTS = {
     UPDATE: (uuid: string) => `/tenants/${uuid}`,
     UPDATE_STATUS: (uuid: string) => `/tenants/${uuid}/status`,
     DELETE: (uuid: string) => `/tenants/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/tenants/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/tenants/${uuid}/restore`,
     AUDIT_LOGS: (tenantId: string) => `/tenants/${tenantId}/audit-logs`,
     AUDIT_SUMMARY: (tenantId: string) => `/tenants/${tenantId}/audit-logs/summary`,
     AUDIT_BY_ACTION: (tenantId: string, action: string) =>
@@ -177,6 +205,16 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/organisations/${uuid}`,
     UPDATE: (uuid: string) => `/organisations/${uuid}`,
     DELETE: (uuid: string) => `/organisations/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/organisations/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/organisations/${uuid}/restore`,
+    DASHBOARD: (organisationId: string) => `/organisations/${organisationId}/dashboard`,
+    HIERARCHY: (organisationId: string) => `/organisations/${organisationId}/hierarchy`,
+    TREE: (organisationId: string) => `/organisations/${organisationId}/tree`,
+    VALIDATE_NAME: '/organisations/validate-name',
+    INDUSTRY_TYPES: '/organisations/industry-types',
+    MATURITY_SCORES: '/organisations/maturity-scores',
+    BULK_IMPORT: '/organisations/bulk-import',
+    EXPORT: '/organisations/export',
   },
 
   // Business Units
@@ -187,6 +225,16 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/business-units/${uuid}`,
     UPDATE: (uuid: string) => `/business-units/${uuid}`,
     DELETE: (uuid: string) => `/business-units/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/business-units/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/business-units/${uuid}/restore`,
+    CRITICAL: (organisationId: string) => `/business-units/${organisationId}/critical`,
+    CRITICALITY_SCORES: '/business-units/criticality-scores',
+    BULK_IMPORT: (organisationId: string) => `/business-units/${organisationId}/bulk-import`,
+    EXPORT: (organisationId: string) => `/business-units/${organisationId}/export`,
+    HIERARCHY: (businessUnitId: string) => `/business-units/${businessUnitId}/hierarchy`,
+    ORGANISATION_HIERARCHY: (organisationId: string) =>
+      `/business-units/organisation/${organisationId}/hierarchy`,
+    VALIDATE_NAME: '/business-units/validate-name',
   },
 
   // Departments
@@ -200,6 +248,15 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/departments/${uuid}`,
     UPDATE: (uuid: string) => `/departments/${uuid}`,
     DELETE: (uuid: string) => `/departments/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/departments/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/departments/${uuid}/restore`,
+    WITHOUT_BIA: (organisationId: string) => `/departments/${organisationId}/without-bia`,
+    HIERARCHY: (businessUnitId: string) => `/departments/${businessUnitId}/hierarchy`,
+    PATH: (departmentId: string) => `/departments/${departmentId}/path`,
+    MOVE: (departmentId: string) => `/departments/${departmentId}/move`,
+    VALIDATE_NAME: '/departments/validate-name',
+    BULK_IMPORT: (businessUnitId: string) => `/departments/${businessUnitId}/bulk-import`,
+    EXPORT: (businessUnitId: string) => `/departments/${businessUnitId}/export`,
   },
 
   // Critical Functions
@@ -224,6 +281,8 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
     UPDATE: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
     DELETE: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
+    ANALYZE: '/bcm/impact-assessments/analyze',
+    EXPORT: (organisationId: string) => `/bcm/impact-assessments/export/${organisationId}`,
   },
 
   // BCP
@@ -237,7 +296,11 @@ export const API_ENDPOINTS = {
     UPDATE: (uuid: string) => `/bcm/plans/${uuid}`,
     APPROVE: (uuid: string) => `/bcm/plans/${uuid}/approve`,
     ARCHIVE: (uuid: string) => `/bcm/plans/${uuid}/archive`,
+    ACTIVATE: (uuid: string) => `/bcm/plans/${uuid}/activate`,
     DELETE: (uuid: string) => `/bcm/plans/${uuid}`,
+    VALIDATE: '/bcm/plans/validate',
+    PROGRESS: '/bcm/plans/progress',
+    EXPORT: (id: string) => `/bcm/plans/${id}/export`,
   },
 
   // Recovery Strategies
@@ -250,6 +313,23 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
     UPDATE: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
     DELETE: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
+    COMPARE: (bcpId: string) => `/bcm/recovery-strategies/${bcpId}/compare`,
+  },
+
+  // Exercise Tests
+  EXERCISE_TESTS: {
+    BASE: '/exercise-tests',
+    PASSED: '/exercise-tests/passed',
+    FAILED: '/exercise-tests/failed',
+    UPCOMING: '/exercise-tests/upcoming',
+    PAST: '/exercise-tests/past',
+    DATE_RANGE: '/exercise-tests/date-range',
+    BY_BCP: (bcpId: string) => `/exercise-tests/bcp/${bcpId}`,
+    BY_ID: (uuid: string) => `/exercise-tests/${uuid}`,
+    UPDATE: (uuid: string) => `/exercise-tests/${uuid}`,
+    RECORD_RESULT: (uuid: string) => `/exercise-tests/${uuid}/record-result`,
+    DELETE: (uuid: string) => `/exercise-tests/${uuid}`,
+    STATISTICS: '/bcm/exercise-tests/statistics',
   },
 
   // Risks
@@ -260,6 +340,10 @@ export const API_ENDPOINTS = {
     MY_ASSIGNED: '/risks/my-assigned',
     OVERDUE_REVIEWS: '/risks/overdue-reviews',
     MATRIX: (organisationId: string) => `/risks/${organisationId}/matrix`,
+    HEATMAP: (organisationId: string) => `/risks/${organisationId}/heatmap`,
+    HEATMAP_SUMMARY: (organisationId: string) => `/risks/${organisationId}/heatmap-summary`,
+    TRENDS: (organisationId: string) => `/risks/${organisationId}/trends`,
+    TREND_ANALYSIS: (organisationId: string) => `/risks/${organisationId}/trend-analysis`,
     BY_ID: (uuid: string) => `/risks/${uuid}`,
     UPDATE: (uuid: string) => `/risks/${uuid}`,
     ASSESS: (uuid: string) => `/risks/${uuid}/assess`,
@@ -267,6 +351,13 @@ export const API_ENDPOINTS = {
     ASSIGN: (uuid: string) => `/risks/${uuid}/assign`,
     CLOSE: (uuid: string) => `/risks/${uuid}/close`,
     DELETE: (uuid: string) => `/risks/${uuid}`,
+    MITIGATION_PLAN: (riskId: string) => `/risks/${riskId}/mitigation-plan`,
+    MITIGATION_ACTION: (riskId: string, actionId: string) =>
+      `/risks/${riskId}/mitigation-plan/actions/${actionId}`,
+    BULK_UPDATE_STATUS: '/risks/bulk-update-status',
+    BULK_ASSIGN: '/risks/bulk-assign',
+    BULK_DELETE: '/risks/bulk-delete',
+    EXPORT: (organisationId: string) => `/risks/export/${organisationId}`,
   },
 
   // Incidents
@@ -287,21 +378,16 @@ export const API_ENDPOINTS = {
     ASSIGN: (uuid: string) => `/incidents/${uuid}/assign`,
     ADD_UPDATE: (uuid: string) => `/incidents/${uuid}/updates`,
     DELETE: (uuid: string) => `/incidents/${uuid}`,
-  },
-
-  // Exercise Tests
-  EXERCISE_TESTS: {
-    BASE: '/exercise-tests',
-    PASSED: '/exercise-tests/passed',
-    FAILED: '/exercise-tests/failed',
-    UPCOMING: '/exercise-tests/upcoming',
-    PAST: '/exercise-tests/past',
-    DATE_RANGE: '/exercise-tests/date-range',
-    BY_BCP: (bcpId: string) => `/exercise-tests/bcp/${bcpId}`,
-    BY_ID: (uuid: string) => `/exercise-tests/${uuid}`,
-    UPDATE: (uuid: string) => `/exercise-tests/${uuid}`,
-    RECORD_RESULT: (uuid: string) => `/exercise-tests/${uuid}/record-result`,
-    DELETE: (uuid: string) => `/exercise-tests/${uuid}`,
+    STATS: '/incidents/stats',
+    RESPONSE_PLAN: (incidentId: string) => `/incidents/${incidentId}/response-plan`,
+    ACTIVATE_PLAN: (incidentId: string) => `/incidents/${incidentId}/activate-plan`,
+    RESPONSE_ACTION: (incidentId: string, actionId: string) =>
+      `/incidents/${incidentId}/response-plan/actions/${actionId}`,
+    RECOVERY_METRICS: (incidentId: string) => `/incidents/${incidentId}/recovery-metrics`,
+    REPORT: (incidentId: string, reportType: string) =>
+      `/incidents/${incidentId}/report/${reportType}`,
+    TIMELINE: (incidentId: string) => `/incidents/${incidentId}/timeline`,
+    EXPORT: (organisationId: string) => `/incidents/export/${organisationId}`,
   },
 
   // Compliance
@@ -317,12 +403,22 @@ export const API_ENDPOINTS = {
     UPDATE: (uuid: string) => `/compliance/${uuid}`,
     UPDATE_STATUS: (uuid: string) => `/compliance/${uuid}/status`,
     DELETE: (uuid: string) => `/compliance/${uuid}`,
+    EVIDENCE: (id: string) => `/compliance/${id}/evidence`,
+    REMOVE_EVIDENCE: (id: string, index: number) => `/compliance/${id}/evidence/${index}`,
+    GAPS: '/compliance/gaps',
+    EXPORT: '/compliance/export',
+    AUDIT_HISTORY: (id: string) => `/compliance/${id}/audit-history`,
+    SCHEDULE_AUDIT: (id: string) => `/compliance/${id}/schedule-audit`,
+    BULK_UPDATE_STATUS: '/compliance/bulk-update-status',
+    VERIFY: '/compliance/verify',
+    GENERATE_REPORT: '/compliance/generate-report',
   },
 
   // Workflows
   WORKFLOWS: {
     BASE: '/workflows',
     STATS: '/workflows/stats',
+    METRICS: '/workflows/metrics',
     PENDING_APPROVALS: '/workflows/pending/approvals',
     OVERDUE: '/workflows/status/overdue',
     ACTIVE: '/workflows/status/active',
@@ -334,7 +430,10 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/workflows/${uuid}`,
     UPDATE: (uuid: string) => `/workflows/${uuid}`,
     DELETE: (uuid: string) => `/workflows/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/workflows/${uuid}/permanent`,
+    RESTORE: (uuid: string) => `/workflows/${uuid}/restore`,
     SUBMIT: (uuid: string) => `/workflows/${uuid}/submit`,
+    START_REVIEW: (uuid: string) => `/workflows/${uuid}/start-review`,
     APPROVE: (uuid: string) => `/workflows/${uuid}/approve`,
     REJECT: (uuid: string) => `/workflows/${uuid}/reject`,
     COMPLETE: (uuid: string) => `/workflows/${uuid}/complete`,
@@ -343,6 +442,15 @@ export const API_ENDPOINTS = {
     REASSIGN: (uuid: string) => `/workflows/${uuid}/reassign`,
     ARCHIVE: (uuid: string) => `/workflows/${uuid}/archive`,
     CANCEL: (uuid: string) => `/workflows/${uuid}/cancel`,
+    APPROVAL_CHAIN: (workflowId: string) => `/workflows/${workflowId}/approval-chain`,
+    COMMENTS: (workflowId: string) => `/workflows/${workflowId}/comments`,
+    TEMPLATES: '/workflows/templates',
+    TEMPLATE_BY_ID: (id: string) => `/workflows/templates/${id}`,
+    CREATE_FROM_TEMPLATE: (templateId: string) => `/workflows/templates/${templateId}/create`,
+    EXPORT: '/workflows/export',
+    BULK_APPROVE: '/workflows/bulk-approve',
+    BULK_REJECT: '/workflows/bulk-reject',
+    BULK_REASSIGN: '/workflows/bulk-reassign',
   },
 
   // Documents
@@ -358,6 +466,9 @@ export const API_ENDPOINTS = {
     BY_STATUS: (status: string) => `/documents/status/${status}`,
     BY_ORGANISATION: (organisationId: string) => `/documents/organisation/${organisationId}`,
     DOWNLOAD: (uuid: string) => `/documents/${uuid}/download`,
+    PREVIEW: (uuid: string) => `/documents/${uuid}/preview`,
+    VERSIONS: (uuid: string) => `/documents/${uuid}/versions`,
+    RESTORE_VERSION: (uuid: string) => `/documents/${uuid}/restore-version`,
     BY_ID: (uuid: string) => `/documents/${uuid}`,
     UPDATE: (uuid: string) => `/documents/${uuid}`,
     NEW_VERSION: (uuid: string) => `/documents/${uuid}/new-version`,
@@ -367,6 +478,12 @@ export const API_ENDPOINTS = {
     ARCHIVE: (uuid: string) => `/documents/${uuid}/archive`,
     PUBLISH: (uuid: string) => `/documents/${uuid}/publish`,
     DELETE: (uuid: string) => `/documents/${uuid}`,
+    VERIFY: (uuid: string) => `/documents/${uuid}/verify`,
+    TAGS: (uuid: string) => `/documents/${uuid}/tags`,
+    BULK_DOWNLOAD: '/documents/bulk-download',
+    BULK_OPERATION: '/documents/bulk-operation',
+    TEMPLATES: '/documents/templates',
+    GENERATE_FROM_TEMPLATE: '/documents/generate-from-template',
   },
 
   // Notifications
@@ -378,10 +495,20 @@ export const API_ENDPOINTS = {
     PREFERENCES: '/notifications/preferences',
     TEMPLATES: '/notifications/templates',
     BULK: '/notifications/bulk',
+    UNREAD: '/notifications/unread',
+    BY_STATUS: (status: string) => `/notifications/status/${status}`,
+    BY_TYPE: (type: string) => `/notifications/type/${type}`,
     BY_ID: (uuid: string) => `/notifications/${uuid}`,
     MARK_READ: (uuid: string) => `/notifications/${uuid}/read`,
+    MARK_UNREAD: (uuid: string) => `/notifications/${uuid}/unread`,
     ARCHIVE: (uuid: string) => `/notifications/${uuid}/archive`,
+    DISMISS: (uuid: string) => `/notifications/${uuid}/dismiss`,
     DELETE: (uuid: string) => `/notifications/${uuid}`,
+    PERMANENT_DELETE: (uuid: string) => `/notifications/${uuid}/permanent`,
+    BULK_DELETE: '/notifications/bulk-delete',
+    SETTINGS: (userId: string) => `/notifications/settings/${userId}`,
+    TRACK_CLICK: (notificationId: string) => `/notifications/${notificationId}/track-click`,
+    SUMMARY: '/notifications/summary',
   },
 
   // Audit
@@ -391,10 +518,14 @@ export const API_ENDPOINTS = {
     ENTITY_HISTORY: (entityType: string, entityId: string) =>
       `/audit/entity-history/${entityType}/${entityId}`,
     USER_ACTIVITY: (userId: string) => `/audit/user-activity/${userId}`,
+    MY_ACTIVITY: '/audit/my-activity',
     STATS: '/audit/stats',
     SUMMARY: '/audit/summary',
     EXPORT: '/audit/export',
     CLEANUP: '/audit/cleanup',
+    REPLAY: '/audit/replay',
+    ANOMALIES: '/audit/anomalies',
+    ANOMALY_BY_ID: (anomalyId: string) => `/audit/anomalies/${anomalyId}`,
     RETENTION_POLICIES: '/audit/retention-policies',
     RETENTION_POLICY_BY_ID: (uuid: string) => `/audit/retention-policies/${uuid}`,
     APPLY_RETENTION: '/audit/apply-retention',
@@ -428,9 +559,15 @@ export const API_ENDPOINTS = {
     ARCHIVE: (uuid: string) => `/rules/${uuid}/archive`,
     EXECUTE: (uuid: string) => `/rules/${uuid}/execute`,
     TEST: (uuid: string) => `/rules/${uuid}/test`,
+    DUPLICATE: (uuid: string) => `/rules/${uuid}/duplicate`,
     DELETE: (uuid: string) => `/rules/${uuid}`,
-    EXECUTION_LOGS: (ruleId: string) => `/rules/${ruleId}/execution-logs`,
-    EXECUTION_STATS: (ruleId: string) => `/rules/${ruleId}/execution-logs/stats`,
+    EXECUTION_LOGS: (ruleId: string) => `/rules/${ruleId}/logs`,
+    EXECUTION_STATS: (ruleId: string) => `/rules/${ruleId}/execution-stats`,
+    SCHEDULE: (ruleId: string) => `/rules/${ruleId}/schedule`,
+    VALIDATE: '/rules/validate',
+    BULK_ACTIVATE: '/rules/bulk-activate',
+    BULK_DEACTIVATE: '/rules/bulk-deactivate',
+    BULK_DELETE: '/rules/bulk-delete',
     EXECUTION_LOGS_CLEANUP: '/rules/execution-logs/cleanup',
   },
 
@@ -440,6 +577,8 @@ export const API_ENDPOINTS = {
     PULL: '/sync/pull',
     PUSH: '/sync/push',
     BATCH: '/sync/batch',
+    STATUS: '/sync/status',
+    TRIGGER: '/sync/trigger',
     CONFLICTS_RESOLVE: '/sync/conflicts/resolve',
     PENDING_CHANGES: '/sync/pending-changes',
     PENDING_CHANGES_PENDING: '/sync/pending-changes/pending',
@@ -455,6 +594,7 @@ export const API_ENDPOINTS = {
     CONFLICTS_BY_ENTITY: (entityId: string) => `/sync/conflicts/entity/${entityId}`,
     CONFLICT_BY_ID: (uuid: string) => `/sync/conflicts/${uuid}`,
     CONFLICT_RESOLVE: (uuid: string) => `/sync/conflicts/${uuid}/resolve`,
+    CONFLICT_PREVIEW: (uuid: string) => `/sync/conflicts/${uuid}/preview`,
     CONFLICT_DELETE: (uuid: string) => `/sync/conflicts/${uuid}`,
     CONFLICTS_CLEANUP: '/sync/conflicts/cleanup',
     METADATA: '/sync/metadata',
@@ -468,6 +608,10 @@ export const API_ENDPOINTS = {
     METADATA_INCREMENT: (key: string) => `/sync/metadata/${key}/increment`,
     METADATA_BACKUP: '/sync/metadata/backup',
     METADATA_CLEAR_PREFIX: (prefix: string) => `/sync/metadata/prefix/${prefix}`,
+    CONFIG: '/sync/config',
+    TOMBSTONES: '/sync/tombstones',
+    TOMBSTONES_CLEANUP: '/sync/tombstones/cleanup',
+    STATS: '/sync/stats',
   },
 
   // Cache
@@ -476,19 +620,25 @@ export const API_ENDPOINTS = {
     STATS: '/cache/stats',
     CLEAN_EXPIRED: '/cache/clean-expired',
     CLEAR_ALL: '/cache/clear-all',
+    KEYS: '/cache/keys',
     BY_PATTERN: '/cache/pattern',
     BY_TAGS: (tags: string) => `/cache/tags/${tags}`,
     DELETE_BY_TAGS: (tags: string) => `/cache/tags/${tags}`,
     BULK: '/cache/bulk',
     EXISTS: (key: string) => `/cache/${encodeURIComponent(key)}/exists`,
+    TTL: (key: string) => `/cache/${encodeURIComponent(key)}/ttl`,
+    INCREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/increment`,
+    DECREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/decrement`,
     GET_OR_SET: (key: string) => `/cache/${encodeURIComponent(key)}/get-or-set`,
     BY_KEY: (key: string) => `/cache/${encodeURIComponent(key)}`,
     UPDATE: (key: string) => `/cache/${encodeURIComponent(key)}`,
     DELETE: (key: string) => `/cache/${encodeURIComponent(key)}`,
+    WARM_UP: '/cache/warm-up',
   },
 
   // Dashboard
   DASHBOARD: {
+    COMPLETE: '/dashboard/complete',
     USER_CONFIG: '/dashboard/user-config',
     CONFIGS: '/dashboard/configs',
     CONFIG_BY_ID: (uuid: string) => `/dashboard/configs/${uuid}`,
@@ -556,5 +706,37 @@ export const API_ENDPOINTS = {
     TRIGGER_SYNC: (userId: string) => `/settings/user/${userId}/sync/trigger`,
     TEMPLATES: '/settings/templates',
     APPLY_TEMPLATE: (templateId: string) => `/settings/templates/${templateId}/apply`,
+    TWO_FACTOR: (userId: string) => `/settings/user/${userId}/two-factor`,
+    TWO_FACTOR_VERIFY: (userId: string) => `/settings/user/${userId}/two-factor/verify`,
+    AVAILABLE_THEMES: '/settings/available-themes',
+    AVAILABLE_LOCALES: '/settings/available-locales',
+    VALIDATE: '/settings/validate',
+    EXPORT: '/settings/export',
+    IMPORT: '/settings/import',
+    BULK_UPDATE: '/settings/bulk-update',
+  },
+
+  // BCM Lifecycle
+  BCM_LIFECYCLE: {
+    BASE: (organisationId: string) => `/bcm/lifecycle/${organisationId}`,
+    PROGRESS: (organisationId: string) => `/bcm/lifecycle/${organisationId}/progress`,
+    TASK: (organisationId: string, taskId: string) =>
+      `/bcm/lifecycle/${organisationId}/tasks/${taskId}`,
+  },
+
+  // BCM Metrics
+  BCM_METRICS: {
+    BASE: '/bcm/metrics',
+    DASHBOARD: '/bcm/dashboard',
+    MATURITY_ASSESSMENT: '/bcm/maturity-assessment',
+  },
+
+  // Cache Extras
+  CACHE_EXTRA: {
+    KEYS: '/cache/keys',
+    TTL: (key: string) => `/cache/${encodeURIComponent(key)}/ttl`,
+    INCREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/increment`,
+    DECREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/decrement`,
+    WARM_UP: '/cache/warm-up',
   },
 } as const

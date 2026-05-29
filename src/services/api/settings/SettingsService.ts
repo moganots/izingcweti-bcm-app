@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   NotificationSettingType,
   type NotificationSettings,
@@ -19,41 +20,41 @@ import {
 
 export class SettingsService extends BaseService {
   async getSettings(params?: SettingsQueryParams): Promise<PaginatedResponse<Settings>> {
-    return this.getPaginated<Settings>('/settings', params as Record<string, any>)
+    return this.getPaginated<Settings>(API_ENDPOINTS.SETTINGS.BASE, params as Record<string, any>)
   }
 
   async getSettingsById(id: string): Promise<Settings> {
-    const response = await this.get<Settings>(`/settings/${id}`)
+    const response = await this.get<Settings>(API_ENDPOINTS.SETTINGS.BY_ID(id))
     return this.extractData(response)
   }
 
   async getUserSettings(userId: string): Promise<Settings> {
-    const response = await this.get<Settings>(`/settings/user/${userId}`)
+    const response = await this.get<Settings>(API_ENDPOINTS.SETTINGS.USER(userId))
     return this.extractData(response)
   }
 
   async getOrganisationSettings(organisationId: string): Promise<Settings[]> {
-    const response = await this.get<Settings[]>(`/settings/organisation/${organisationId}`)
+    const response = await this.get<Settings[]>(API_ENDPOINTS.SETTINGS.ORGANISATION(organisationId))
     return this.extractData(response)
   }
 
   async getSystemDefaultSettings(): Promise<Settings> {
-    const response = await this.get<Settings>('/settings/system-defaults')
+    const response = await this.get<Settings>(API_ENDPOINTS.SETTINGS.SYSTEM_DEFAULTS)
     return this.extractData(response)
   }
 
   async createSettings(data: Partial<Settings>): Promise<Settings> {
-    const response = await this.post<Settings>('/settings', data)
+    const response = await this.post<Settings>(API_ENDPOINTS.SETTINGS.BASE, data)
     return this.extractData(response)
   }
 
   async updateSettings(id: string, data: UpdateSettingsRequest): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/${id}`, data)
+    const response = await this.put<Settings>(API_ENDPOINTS.SETTINGS.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async updateUserSettings(userId: string, data: UpdateSettingsRequest): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}`, data)
+    const response = await this.put<Settings>(API_ENDPOINTS.SETTINGS.USER(userId), data)
     return this.extractData(response)
   }
 
@@ -61,43 +62,48 @@ export class SettingsService extends BaseService {
     organisationId: string,
     data: UpdateSettingsRequest
   ): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/organisation/${organisationId}`, data)
+    const response = await this.put<Settings>(
+      API_ENDPOINTS.SETTINGS.ORGANISATION(organisationId),
+      data
+    )
     return this.extractData(response)
   }
 
   async deleteSettings(id: string): Promise<void> {
-    await this.delete(`/settings/${id}`)
+    await this.delete(API_ENDPOINTS.SETTINGS.BY_ID(id))
   }
 
   async resetUserSettings(userId: string): Promise<Settings> {
-    const response = await this.post<Settings>(`/settings/user/${userId}/reset`)
+    const response = await this.post<Settings>(API_ENDPOINTS.SETTINGS.RESET_USER(userId))
     return this.extractData(response)
   }
 
   async resetOrganisationSettings(organisationId: string): Promise<Settings[]> {
-    const response = await this.post<Settings[]>(`/settings/organisation/${organisationId}/reset`)
+    const response = await this.post<Settings[]>(
+      API_ENDPOINTS.SETTINGS.RESET_ORGANISATION(organisationId)
+    )
     return this.extractData(response)
   }
 
   async getUserPreference<T = any>(userId: string, key: string): Promise<T | null> {
-    const response = await this.get<T | null>(`/settings/user/${userId}/preference/${key}`)
+    const response = await this.get<T | null>(API_ENDPOINTS.SETTINGS.PREFERENCE(userId, key))
     return this.extractData(response)
   }
 
   async setUserPreference<T = any>(userId: string, key: string, value: T): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}/preference/${key}`, {
+    const response = await this.put<Settings>(API_ENDPOINTS.SETTINGS.PREFERENCE(userId, key), {
       value,
     })
     return this.extractData(response)
   }
 
   async deleteUserPreference(userId: string, key: string): Promise<void> {
-    await this.delete(`/settings/user/${userId}/preference/${key}`)
+    await this.delete(API_ENDPOINTS.SETTINGS.PREFERENCE(userId, key))
   }
 
   async getUserPreferences(userId: string, keys: string[]): Promise<Record<string, any>> {
     const response = await this.post<Record<string, any>>(
-      `/settings/user/${userId}/preferences/bulk`,
+      API_ENDPOINTS.SETTINGS.PREFERENCES_BULK(userId),
       { keys }
     )
     return this.extractData(response)
@@ -109,7 +115,7 @@ export class SettingsService extends BaseService {
     settings: { email?: boolean; push?: boolean; sms?: boolean; in_app?: boolean }
   ): Promise<Settings> {
     const response = await this.put<Settings>(
-      `/settings/user/${userId}/notifications/${notificationType}`,
+      API_ENDPOINTS.SETTINGS.NOTIFICATION_SETTINGS(userId, notificationType),
       settings
     )
     return this.extractData(response)
@@ -120,14 +126,17 @@ export class SettingsService extends BaseService {
     settings: NotificationSettings
   ): Promise<Settings> {
     const response = await this.put<Settings>(
-      `/settings/user/${userId}/notifications/bulk`,
+      API_ENDPOINTS.SETTINGS.NOTIFICATION_SETTINGS_BULK(userId),
       settings
     )
     return this.extractData(response)
   }
 
   async updateThemeSettings(userId: string, settings: Partial<ThemeSettings>): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}/theme`, settings)
+    const response = await this.put<Settings>(
+      API_ENDPOINTS.SETTINGS.THEME_SETTINGS(userId),
+      settings
+    )
     return this.extractData(response)
   }
 
@@ -142,7 +151,10 @@ export class SettingsService extends BaseService {
     userId: string,
     settings: Partial<LanguageSettings>
   ): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}/language`, settings)
+    const response = await this.put<Settings>(
+      API_ENDPOINTS.SETTINGS.LANGUAGE_SETTINGS(userId),
+      settings
+    )
     return this.extractData(response)
   }
 
@@ -157,7 +169,10 @@ export class SettingsService extends BaseService {
     userId: string,
     settings: Partial<SecuritySettings>
   ): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}/security`, settings)
+    const response = await this.put<Settings>(
+      API_ENDPOINTS.SETTINGS.SECURITY_SETTINGS(userId),
+      settings
+    )
     return this.extractData(response)
   }
 
@@ -185,13 +200,16 @@ export class SettingsService extends BaseService {
     userId: string,
     settings: Partial<SettingsSyncSettings>
   ): Promise<Settings> {
-    const response = await this.put<Settings>(`/settings/user/${userId}/sync`, settings)
+    const response = await this.put<Settings>(
+      API_ENDPOINTS.SETTINGS.SYNC_SETTINGS(userId),
+      settings
+    )
     return this.extractData(response)
   }
 
   async triggerSync(userId: string): Promise<{ synced: boolean; changes: number }> {
     const response = await this.post<{ synced: boolean; changes: number }>(
-      `/settings/user/${userId}/sync/trigger`
+      API_ENDPOINTS.SETTINGS.TRIGGER_SYNC(userId)
     )
     return this.extractData(response)
   }
@@ -206,7 +224,7 @@ export class SettingsService extends BaseService {
     userIds: string[]
   ): Promise<SettingsImportResult> {
     const response = await this.post<SettingsImportResult>(
-      `/settings/templates/${templateId}/apply`,
+      API_ENDPOINTS.SETTINGS.APPLY_TEMPLATE(templateId),
       { userIds }
     )
     return this.extractData(response)
@@ -218,12 +236,15 @@ export class SettingsService extends BaseService {
   }
 
   async getSettingsTemplates(): Promise<DefaultSettingsTemplate[]> {
-    const response = await this.get<DefaultSettingsTemplate[]>('/settings/templates')
+    const response = await this.get<DefaultSettingsTemplate[]>(API_ENDPOINTS.SETTINGS.TEMPLATES)
     return this.extractData(response)
   }
 
   async createSettingsTemplate(data: DefaultSettingsTemplate): Promise<DefaultSettingsTemplate> {
-    const response = await this.post<DefaultSettingsTemplate>('/settings/templates', data)
+    const response = await this.post<DefaultSettingsTemplate>(
+      API_ENDPOINTS.SETTINGS.TEMPLATES,
+      data
+    )
     return this.extractData(response)
   }
 

@@ -1,20 +1,15 @@
 import { BaseService } from '../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Enums
   UserRole,
-  // Types
   type User,
   type UserPreferences,
   type CreateUserRequest,
   type UpdateUserRequest,
-  // Shared Types
   type PaginatedResponse,
   type QueryParams,
 } from '../../../modules'
 
-/**
- * User Query Parameters
- */
 export interface UserQueryParams extends QueryParams {
   organisation_id?: string
   role?: UserRole
@@ -23,17 +18,11 @@ export interface UserQueryParams extends QueryParams {
   search?: string
 }
 
-/**
- * Change Password Request
- */
 export interface ChangePasswordRequest {
   current_password: string
   new_password: string
 }
 
-/**
- * Update Profile Request
- */
 export interface UpdateProfileRequest {
   email?: string
   first_name?: string
@@ -43,9 +32,6 @@ export interface UpdateProfileRequest {
   preferences?: Partial<UserPreferences>
 }
 
-/**
- * User Statistics
- */
 export interface UserStats {
   total: number
   active: number
@@ -56,9 +42,6 @@ export interface UserStats {
   byOrganisation: Record<string, number>
 }
 
-/**
- * Bulk Import Result
- */
 export interface BulkImportResult {
   created: number
   updated: number
@@ -66,115 +49,55 @@ export interface BulkImportResult {
   errors: string[]
 }
 
-/**
- * User API Service
- * Uses consolidated module types and enums
- */
 export class UserService extends BaseService {
-  /**
-   * Get all users with pagination and filters
-   */
   async getUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
-    return this.getPaginated<User>('/users', params as Record<string, any>)
+    return this.getPaginated<User>(API_ENDPOINTS.USERS.BASE, params as Record<string, any>)
   }
 
-  /**
-   * Get user by ID
-   */
   async getUser(id: string): Promise<User> {
-    const response = await this.get<User>(`/users/${id}`)
+    const response = await this.get<User>(API_ENDPOINTS.USERS.BY_ID(id))
     return this.extractData(response)
   }
 
-  /**
-   * Get current user profile
-   */
   async getProfile(): Promise<User> {
-    const response = await this.get<User>('/users/profile')
+    const response = await this.get<User>(API_ENDPOINTS.USERS.PROFILE)
     return this.extractData(response)
   }
 
-  /**
-   * Create a new user
-   */
   async createUser(data: CreateUserRequest): Promise<User> {
-    const response = await this.post<User>('/users', data)
+    const response = await this.post<User>(API_ENDPOINTS.USERS.BASE, data)
     return this.extractData(response)
   }
 
-  /**
-   * Update a user
-   */
   async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
-    const response = await this.put<User>(`/users/${id}`, data)
+    const response = await this.put<User>(API_ENDPOINTS.USERS.BY_ID(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Update current user profile
-   */
   async updateProfile(data: UpdateProfileRequest): Promise<User> {
-    const response = await this.put<User>('/users/profile', data)
+    const response = await this.put<User>(API_ENDPOINTS.USERS.PROFILE, data)
     return this.extractData(response)
   }
 
-  /**
-   * Delete a user (soft delete)
-   */
   async deleteUser(id: string): Promise<void> {
-    await this.delete(`/users/${id}`)
+    await this.delete(API_ENDPOINTS.USERS.BY_ID(id))
   }
 
-  /**
-   * Permanently delete a user
-   */
-  async permanentlyDeleteUser(id: string): Promise<void> {
-    await this.delete(`/users/${id}/permanent`)
-  }
-
-  /**
-   * Restore a deleted user
-   */
-  async restoreUser(id: string): Promise<User> {
-    const response = await this.post<User>(`/users/${id}/restore`)
-    return this.extractData(response)
-  }
-
-  /**
-   * Deactivate a user
-   */
   async deactivateUser(id: string): Promise<User> {
-    const response = await this.patch<User>(`/users/${id}/deactivate`)
+    const response = await this.patch<User>(API_ENDPOINTS.USERS.DEACTIVATE(id))
     return this.extractData(response)
   }
 
-  /**
-   * Activate a user
-   */
   async activateUser(id: string): Promise<User> {
-    const response = await this.patch<User>(`/users/${id}/activate`)
+    const response = await this.patch<User>(API_ENDPOINTS.USERS.ACTIVATE(id))
     return this.extractData(response)
   }
 
-  /**
-   * Change user password (admin)
-   */
   async changeUserPassword(id: string, data: { new_password: string }): Promise<void> {
-    const response = await this.post(`/users/${id}/change-password`, data)
+    const response = await this.post(API_ENDPOINTS.USERS.CHANGE_PASSWORD(id), data)
     this.extractData(response)
   }
 
-  /**
-   * Change current user password
-   */
-  async changeMyPassword(data: ChangePasswordRequest): Promise<void> {
-    const response = await this.post('/users/change-password', data)
-    this.extractData(response)
-  }
-
-  /**
-   * Get users by organisation
-   */
   async getUsersByOrganisation(
     organisationId: string,
     params?: UserQueryParams
@@ -182,68 +105,62 @@ export class UserService extends BaseService {
     return this.getUsers({ ...params, organisation_id: organisationId })
   }
 
-  /**
-   * Get users by role
-   */
   async getUsersByRole(role: UserRole, params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, role })
   }
 
-  /**
-   * Get active users
-   */
   async getActiveUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, is_active: true })
   }
 
-  /**
-   * Get inactive users
-   */
   async getInactiveUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, is_active: false })
   }
 
-  /**
-   * Get users with pending training
-   */
   async getUsersPendingTraining(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, training_completed: false })
   }
 
-  /**
-   * Get users with completed training
-   */
   async getUsersCompletedTraining(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, training_completed: true })
   }
 
-  /**
-   * Get user statistics
-   */
   async getStats(organisationId?: string): Promise<UserStats> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<UserStats>('/users/stats', params)
+    const response = await this.get<UserStats>(API_ENDPOINTS.USERS.STATISTICS, params)
     return this.extractData(response)
   }
 
-  /**
-   * Search users
-   */
   async searchUsers(query: string, params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     return this.getUsers({ ...params, search: query })
   }
 
-  /**
-   * Bulk import users
-   */
-  async bulkImportUsers(users: CreateUserRequest[]): Promise<BulkImportResult> {
-    const response = await this.post<BulkImportResult>('/users/bulk-import', { users })
+  async updateTrainingStatus(id: string, completed: boolean): Promise<User> {
+    const response = await this.patch<User>(API_ENDPOINTS.USERS.UPDATE_TRAINING(id), {
+      training_completed_at: completed ? new Date().toISOString() : null,
+    })
     return this.extractData(response)
   }
 
-  /**
-   * Export users
-   */
+  async permanentlyDeleteUser(id: string): Promise<void> {
+    await this.delete(API_ENDPOINTS.USERS.PERMANENT_DELETE(id))
+  }
+
+  async restoreUser(id: string): Promise<User> {
+    const response = await this.post<User>(API_ENDPOINTS.USERS.RESTORE(id))
+    return this.extractData(response)
+  }
+
+  async changeMyPassword(data: ChangePasswordRequest): Promise<void> {
+    const response = await this.post(API_ENDPOINTS.USERS.CHANGE_MY_PASSWORD, data)
+    this.extractData(response)
+  }
+
+  async bulkImportUsers(users: CreateUserRequest[]): Promise<BulkImportResult> {
+    const response = await this.post<BulkImportResult>(API_ENDPOINTS.USERS.BULK_IMPORT, { users })
+    return this.extractData(response)
+  }
+
   async exportUsers(params?: {
     organisation_id?: string
     role?: UserRole
@@ -251,92 +168,57 @@ export class UserService extends BaseService {
   }): Promise<void> {
     const format = params?.format || 'csv'
     await this.download(
-      '/users/export',
+      API_ENDPOINTS.USERS.EXPORT,
       `users_export_${new Date().toISOString().split('T')[0]}.${format}`,
       { params: params as Record<string, any> }
     )
   }
 
-  /**
-   * Resend invitation email
-   */
   async resendInvitation(id: string): Promise<void> {
-    await this.post(`/users/${id}/resend-invitation`)
+    await this.post(API_ENDPOINTS.USERS.RESEND_INVITATION(id))
   }
 
-  /**
-   * Update user training status
-   */
-  async updateTrainingStatus(id: string, completed: boolean): Promise<User> {
-    const response = await this.patch<User>(`/users/${id}/training`, {
-      training_completed_at: completed ? new Date().toISOString() : null,
-    })
-    return this.extractData(response)
-  }
-
-  /**
-   * Get user preferences
-   */
   async getUserPreferences(userId: string): Promise<UserPreferences> {
-    const response = await this.get<UserPreferences>(`/users/${userId}/preferences`)
+    const response = await this.get<UserPreferences>(API_ENDPOINTS.USERS.PREFERENCES(userId))
     return this.extractData(response)
   }
 
-  /**
-   * Update user preferences
-   */
   async updateUserPreferences(
     userId: string,
     preferences: Partial<UserPreferences>
   ): Promise<UserPreferences> {
-    const response = await this.put<UserPreferences>(`/users/${userId}/preferences`, preferences)
+    const response = await this.put<UserPreferences>(
+      API_ENDPOINTS.USERS.PREFERENCES(userId),
+      preferences
+    )
     return this.extractData(response)
   }
 
-  /**
-   * Get current user's sessions
-   */
   async getMySessions(): Promise<any[]> {
-    const response = await this.get<any[]>('/users/sessions')
+    const response = await this.get<any[]>(API_ENDPOINTS.USERS.MY_SESSIONS)
     return this.extractData(response)
   }
 
-  /**
-   * Revoke a specific session
-   */
   async revokeSession(sessionId: string): Promise<void> {
-    await this.delete(`/users/sessions/${sessionId}`)
+    await this.delete(API_ENDPOINTS.USERS.REVOKE_SESSION(sessionId))
   }
 
-  /**
-   * Revoke all other sessions
-   */
   async revokeOtherSessions(): Promise<void> {
-    await this.post('/users/sessions/revoke-others')
+    await this.post(API_ENDPOINTS.USERS.REVOKE_OTHER_MY_SESSIONS)
   }
 
-  /**
-   * Get available user roles
-   */
   async getUserRoles(): Promise<UserRole[]> {
-    const response = await this.get<UserRole[]>('/users/roles')
+    const response = await this.get<UserRole[]>(API_ENDPOINTS.USERS.ROLES)
     return this.extractData(response)
   }
 
-  /**
-   * Verify user email
-   */
   async verifyEmail(token: string): Promise<void> {
-    await this.post('/users/verify-email', { token })
+    await this.post(API_ENDPOINTS.USERS.VERIFY_EMAIL, { token })
   }
 
-  /**
-   * Resend verification email
-   */
   async resendVerificationEmail(): Promise<void> {
-    await this.post('/users/resend-verification')
+    await this.post(API_ENDPOINTS.USERS.RESEND_VERIFICATION)
   }
 }
 
-// Export singleton
 export const userService = new UserService()

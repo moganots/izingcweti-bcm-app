@@ -1,11 +1,10 @@
 import { BaseService } from '../BaseService'
+import { API_ENDPOINTS } from '../../core/constants/api.constants'
 import {
-  // Enums
   PendingChangeStatus,
   SyncPriority,
   ConflictType,
   ResolutionStrategy,
-  // Types
   type PendingChange,
   type SyncConflict,
   type SyncMetadata,
@@ -19,22 +18,20 @@ import {
   type SyncProgress,
   type ConflictResolutionPreview,
   type CreatePendingChangeRequest,
-  // Shared Types
   type PaginatedResponse,
 } from './../../modules'
 
 export class SyncService extends BaseService {
-  // Core Sync Operations
   async pullChanges(params?: PullChangesRequest): Promise<PullChangesResponse> {
     const response = await this.get<PullChangesResponse>(
-      '/sync/pull',
+      API_ENDPOINTS.SYNC.PULL,
       params as Record<string, any>
     )
     return this.extractData(response)
   }
 
   async pushChanges(data: PushChangesRequest): Promise<PushChangesResponse> {
-    const response = await this.post<PushChangesResponse>('/sync/push', data)
+    const response = await this.post<PushChangesResponse>(API_ENDPOINTS.SYNC.PUSH, data)
     return this.extractData(response)
   }
 
@@ -71,24 +68,16 @@ export class SyncService extends BaseService {
   }
 
   async getSyncStatus(): Promise<SyncProgress> {
-    const response = await this.get<SyncProgress>('/sync/status')
+    const response = await this.get<SyncProgress>(API_ENDPOINTS.SYNC.SYNC_PROGRESS)
     return this.extractData(response)
   }
 
-  async triggerSync(): Promise<{ success: boolean; changesProcessed: number }> {
-    const response = await this.post<{ success: boolean; changesProcessed: number }>(
-      '/sync/trigger'
-    )
-    return this.extractData(response)
-  }
-
-  // Pending Changes
   async getPendingChanges(params?: {
     status?: PendingChangeStatus
     limit?: number
   }): Promise<PendingChange[]> {
     const response = await this.get<PendingChange[]>(
-      '/sync/pending-changes',
+      API_ENDPOINTS.SYNC.PENDING_CHANGES,
       params as Record<string, any>
     )
     return this.extractData(response)
@@ -96,13 +85,13 @@ export class SyncService extends BaseService {
 
   async getPendingChangesByEntity(entityType: string, entityId: string): Promise<PendingChange[]> {
     const response = await this.get<PendingChange[]>(
-      `/sync/pending-changes/entity/${entityType}/${entityId}`
+      API_ENDPOINTS.SYNC.PENDING_CHANGES_BY_ENTITY(entityId)
     )
     return this.extractData(response)
   }
 
   async createPendingChange(data: CreatePendingChangeRequest): Promise<PendingChange> {
-    const response = await this.post<PendingChange>('/sync/pending-changes', data)
+    const response = await this.post<PendingChange>(API_ENDPOINTS.SYNC.PENDING_CHANGES, data)
     return this.extractData(response)
   }
 
@@ -110,16 +99,19 @@ export class SyncService extends BaseService {
     changeIds?: string[]
   ): Promise<{ retried: number; succeeded: number; failed: number }> {
     const response = await this.post<{ retried: number; succeeded: number; failed: number }>(
-      '/sync/pending-changes/retry-failed',
+      API_ENDPOINTS.SYNC.PENDING_CHANGES_RETRY_FAILED,
       { change_ids: changeIds }
     )
     return this.extractData(response)
   }
 
   async clearPendingChanges(changeIds?: string[]): Promise<{ cleared: number }> {
-    const response = await this.post<{ cleared: number }>('/sync/pending-changes/clear', {
-      change_ids: changeIds,
-    })
+    const response = await this.post<{ cleared: number }>(
+      API_ENDPOINTS.SYNC.PENDING_CHANGES_CLEANUP,
+      {
+        change_ids: changeIds,
+      }
+    )
     return this.extractData(response)
   }
 
@@ -128,45 +120,43 @@ export class SyncService extends BaseService {
     byPriority: Record<SyncPriority, number>
   }> {
     const response = await this.get<{ total: number; byPriority: Record<SyncPriority, number> }>(
-      '/sync/pending-changes/count'
+      API_ENDPOINTS.SYNC.PENDING_CHANGES_STATS
     )
     return this.extractData(response)
   }
 
-  // Conflict Management
   async getConflicts(params?: {
     resolved?: boolean
     entity_type?: string
     limit?: number
   }): Promise<PaginatedResponse<SyncConflict>> {
-    return this.getPaginated<SyncConflict>('/sync/conflicts', params as Record<string, any>)
+    return this.getPaginated<SyncConflict>(
+      API_ENDPOINTS.SYNC.CONFLICTS,
+      params as Record<string, any>
+    )
   }
 
   async getUnresolvedConflicts(): Promise<SyncConflict[]> {
-    const response = await this.get<SyncConflict[]>('/sync/conflicts/unresolved')
+    const response = await this.get<SyncConflict[]>(API_ENDPOINTS.SYNC.CONFLICTS_UNRESOLVED)
     return this.extractData(response)
   }
 
   async getConflict(conflictId: string): Promise<SyncConflict> {
-    const response = await this.get<SyncConflict>(`/sync/conflicts/${conflictId}`)
+    const response = await this.get<SyncConflict>(API_ENDPOINTS.SYNC.CONFLICT_BY_ID(conflictId))
     return this.extractData(response)
   }
 
   async getConflictsByEntity(entityType: string, entityId: string): Promise<SyncConflict[]> {
     const response = await this.get<SyncConflict[]>(
-      `/sync/conflicts/entity/${entityType}/${entityId}`
+      API_ENDPOINTS.SYNC.CONFLICTS_BY_ENTITY(entityId)
     )
     return this.extractData(response)
   }
 
   async resolveConflict(conflictId: string, data: ResolveConflictRequest): Promise<SyncConflict> {
-    const response = await this.post<SyncConflict>(`/sync/conflicts/${conflictId}/resolve`, data)
-    return this.extractData(response)
-  }
-
-  async getConflictPreview(conflictId: string): Promise<ConflictResolutionPreview> {
-    const response = await this.get<ConflictResolutionPreview>(
-      `/sync/conflicts/${conflictId}/preview`
+    const response = await this.post<SyncConflict>(
+      API_ENDPOINTS.SYNC.CONFLICT_RESOLVE(conflictId),
+      data
     )
     return this.extractData(response)
   }
@@ -187,7 +177,7 @@ export class SyncService extends BaseService {
       resolved: number
       failed: number
       errors: Array<{ conflictId: string; error: string }>
-    }>('/sync/conflicts/bulk-resolve', { resolutions })
+    }>(API_ENDPOINTS.SYNC.CONFLICTS_RESOLVE, { resolutions })
     return this.extractData(response)
   }
 
@@ -204,32 +194,33 @@ export class SyncService extends BaseService {
       unresolved: number
       byType: Record<ConflictType, number>
       autoResolvable: number
-    }>('/sync/conflicts/stats')
+    }>(API_ENDPOINTS.SYNC.CONFLICTS_STATS)
     return this.extractData(response)
   }
 
-  // Sync Metadata
   async getSyncMetadata(key?: string): Promise<SyncMetadata | SyncMetadata[] | null> {
     if (key) {
-      const response = await this.get<SyncMetadata>(`/sync/metadata/${key}`)
+      const response = await this.get<SyncMetadata>(API_ENDPOINTS.SYNC.METADATA_BY_KEY(key))
       return this.extractData(response)
     }
-    const response = await this.get<SyncMetadata[]>('/sync/metadata')
+    const response = await this.get<SyncMetadata[]>(API_ENDPOINTS.SYNC.METADATA)
     return this.extractData(response)
   }
 
   async setSyncMetadata(key: string, value: string): Promise<SyncMetadata> {
     const existing = await this.getSyncMetadata(key)
     if (existing) {
-      const response = await this.put<SyncMetadata>(`/sync/metadata/${key}`, { value })
+      const response = await this.put<SyncMetadata>(API_ENDPOINTS.SYNC.METADATA_BY_KEY(key), {
+        value,
+      })
       return this.extractData(response)
     }
-    const response = await this.post<SyncMetadata>('/sync/metadata', { key, value })
+    const response = await this.post<SyncMetadata>(API_ENDPOINTS.SYNC.METADATA, { key, value })
     return this.extractData(response)
   }
 
   async deleteSyncMetadata(key: string): Promise<void> {
-    await this.delete(`/sync/metadata/${key}`)
+    await this.delete(API_ENDPOINTS.SYNC.METADATA_BY_KEY(key))
   }
 
   async getLastSyncToken(): Promise<string | null> {
@@ -256,39 +247,53 @@ export class SyncService extends BaseService {
       total_entities: number
       synced_entities: number
       percentage: number
-    }>('/sync/initial-sync-progress')
+    }>(API_ENDPOINTS.SYNC.SYNC_PROGRESS)
     return this.extractData(response)
   }
 
-  // Sync Configuration
+  async triggerSync(): Promise<{ success: boolean; changesProcessed: number }> {
+    const response = await this.post<{ success: boolean; changesProcessed: number }>(
+      API_ENDPOINTS.SYNC.TRIGGER
+    )
+    return this.extractData(response)
+  }
+
+  async getConflictPreview(conflictId: string): Promise<ConflictResolutionPreview> {
+    const response = await this.get<ConflictResolutionPreview>(
+      API_ENDPOINTS.SYNC.CONFLICT_PREVIEW(conflictId)
+    )
+    return this.extractData(response)
+  }
+
   async getSyncConfig(): Promise<SyncConfig> {
-    const response = await this.get<SyncConfig>('/sync/config')
+    const response = await this.get<SyncConfig>(API_ENDPOINTS.SYNC.CONFIG)
     return this.extractData(response)
   }
 
   async updateSyncConfig(config: Partial<SyncConfig>): Promise<SyncConfig> {
-    const response = await this.put<SyncConfig>('/sync/config', config)
+    const response = await this.put<SyncConfig>(API_ENDPOINTS.SYNC.CONFIG, config)
     return this.extractData(response)
   }
 
-  // Tombstones
   async getTombstones(params?: {
     entity_type?: string
     since?: string
     limit?: number
   }): Promise<Tombstone[]> {
-    const response = await this.get<Tombstone[]>('/sync/tombstones', params as Record<string, any>)
+    const response = await this.get<Tombstone[]>(
+      API_ENDPOINTS.SYNC.TOMBSTONES,
+      params as Record<string, any>
+    )
     return this.extractData(response)
   }
 
   async cleanupTombstones(daysOld?: number): Promise<{ cleaned: number }> {
-    const response = await this.post<{ cleaned: number }>('/sync/tombstones/cleanup', {
+    const response = await this.post<{ cleaned: number }>(API_ENDPOINTS.SYNC.TOMBSTONES_CLEANUP, {
       days_old: daysOld || 90,
     })
     return this.extractData(response)
   }
 
-  // Sync Statistics
   async getSyncStats(): Promise<{
     totalSyncs: number
     successfulSyncs: number
@@ -304,7 +309,7 @@ export class SyncService extends BaseService {
       averageSyncTimeMs: number
       totalConflictsResolved: number
       lastSyncAt: string | null
-    }>('/sync/stats')
+    }>(API_ENDPOINTS.SYNC.STATS)
     return this.extractData(response)
   }
 }

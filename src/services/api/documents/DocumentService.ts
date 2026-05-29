@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   DocumentType,
   DocumentStatus,
@@ -33,11 +34,11 @@ export interface DocumentVerificationResult {
 
 export class DocumentService extends BaseService {
   async getDocuments(params?: DocumentQueryParams): Promise<PaginatedResponse<Document>> {
-    return this.getPaginated<Document>('/documents', params as Record<string, any>)
+    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, params as Record<string, any>)
   }
 
   async getDocument(id: string): Promise<Document> {
-    const response = await this.get<Document>(`/documents/${id}`)
+    const response = await this.get<Document>(API_ENDPOINTS.DOCUMENTS.BY_ID(id))
     return this.extractData(response)
   }
 
@@ -53,17 +54,17 @@ export class DocumentService extends BaseService {
     if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata))
     if (data.expires_at) formData.append('expires_at', data.expires_at)
 
-    const response = await this.upload<Document>('/documents', formData)
+    const response = await this.upload<Document>(API_ENDPOINTS.DOCUMENTS.UPLOAD, formData)
     return this.extractData(response)
   }
 
   async updateDocument(id: string, data: UpdateDocumentRequest): Promise<Document> {
-    const response = await this.put<Document>(`/documents/${id}`, data)
+    const response = await this.put<Document>(API_ENDPOINTS.DOCUMENTS.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async deleteDocument(id: string): Promise<void> {
-    await this.delete(`/documents/${id}`)
+    await this.delete(API_ENDPOINTS.DOCUMENTS.BY_ID(id))
   }
 
   async uploadNewVersion(
@@ -75,7 +76,7 @@ export class DocumentService extends BaseService {
     formData.append('file', file)
 
     const response = await this.upload<Document>(
-      `/documents/${id}/new-version`,
+      API_ENDPOINTS.DOCUMENTS.NEW_VERSION(id),
       formData,
       (percent) => {
         if (onProgress) {
@@ -87,7 +88,7 @@ export class DocumentService extends BaseService {
   }
 
   async downloadDocument(id: string, filename?: string): Promise<void> {
-    await this.download(`/documents/${id}/download`, filename)
+    await this.download(API_ENDPOINTS.DOCUMENTS.DOWNLOAD(id), filename)
   }
 
   async previewDocument(id: string): Promise<string> {
@@ -108,22 +109,22 @@ export class DocumentService extends BaseService {
   }
 
   async approveDocument(id: string, request?: ApproveDocumentRequest): Promise<Document> {
-    const response = await this.post<Document>(`/documents/${id}/approve`, request || {})
+    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.APPROVE(id), request || {})
     return this.extractData(response)
   }
 
   async rejectDocument(id: string, request: RejectDocumentRequest): Promise<Document> {
-    const response = await this.post<Document>(`/documents/${id}/reject`, request)
+    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.REJECT(id), request)
     return this.extractData(response)
   }
 
   async archiveDocument(id: string): Promise<Document> {
-    const response = await this.post<Document>(`/documents/${id}/archive`)
+    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.ARCHIVE(id))
     return this.extractData(response)
   }
 
   async publishDocument(id: string): Promise<Document> {
-    const response = await this.post<Document>(`/documents/${id}/publish`)
+    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.PUBLISH(id))
     return this.extractData(response)
   }
 
@@ -165,7 +166,10 @@ export class DocumentService extends BaseService {
     if (organisationId) {
       params.organisation_id = organisationId
     }
-    return this.getPaginated<Document>('/documents/search', params as Record<string, any>)
+    return this.getPaginated<Document>(
+      API_ENDPOINTS.DOCUMENTS.SEARCH,
+      params as Record<string, any>
+    )
   }
 
   async searchByTags(
@@ -180,7 +184,9 @@ export class DocumentService extends BaseService {
   }
 
   async getDocumentStats(organisationId: string): Promise<DocumentStats> {
-    const response = await this.get<DocumentStats>(`/documents/stats/${organisationId}`)
+    const response = await this.get<DocumentStats>(API_ENDPOINTS.DOCUMENTS.STATS, {
+      organisation_id: organisationId,
+    })
     return this.extractData(response)
   }
 

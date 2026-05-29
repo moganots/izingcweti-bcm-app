@@ -1,10 +1,9 @@
 import { BaseService } from '../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Enums
   WorkflowType,
   WorkflowState,
   WorkflowPriority,
-  // Types
   type Workflow,
   type ApprovalStep,
   type WorkflowComment,
@@ -16,36 +15,23 @@ import {
   type EscalateWorkflowRequest,
   type WorkflowQueryParams,
   type WorkflowStats,
-  // Shared Types
   type PaginatedResponse,
 } from '../../../modules'
 
-/**
- * Submit Workflow Request
- */
 export interface SubmitWorkflowRequest {
   comments?: string
 }
 
-/**
- * Reassign Workflow Request
- */
 export interface ReassignWorkflowRequest {
   assigned_to: string
   reason?: string
 }
 
-/**
- * Add Comment Request
- */
 export interface AddCommentRequest {
   comment: string
   action?: string
 }
 
-/**
- * Update Workflow Request
- */
 export interface UpdateWorkflowRequest {
   title?: string
   description?: string
@@ -56,202 +42,123 @@ export interface UpdateWorkflowRequest {
   metadata?: Record<string, any>
 }
 
-/**
- * Workflow API Service
- * Uses consolidated module types and enums
- */
 export class WorkflowService extends BaseService {
-  /**
-   * Get all workflows with pagination
-   */
   async getWorkflows(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
-    return this.getPaginated<Workflow>('/workflows', params as Record<string, any>)
+    return this.getPaginated<Workflow>(API_ENDPOINTS.WORKFLOWS.BASE, params as Record<string, any>)
   }
 
-  /**
-   * Get workflow by ID
-   */
   async getWorkflow(id: string): Promise<Workflow> {
-    const response = await this.get<Workflow>(`/workflows/${id}`)
+    const response = await this.get<Workflow>(API_ENDPOINTS.WORKFLOWS.BY_ID(id))
     return this.extractData(response)
   }
 
-  /**
-   * Create a new workflow
-   */
   async createWorkflow(data: CreateWorkflowRequest): Promise<Workflow> {
-    const response = await this.post<Workflow>('/workflows', data)
+    const response = await this.post<Workflow>(API_ENDPOINTS.WORKFLOWS.BASE, data)
     return this.extractData(response)
   }
 
-  /**
-   * Update a workflow
-   */
   async updateWorkflow(id: string, data: UpdateWorkflowRequest): Promise<Workflow> {
-    const response = await this.put<Workflow>(`/workflows/${id}`, data)
+    const response = await this.put<Workflow>(API_ENDPOINTS.WORKFLOWS.BY_ID(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Delete a workflow (soft delete)
-   */
   async deleteWorkflow(id: string): Promise<void> {
-    await this.delete(`/workflows/${id}`)
+    await this.delete(API_ENDPOINTS.WORKFLOWS.BY_ID(id))
   }
 
-  /**
-   * Permanently delete a workflow
-   */
   async permanentlyDeleteWorkflow(id: string): Promise<void> {
     await this.delete(`/workflows/${id}/permanent`)
   }
 
-  /**
-   * Restore a deleted workflow
-   */
   async restoreWorkflow(id: string): Promise<Workflow> {
     const response = await this.post<Workflow>(`/workflows/${id}/restore`)
     return this.extractData(response)
   }
 
-  /**
-   * Get pending approvals for current user
-   */
   async getPendingApprovals(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
     return this.getPaginated<Workflow>(
-      '/workflows/pending/approvals',
+      API_ENDPOINTS.WORKFLOWS.PENDING_APPROVALS,
       params as Record<string, any>
     )
   }
 
-  /**
-   * Get workflows assigned to current user
-   */
   async getMyWorkflows(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
     return this.getWorkflows({ ...params, my_workflows: true })
   }
 
-  /**
-   * Get workflows awaiting my approval
-   */
   async getAwaitingMyApproval(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
     return this.getWorkflows({ ...params, my_approvals: true })
   }
 
-  /**
-   * Get overdue workflows
-   */
   async getOverdueWorkflows(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
     return this.getWorkflows({ ...params, overdue_only: true })
   }
 
-  /**
-   * Get escalated workflows
-   */
   async getEscalatedWorkflows(params?: WorkflowQueryParams): Promise<PaginatedResponse<Workflow>> {
     return this.getWorkflows({ ...params, escalated_only: true })
   }
 
-  /**
-   * Submit workflow for review
-   */
   async submitWorkflow(id: string, data?: SubmitWorkflowRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/submit`, data || {})
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.SUBMIT(id), data || {})
     return this.extractData(response)
   }
 
-  /**
-   * Start reviewing a workflow
-   */
   async startReview(id: string): Promise<Workflow> {
     const response = await this.patch<Workflow>(`/workflows/${id}/start-review`)
     return this.extractData(response)
   }
 
-  /**
-   * Approve a workflow
-   */
   async approveWorkflow(id: string, data: ApproveWorkflowRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/approve`, data)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.APPROVE(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Reject a workflow
-   */
   async rejectWorkflow(id: string, data: RejectWorkflowRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/reject`, data)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.REJECT(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Escalate a workflow
-   */
   async escalateWorkflow(id: string, data: EscalateWorkflowRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/escalate`, data)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.ESCALATE(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Reassign a workflow to another user
-   */
   async reassignWorkflow(id: string, data: ReassignWorkflowRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/reassign`, data)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.REASSIGN(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Add comment to workflow
-   */
   async addComment(id: string, data: AddCommentRequest): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/comment`, data)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.ADD_COMMENT(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Complete a workflow
-   */
   async completeWorkflow(id: string): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/complete`)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.COMPLETE(id))
     return this.extractData(response)
   }
 
-  /**
-   * Archive a workflow
-   */
   async archiveWorkflow(id: string): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/archive`)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.ARCHIVE(id))
     return this.extractData(response)
   }
 
-  /**
-   * Cancel a workflow
-   */
   async cancelWorkflow(id: string): Promise<Workflow> {
-    const response = await this.patch<Workflow>(`/workflows/${id}/cancel`)
+    const response = await this.patch<Workflow>(API_ENDPOINTS.WORKFLOWS.CANCEL(id))
     return this.extractData(response)
   }
 
-  /**
-   * Get workflow statistics
-   */
   async getStats(): Promise<WorkflowStats> {
-    const response = await this.get<WorkflowStats>('/workflows/stats')
+    const response = await this.get<WorkflowStats>(API_ENDPOINTS.WORKFLOWS.STATS)
     return this.extractData(response)
   }
 
-  /**
-   * Get workflow metrics for dashboard
-   */
   async getMetrics(organisationId?: string): Promise<WorkflowMetrics> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
     const response = await this.get<WorkflowMetrics>('/workflows/metrics', params)
     return this.extractData(response)
   }
 
-  /**
-   * Get workflows by entity
-   */
   async getWorkflowsByEntity(
     entityType: string,
     entityId: string,
@@ -260,9 +167,6 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, entity_type: entityType, entity_id: entityId })
   }
 
-  /**
-   * Get workflows by type
-   */
   async getWorkflowsByType(
     workflowType: WorkflowType,
     params?: WorkflowQueryParams
@@ -270,9 +174,6 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, workflow_type: workflowType })
   }
 
-  /**
-   * Get workflows by state
-   */
   async getWorkflowsByState(
     state: WorkflowState,
     params?: WorkflowQueryParams
@@ -280,9 +181,6 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, workflow_state: state })
   }
 
-  /**
-   * Get workflows by priority
-   */
   async getWorkflowsByPriority(
     priority: WorkflowPriority,
     params?: WorkflowQueryParams
@@ -290,9 +188,6 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, priority })
   }
 
-  /**
-   * Get workflows by assignee
-   */
   async getWorkflowsByAssignee(
     assigneeId: string,
     params?: WorkflowQueryParams
@@ -300,9 +195,6 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, assigned_to: assigneeId })
   }
 
-  /**
-   * Get workflows by initiator
-   */
   async getWorkflowsByInitiator(
     initiatorId: string,
     params?: WorkflowQueryParams
@@ -310,26 +202,17 @@ export class WorkflowService extends BaseService {
     return this.getWorkflows({ ...params, initiated_by: initiatorId })
   }
 
-  /**
-   * Get workflow templates
-   */
   async getWorkflowTemplates(workflowType?: WorkflowType): Promise<WorkflowTemplate[]> {
     const params = workflowType ? { workflow_type: workflowType } : undefined
     const response = await this.get<WorkflowTemplate[]>('/workflows/templates', params)
     return this.extractData(response)
   }
 
-  /**
-   * Get workflow template by ID
-   */
   async getWorkflowTemplate(id: string): Promise<WorkflowTemplate> {
     const response = await this.get<WorkflowTemplate>(`/workflows/templates/${id}`)
     return this.extractData(response)
   }
 
-  /**
-   * Create workflow from template
-   */
   async createWorkflowFromTemplate(
     templateId: string,
     data: Omit<CreateWorkflowRequest, 'workflow_type'>
@@ -338,9 +221,6 @@ export class WorkflowService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Export workflows
-   */
   async exportWorkflows(params?: {
     workflow_type?: WorkflowType
     workflow_state?: WorkflowState
@@ -356,9 +236,6 @@ export class WorkflowService extends BaseService {
     )
   }
 
-  /**
-   * Bulk approve workflows
-   */
   async bulkApprove(
     ids: string[],
     comments?: string
@@ -370,9 +247,6 @@ export class WorkflowService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Bulk reject workflows
-   */
   async bulkReject(
     ids: string[],
     rejectionReason: string
@@ -384,9 +258,6 @@ export class WorkflowService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Bulk reassign workflows
-   */
   async bulkReassign(
     ids: string[],
     assignedTo: string
@@ -398,17 +269,11 @@ export class WorkflowService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Get workflow approval chain
-   */
   async getApprovalChain(workflowId: string): Promise<ApprovalStep[]> {
     const response = await this.get<ApprovalStep[]>(`/workflows/${workflowId}/approval-chain`)
     return this.extractData(response)
   }
 
-  /**
-   * Update approval chain (admin)
-   */
   async updateApprovalChain(
     workflowId: string,
     approvalChain: Omit<ApprovalStep, 'status'>[]
@@ -419,14 +284,10 @@ export class WorkflowService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Get workflow comments
-   */
   async getComments(workflowId: string): Promise<WorkflowComment[]> {
     const response = await this.get<WorkflowComment[]>(`/workflows/${workflowId}/comments`)
     return this.extractData(response)
   }
 }
 
-// Export singleton
 export const workflowService = new WorkflowService()

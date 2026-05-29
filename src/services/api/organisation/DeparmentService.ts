@@ -1,18 +1,13 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Enums (none specific to departments, but imported for consistency)
-  // Types
   type Department,
   type CreateDepartmentRequest,
-  // Shared Types
   type PaginatedResponse,
   type QueryParams,
   UpdateDepartmentRequest,
 } from './../../../modules'
 
-/**
- * Department Query Parameters
- */
 export interface DepartmentQueryParams extends QueryParams {
   business_unit_id?: string
   parent_department_id?: string
@@ -20,9 +15,6 @@ export interface DepartmentQueryParams extends QueryParams {
   has_rpo?: boolean
 }
 
-/**
- * Department Tree Node
- */
 export interface DepartmentTreeNode {
   id: string
   name: string
@@ -33,9 +25,6 @@ export interface DepartmentTreeNode {
   children: DepartmentTreeNode[]
 }
 
-/**
- * Bulk Import Result
- */
 export interface BulkImportResult {
   imported: number
   updated: number
@@ -43,33 +32,19 @@ export interface BulkImportResult {
   errors: string[]
 }
 
-/**
- * Department API Service
- * Uses consolidated module types and enums
- */
 export class DepartmentService extends BaseService {
-  // ============================================
-  // Department CRUD
-  // ============================================
-
-  /**
-   * Get all departments with pagination and filters
-   */
   async getDepartments(params?: DepartmentQueryParams): Promise<PaginatedResponse<Department>> {
-    return this.getPaginated<Department>('/departments', params as Record<string, any>)
+    return this.getPaginated<Department>(
+      API_ENDPOINTS.DEPARTMENTS.BASE,
+      params as Record<string, any>
+    )
   }
 
-  /**
-   * Get department by ID
-   */
   async getDepartment(id: string): Promise<Department> {
-    const response = await this.get<Department>(`/departments/${id}`)
+    const response = await this.get<Department>(API_ENDPOINTS.DEPARTMENTS.BY_ID(id))
     return this.extractData(response)
   }
 
-  /**
-   * Get departments by business unit
-   */
   async getDepartmentsByBusinessUnit(
     businessUnitId: string,
     params?: DepartmentQueryParams
@@ -77,9 +52,6 @@ export class DepartmentService extends BaseService {
     return this.getDepartments({ ...params, business_unit_id: businessUnitId })
   }
 
-  /**
-   * Get departments by parent department (sub-departments)
-   */
   async getSubDepartments(
     parentDepartmentId: string,
     params?: DepartmentQueryParams
@@ -87,96 +59,65 @@ export class DepartmentService extends BaseService {
     return this.getDepartments({ ...params, parent_department_id: parentDepartmentId })
   }
 
-  /**
-   * Get root departments (no parent) for a business unit
-   */
   async getRootDepartments(businessUnitId: string): Promise<PaginatedResponse<Department>> {
     return this.getDepartments({ business_unit_id: businessUnitId, parent_department_id: '' })
   }
 
-  /**
-   * Create a new department
-   */
   async createDepartment(data: CreateDepartmentRequest): Promise<Department> {
-    const response = await this.post<Department>('/departments', data)
+    const response = await this.post<Department>(API_ENDPOINTS.DEPARTMENTS.BASE, data)
     return this.extractData(response)
   }
 
-  /**
-   * Update a department
-   */
   async updateDepartment(id: string, data: UpdateDepartmentRequest): Promise<Department> {
-    const response = await this.put<Department>(`/departments/${id}`, data)
+    const response = await this.put<Department>(API_ENDPOINTS.DEPARTMENTS.BY_ID(id), data)
     return this.extractData(response)
   }
 
-  /**
-   * Delete a department (soft delete)
-   */
   async deleteDepartment(id: string): Promise<void> {
-    await this.delete(`/departments/${id}`)
+    await this.delete(API_ENDPOINTS.DEPARTMENTS.BY_ID(id))
   }
 
-  /**
-   * Permanently delete a department
-   */
   async permanentlyDeleteDepartment(id: string): Promise<void> {
     await this.delete(`/departments/${id}/permanent`)
   }
 
-  /**
-   * Restore a deleted department
-   */
   async restoreDepartment(id: string): Promise<Department> {
     const response = await this.post<Department>(`/departments/${id}/restore`)
     return this.extractData(response)
   }
 
-  /**
-   * Get departments without BIA (missing RTO/RPO)
-   */
   async getDepartmentsWithoutBIA(organisationId: string): Promise<Department[]> {
     const response = await this.get<Department[]>(`/departments/${organisationId}/without-bia`)
     return this.extractData(response)
   }
 
-  /**
-   * Get departments with RTO configured
-   */
   async getDepartmentsWithRTO(businessUnitId?: string): Promise<Department[]> {
     const params: DepartmentQueryParams = { has_rto: true }
     if (businessUnitId) params.business_unit_id = businessUnitId
     const response = await this.getPaginated<Department>(
-      '/departments',
+      API_ENDPOINTS.DEPARTMENTS.BASE,
       params as Record<string, any>
     )
     return response.data
   }
 
-  /**
-   * Get departments with RPO configured
-   */
   async getDepartmentsWithRPO(businessUnitId?: string): Promise<Department[]> {
     const params: DepartmentQueryParams = { has_rpo: true }
     if (businessUnitId) params.business_unit_id = businessUnitId
     const response = await this.getPaginated<Department>(
-      '/departments',
+      API_ENDPOINTS.DEPARTMENTS.BASE,
       params as Record<string, any>
     )
     return response.data
   }
 
-  /**
-   * Get department tree (hierarchical structure)
-   */
   async getDepartmentTree(businessUnitId: string): Promise<DepartmentTreeNode[]> {
-    const response = await this.get<DepartmentTreeNode[]>(`/departments/${businessUnitId}/tree`)
+    const response = await this.get<DepartmentTreeNode[]>(
+      API_ENDPOINTS.DEPARTMENTS.TREE(businessUnitId)
+    )
     return this.extractData(response)
   }
 
-  /**
-   * Get full department hierarchy for a business unit
-   */
   async getDepartmentHierarchy(businessUnitId: string): Promise<{
     businessUnit: { uuid: string; name: string }
     departments: DepartmentTreeNode[]
@@ -188,16 +129,10 @@ export class DepartmentService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Reorder departments (update display order)
-   */
   async reorderDepartments(orders: Array<{ id: string; order: number }>): Promise<void> {
-    await this.post('/departments/reorder', { orders })
+    await this.post(API_ENDPOINTS.DEPARTMENTS.REORDER, { orders })
   }
 
-  /**
-   * Search departments by name
-   */
   async searchDepartments(
     query: string,
     businessUnitId?: string
@@ -207,9 +142,6 @@ export class DepartmentService extends BaseService {
     return this.getDepartments(params)
   }
 
-  /**
-   * Bulk import departments
-   */
   async bulkImportDepartments(
     businessUnitId: string,
     departments: CreateDepartmentRequest[]
@@ -223,9 +155,6 @@ export class DepartmentService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Export departments
-   */
   async exportDepartments(businessUnitId: string, format: 'csv' | 'json' = 'csv'): Promise<void> {
     await this.download(
       `/departments/${businessUnitId}/export`,
@@ -234,9 +163,6 @@ export class DepartmentService extends BaseService {
     )
   }
 
-  /**
-   * Get department statistics
-   */
   async getDepartmentStats(businessUnitId?: string): Promise<{
     total: number
     withRTO: number
@@ -255,21 +181,15 @@ export class DepartmentService extends BaseService {
       withoutBIA: number
       averageRTOHours: number
       averageRPOHours: number
-    }>('/departments/stats', params)
+    }>(API_ENDPOINTS.DEPARTMENTS.STATISTICS, params)
     return this.extractData(response)
   }
 
-  /**
-   * Get department path (breadcrumb)
-   */
   async getDepartmentPath(departmentId: string): Promise<Department[]> {
     const response = await this.get<Department[]>(`/departments/${departmentId}/path`)
     return this.extractData(response)
   }
 
-  /**
-   * Move department to different parent or business unit
-   */
   async moveDepartment(
     departmentId: string,
     target: { business_unit_id?: string; parent_department_id?: string | null }
@@ -278,9 +198,6 @@ export class DepartmentService extends BaseService {
     return this.extractData(response)
   }
 
-  /**
-   * Validate department name uniqueness within business unit
-   */
   async validateDepartmentName(
     name: string,
     businessUnitId: string,
@@ -294,5 +211,4 @@ export class DepartmentService extends BaseService {
   }
 }
 
-// Export singleton
 export const departmentService = new DepartmentService()

@@ -1,10 +1,9 @@
 import { BaseService } from '../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Enums
   AuditAction,
   AuditCategory,
   AuditSeverity,
-  // Types
   type AuditLog,
   type AuditRetentionPolicy,
   type AuditStats,
@@ -18,25 +17,23 @@ import {
   type AuditQueryParams,
   type AuditRetentionPolicyRequest,
   type ExportAuditRequest,
-  // Shared Types
   type PaginatedResponse,
 } from './../../../modules'
 
-/**
- * Audit API Service
- * Uses consolidated module types and enums
- */
 export class AuditService extends BaseService {
   async getLogs(params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
-    return this.getPaginated<AuditLog>('/audit/logs', params as Record<string, any>)
+    return this.getPaginated<AuditLog>(API_ENDPOINTS.AUDIT.BASE, params as Record<string, any>)
   }
 
   async getLog(id: string): Promise<AuditLog> {
-    const response = await this.get<AuditLog>(`/audit/logs/${id}`)
+    const response = await this.get<AuditLog>(API_ENDPOINTS.AUDIT.BY_ID(id))
     return this.extractData(response)
   }
 
-  async getLogsByUser(userId: string, params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
+  async getLogsByUser(
+    userId: string,
+    params?: AuditQueryParams
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.getLogs({ ...params, user_id: userId })
   }
 
@@ -49,25 +46,36 @@ export class AuditService extends BaseService {
   }
 
   async getEntityHistory(entityType: string, entityId: string): Promise<AuditLog[]> {
-    const response = await this.get<AuditLog[]>(`/audit/entity-history/${entityType}/${entityId}`)
+    const response = await this.get<AuditLog[]>(
+      API_ENDPOINTS.AUDIT.ENTITY_HISTORY(entityType, entityId)
+    )
     return this.extractData(response)
   }
 
-  async getStats(params?: { organisation_id?: string; start_date?: string; end_date?: string }): Promise<AuditStats> {
-    const response = await this.get<AuditStats>('/audit/stats', params as Record<string, any>)
+  async getStats(params?: {
+    organisation_id?: string
+    start_date?: string
+    end_date?: string
+  }): Promise<AuditStats> {
+    const response = await this.get<AuditStats>(
+      API_ENDPOINTS.AUDIT.STATS,
+      params as Record<string, any>
+    )
     return this.extractData(response)
   }
 
   async getSummary(organisationId?: string): Promise<AuditSummary> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<AuditSummary>('/audit/summary', params)
+    const response = await this.get<AuditSummary>(API_ENDPOINTS.AUDIT.SUMMARY, params)
     return this.extractData(response)
   }
 
   async exportLogs(data: ExportAuditRequest): Promise<void> {
     const format = data.format || 'csv'
     const filename = `audit_export_${new Date().toISOString().split('T')[0]}.${format}`
-    await this.download('/audit/export', filename, { params: data as Record<string, any> })
+    await this.download(API_ENDPOINTS.AUDIT.EXPORT, filename, {
+      params: data as Record<string, any>,
+    })
   }
 
   async getSensitiveLogs(params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
@@ -75,12 +83,14 @@ export class AuditService extends BaseService {
   }
 
   async createLog(data: CreateAuditLogRequest): Promise<AuditLog> {
-    const response = await this.post<AuditLog>('/audit/logs', data)
+    const response = await this.post<AuditLog>(API_ENDPOINTS.AUDIT.BASE, data)
     return this.extractData(response)
   }
 
   async cleanupOldLogs(retentionDays?: number): Promise<AuditCleanupResult> {
-    const response = await this.post<AuditCleanupResult>('/audit/cleanup', { retention_days: retentionDays })
+    const response = await this.post<AuditCleanupResult>(API_ENDPOINTS.AUDIT.CLEANUP, {
+      retention_days: retentionDays,
+    })
     return this.extractData(response)
   }
 
@@ -99,40 +109,54 @@ export class AuditService extends BaseService {
     return this.extractData(response)
   }
 
-  // Retention Policies
   async getRetentionPolicies(organisationId?: string): Promise<AuditRetentionPolicy[]> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<AuditRetentionPolicy[]>('/audit/retention-policies', params)
+    const response = await this.get<AuditRetentionPolicy[]>(
+      API_ENDPOINTS.AUDIT.RETENTION_POLICIES,
+      params
+    )
     return this.extractData(response)
   }
 
   async getRetentionPolicy(id: string): Promise<AuditRetentionPolicy> {
-    const response = await this.get<AuditRetentionPolicy>(`/audit/retention-policies/${id}`)
+    const response = await this.get<AuditRetentionPolicy>(
+      API_ENDPOINTS.AUDIT.RETENTION_POLICY_BY_ID(id)
+    )
     return this.extractData(response)
   }
 
   async createRetentionPolicy(data: AuditRetentionPolicyRequest): Promise<AuditRetentionPolicy> {
-    const response = await this.post<AuditRetentionPolicy>('/audit/retention-policies', data)
+    const response = await this.post<AuditRetentionPolicy>(
+      API_ENDPOINTS.AUDIT.RETENTION_POLICIES,
+      data
+    )
     return this.extractData(response)
   }
 
-  async updateRetentionPolicy(id: string, data: Partial<AuditRetentionPolicyRequest>): Promise<AuditRetentionPolicy> {
-    const response = await this.put<AuditRetentionPolicy>(`/audit/retention-policies/${id}`, data)
+  async updateRetentionPolicy(
+    id: string,
+    data: Partial<AuditRetentionPolicyRequest>
+  ): Promise<AuditRetentionPolicy> {
+    const response = await this.put<AuditRetentionPolicy>(
+      API_ENDPOINTS.AUDIT.RETENTION_POLICY_BY_ID(id),
+      data
+    )
     return this.extractData(response)
   }
 
   async deleteRetentionPolicy(id: string): Promise<void> {
-    await this.delete(`/audit/retention-policies/${id}`)
+    await this.delete(API_ENDPOINTS.AUDIT.RETENTION_POLICY_BY_ID(id))
   }
 
   async applyRetentionPolicies(): Promise<AuditCleanupResult> {
-    const response = await this.post<AuditCleanupResult>('/audit/apply-retention')
+    const response = await this.post<AuditCleanupResult>(API_ENDPOINTS.AUDIT.APPLY_RETENTION)
     return this.extractData(response)
   }
 
-  // User Activity
   async getUserActivity(userId: string, limit: number = 50): Promise<AuditLog[]> {
-    const response = await this.get<AuditLog[]>('/audit/user-activity', { user_id: userId, limit })
+    const response = await this.get<AuditLog[]>(API_ENDPOINTS.AUDIT.USER_ACTIVITY(userId), {
+      limit,
+    })
     return this.extractData(response)
   }
 
@@ -141,20 +165,28 @@ export class AuditService extends BaseService {
     return this.extractData(response)
   }
 
-  // Search Operations
   async searchLogs(query: string, params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
     return this.getLogs({ ...params, search: query })
   }
 
-  async getLogsByAction(action: AuditAction, params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
+  async getLogsByAction(
+    action: AuditAction,
+    params?: AuditQueryParams
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.getLogs({ ...params, action })
   }
 
-  async getLogsByCategory(category: AuditCategory, params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
+  async getLogsByCategory(
+    category: AuditCategory,
+    params?: AuditQueryParams
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.getLogs({ ...params, audit_category: category })
   }
 
-  async getLogsBySeverity(severity: AuditSeverity, params?: AuditQueryParams): Promise<PaginatedResponse<AuditLog>> {
+  async getLogsBySeverity(
+    severity: AuditSeverity,
+    params?: AuditQueryParams
+  ): Promise<PaginatedResponse<AuditLog>> {
     return this.getLogs({ ...params, severity })
   }
 

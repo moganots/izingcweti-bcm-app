@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   ComplianceStandard,
   ComplianceStatus,
@@ -41,30 +42,36 @@ export interface UpdateComplianceStatusRequest {
 
 export class ComplianceService extends BaseService {
   async getRecords(params?: ComplianceQueryParams): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>('/compliance', params as Record<string, any>)
+    return this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.BASE,
+      params as Record<string, any>
+    )
   }
 
   async getRecord(id: string): Promise<ComplianceRecord> {
-    const response = await this.get<ComplianceRecord>(`/compliance/${id}`)
+    const response = await this.get<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
     return this.extractData(response)
   }
 
   async createRecord(data: CreateComplianceRecordRequest): Promise<ComplianceRecord> {
-    const response = await this.post<ComplianceRecord>('/compliance', data)
+    const response = await this.post<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BASE, data)
     return this.extractData(response)
   }
 
   async updateRecord(id: string, data: UpdateComplianceRecordRequest): Promise<ComplianceRecord> {
-    const response = await this.put<ComplianceRecord>(`/compliance/${id}`, data)
+    const response = await this.put<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async deleteRecord(id: string): Promise<void> {
-    await this.delete(`/compliance/${id}`)
+    await this.delete(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
   }
 
   async updateStatus(id: string, data: UpdateComplianceStatusRequest): Promise<ComplianceRecord> {
-    const response = await this.patch<ComplianceRecord>(`/compliance/${id}/status`, data)
+    const response = await this.patch<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.UPDATE_STATUS(id),
+      data
+    )
     return this.extractData(response)
   }
 
@@ -90,7 +97,10 @@ export class ComplianceService extends BaseService {
     const date = new Date()
     date.setDate(date.getDate() + days)
     const params: ComplianceQueryParams = { days: days }
-    const response = await this.getPaginated<ComplianceRecord>('/compliance/upcoming', params)
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.UPCOMING,
+      params
+    )
     return response
   }
 
@@ -117,7 +127,7 @@ export class ComplianceService extends BaseService {
 
   async getStats(organisationId?: string): Promise<ComplianceStats> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<ComplianceStats>('/compliance/stats', params)
+    const response = await this.get<ComplianceStats>(API_ENDPOINTS.COMPLIANCE.SUMMARY, params)
     return this.extractData(response)
   }
 

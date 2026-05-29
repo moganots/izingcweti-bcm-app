@@ -1,6 +1,6 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Enums
   RiskCategory,
   RiskStatus,
   RiskTreatment,
@@ -8,7 +8,6 @@ import {
   RiskScoreLevel,
   getRiskScoreLevel,
   getRiskColor,
-  // Types
   type Risk,
   type MitigatingControl,
   type RiskMitigationPlan,
@@ -22,53 +21,54 @@ import {
   type UpdateRiskRequest,
   type AssessRiskRequest,
   type RiskQueryParams,
-  // Shared Types
   type PaginatedResponse,
 } from './../../../modules'
 
 export class RiskService extends BaseService {
-  // Core CRUD Operations
   async getRisks(params?: RiskQueryParams): Promise<PaginatedResponse<Risk>> {
-    return this.getPaginated<Risk>('/risks', params as Record<string, any>)
+    return this.getPaginated<Risk>(API_ENDPOINTS.RISKS.BASE, params as Record<string, any>)
   }
 
   async getRisk(id: string): Promise<Risk> {
-    const response = await this.get<Risk>(`/risks/${id}`)
+    const response = await this.get<Risk>(API_ENDPOINTS.RISKS.BY_ID(id))
     return this.extractData(response)
   }
 
   async createRisk(data: CreateRiskRequest): Promise<Risk> {
-    const response = await this.post<Risk>('/risks', data)
+    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.BASE, data)
     return this.extractData(response)
   }
 
   async updateRisk(id: string, data: UpdateRiskRequest): Promise<Risk> {
-    const response = await this.put<Risk>(`/risks/${id}`, data)
+    const response = await this.put<Risk>(API_ENDPOINTS.RISKS.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async deleteRisk(id: string): Promise<void> {
-    await this.delete(`/risks/${id}`)
+    await this.delete(API_ENDPOINTS.RISKS.BY_ID(id))
   }
 
-  // Risk Assessment
   async assessRisk(id: string, data: AssessRiskRequest): Promise<Risk> {
-    const response = await this.post<Risk>(`/risks/${id}/assess`, data)
+    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.ASSESS(id), data)
     return this.extractData(response)
   }
 
   async approveRisk(id: string, notes?: string): Promise<Risk> {
-    const response = await this.post<Risk>(`/risks/${id}/approve`, { approval_notes: notes })
+    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.APPROVE(id), {
+      approval_notes: notes,
+    })
     return this.extractData(response)
   }
 
   async assignRisk(id: string, assignedTo: string): Promise<Risk> {
-    const response = await this.post<Risk>(`/risks/${id}/assign`, { assigned_to: assignedTo })
+    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.ASSIGN(id), {
+      assigned_to: assignedTo,
+    })
     return this.extractData(response)
   }
 
   async closeRisk(id: string): Promise<Risk> {
-    const response = await this.post<Risk>(`/risks/${id}/close`)
+    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.CLOSE(id))
     return this.extractData(response)
   }
 
@@ -76,7 +76,6 @@ export class RiskService extends BaseService {
     return this.assessRisk(id, data)
   }
 
-  // Risk Filters
   async getRisksByOrganisation(
     organisationId: string,
     params?: RiskQueryParams
@@ -107,18 +106,17 @@ export class RiskService extends BaseService {
   }
 
   async getMyAssignedRisks(): Promise<PaginatedResponse<Risk>> {
-    return this.getPaginated<Risk>('/risks/my-assigned')
+    return this.getPaginated<Risk>(API_ENDPOINTS.RISKS.MY_ASSIGNED)
   }
 
   async getOverdueReviews(): Promise<PaginatedResponse<Risk>> {
-    return this.getPaginated<Risk>('/risks/overdue-reviews')
+    return this.getPaginated<Risk>(API_ENDPOINTS.RISKS.OVERDUE_REVIEWS)
   }
 
-  // Risk Mitigation
   async addMitigatingControl(riskId: string, control: MitigatingControl): Promise<Risk> {
     const risk = await this.getRisk(riskId)
     const controls = risk.mitigating_controls || []
-    const response = await this.put<Risk>(`/risks/${riskId}`, {
+    const response = await this.put<Risk>(API_ENDPOINTS.RISKS.BY_ID(riskId), {
       mitigating_controls: [...controls, control],
     })
     return this.extractData(response)
@@ -133,14 +131,18 @@ export class RiskService extends BaseService {
     const controls = (risk.mitigating_controls || []).map((c) =>
       c.control_id === controlId ? { ...c, ...updates } : c
     )
-    const response = await this.put<Risk>(`/risks/${riskId}`, { mitigating_controls: controls })
+    const response = await this.put<Risk>(API_ENDPOINTS.RISKS.BY_ID(riskId), {
+      mitigating_controls: controls,
+    })
     return this.extractData(response)
   }
 
   async removeMitigatingControl(riskId: string, controlId: string): Promise<Risk> {
     const risk = await this.getRisk(riskId)
     const controls = (risk.mitigating_controls || []).filter((c) => c.control_id !== controlId)
-    const response = await this.put<Risk>(`/risks/${riskId}`, { mitigating_controls: controls })
+    const response = await this.put<Risk>(API_ENDPOINTS.RISKS.BY_ID(riskId), {
+      mitigating_controls: controls,
+    })
     return this.extractData(response)
   }
 
@@ -164,9 +166,8 @@ export class RiskService extends BaseService {
     return this.extractData(response)
   }
 
-  // Risk Analytics & Visualization
   async getRiskMatrix(organisationId: string): Promise<RiskMatrixData[]> {
-    const response = await this.get<RiskMatrixData[]>(`/risks/${organisationId}/matrix`)
+    const response = await this.get<RiskMatrixData[]>(API_ENDPOINTS.RISKS.MATRIX(organisationId))
     return this.extractData(response)
   }
 
@@ -190,7 +191,6 @@ export class RiskService extends BaseService {
     return this.extractData(response)
   }
 
-  // Statistics
   async getRiskStats(organisationId?: string): Promise<{
     total: number
     critical: number
@@ -211,7 +211,7 @@ export class RiskService extends BaseService {
       byCategory: Record<string, number>
       byStatus: Record<string, number>
       averageScore: number
-    }>('/risks/statistics', params)
+    }>(API_ENDPOINTS.RISKS.STATISTICS, params)
     return this.extractData(response)
   }
 
@@ -220,7 +220,6 @@ export class RiskService extends BaseService {
     return this.extractData(response)
   }
 
-  // Search & Export
   async searchRisks(query: string, params?: RiskQueryParams): Promise<PaginatedResponse<Risk>> {
     return this.getRisks({ ...params, search: query })
   }
@@ -243,7 +242,6 @@ export class RiskService extends BaseService {
     )
   }
 
-  // Bulk Operations
   async bulkUpdateStatus(ids: string[], status: RiskStatus): Promise<{ updated: number }> {
     const response = await this.post<{ updated: number }>('/risks/bulk-update-status', {
       ids,
@@ -265,7 +263,6 @@ export class RiskService extends BaseService {
     return this.extractData(response)
   }
 
-  // Helper Methods
   getRiskScoreLevel(score: number): RiskScoreLevel {
     return getRiskScoreLevel(score)
   }

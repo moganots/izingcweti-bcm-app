@@ -1,6 +1,6 @@
 import { BaseService } from '../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-  // Types
   type AuthTokens,
   type LoginCredentials,
   type LoginResponse,
@@ -20,7 +20,7 @@ export class AuthService extends BaseService {
       user: any
       requires_mfa?: boolean
       mfa_token?: string
-    }>('/auth/login', credentials)
+    }>(API_ENDPOINTS.AUTH.LOGIN, credentials)
 
     const data = this.extractData(response)
 
@@ -42,7 +42,7 @@ export class AuthService extends BaseService {
 
   async logout(): Promise<void> {
     try {
-      await this.post('/auth/logout')
+      await this.post(API_ENDPOINTS.AUTH.LOGOUT)
     } finally {
       this.clearAuthTokens()
     }
@@ -50,7 +50,7 @@ export class AuthService extends BaseService {
 
   async logoutAllDevices(): Promise<void> {
     try {
-      await this.post('/auth/logout-all')
+      await this.post(API_ENDPOINTS.AUTH.LOGOUT_ALL)
     } finally {
       this.clearAuthTokens()
     }
@@ -65,7 +65,7 @@ export class AuthService extends BaseService {
         access_token: string
         refresh_token: string
         expires_in: number
-      }>('/auth/refresh', { refresh_token: refreshToken })
+      }>(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken })
 
       const data = this.extractData(response)
 
@@ -88,7 +88,7 @@ export class AuthService extends BaseService {
 
   async validateToken(): Promise<boolean> {
     try {
-      await this.get('/auth/validate')
+      await this.get(API_ENDPOINTS.AUTH.VALIDATE)
       return true
     } catch {
       return false
@@ -96,29 +96,24 @@ export class AuthService extends BaseService {
   }
 
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    await this.post('/auth/change-password', data)
+    await this.post(API_ENDPOINTS.AUTH.CHANGE_PASSWORD, data)
   }
 
   async forgotPassword(data: ForgotPasswordRequest): Promise<void> {
-    await this.post('/auth/forgot-password', data)
-  }
-
-  async verifyResetToken(token: string): Promise<{ email: string }> {
-    const response = await this.get<{ email: string }>(`/auth/verify-reset-token/${token}`)
-    return this.extractData(response)
+    await this.post(API_ENDPOINTS.AUTH.FORGOT_PASSWORD, data)
   }
 
   async resetPassword(data: ResetPasswordRequest): Promise<void> {
-    await this.post('/auth/reset-password', data)
+    await this.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data)
   }
 
   async getSessions(): Promise<SessionInfo[]> {
-    const response = await this.get<SessionInfo[]>('/auth/sessions')
+    const response = await this.get<SessionInfo[]>(API_ENDPOINTS.AUTH.SESSIONS)
     return this.extractData(response)
   }
 
   async revokeSession(sessionId: string): Promise<void> {
-    await this.delete(`/auth/sessions/${sessionId}`)
+    await this.delete(API_ENDPOINTS.AUTH.SESSION(sessionId))
   }
 
   async revokeOtherSessions(): Promise<void> {
@@ -126,16 +121,16 @@ export class AuthService extends BaseService {
   }
 
   async getUserTokens(userId: string): Promise<AuthToken[]> {
-    const response = await this.get<AuthToken[]>(`/auth/tokens/users/${userId}`)
+    const response = await this.get<AuthToken[]>(API_ENDPOINTS.AUTH_TOKENS.BY_USER(userId))
     return this.extractData(response)
   }
 
   async revokeToken(tokenId: string): Promise<void> {
-    await this.post(`/auth/tokens/${tokenId}/revoke`)
+    await this.post(API_ENDPOINTS.AUTH_TOKENS.REVOKE(tokenId))
   }
 
   async revokeAllUserTokens(userId: string): Promise<void> {
-    await this.post(`/auth/tokens/users/${userId}/revoke-all`)
+    await this.post(API_ENDPOINTS.AUTH_TOKENS.REVOKE_ALL(userId))
   }
 
   async cleanupExpiredTokens(): Promise<{
@@ -144,8 +139,13 @@ export class AuthService extends BaseService {
     total_cleaned: number
   }> {
     const response = await this.post<{ revoked: number; expired: number; total_cleaned: number }>(
-      '/auth/cleanup'
+      API_ENDPOINTS.AUTH.CLEANUP
     )
+    return this.extractData(response)
+  }
+
+  async verifyResetToken(token: string): Promise<{ email: string }> {
+    const response = await this.get<{ email: string }>(API_ENDPOINTS.AUTH.VERIFY_RESET_TOKEN(token))
     return this.extractData(response)
   }
 }

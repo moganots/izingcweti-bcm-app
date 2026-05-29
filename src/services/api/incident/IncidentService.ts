@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   IncidentSeverity,
   type Incident,
@@ -19,48 +20,48 @@ import {
 
 export class IncidentService extends BaseService {
   async getIncidents(params?: IncidentQueryParams): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>('/incidents', params as Record<string, any>)
+    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, params as Record<string, any>)
   }
 
   async getIncident(id: string): Promise<Incident> {
-    const response = await this.get<Incident>(`/incidents/${id}`)
+    const response = await this.get<Incident>(API_ENDPOINTS.INCIDENTS.BY_ID(id))
     return this.extractData(response)
   }
 
   async createIncident(data: CreateIncidentRequest): Promise<Incident> {
-    const response = await this.post<Incident>('/incidents', data)
+    const response = await this.post<Incident>(API_ENDPOINTS.INCIDENTS.BASE, data)
     return this.extractData(response)
   }
 
   async updateIncident(id: string, data: UpdateIncidentRequest): Promise<Incident> {
-    const response = await this.put<Incident>(`/incidents/${id}`, data)
+    const response = await this.put<Incident>(API_ENDPOINTS.INCIDENTS.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async closeIncident(id: string, data: CloseIncidentRequest): Promise<Incident> {
-    const response = await this.patch<Incident>(`/incidents/${id}/close`, data)
+    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.CLOSE(id), data)
     return this.extractData(response)
   }
 
   async reopenIncident(id: string): Promise<Incident> {
-    const response = await this.patch<Incident>(`/incidents/${id}/reopen`)
+    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.REOPEN(id))
     return this.extractData(response)
   }
 
   async escalateIncident(id: string, data: EscalateIncidentRequest): Promise<Incident> {
-    const response = await this.patch<Incident>(`/incidents/${id}/escalate`, data)
+    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.ESCALATE(id), data)
     return this.extractData(response)
   }
 
   async assignIncident(id: string, assignedTo: string): Promise<Incident> {
-    const response = await this.patch<Incident>(`/incidents/${id}/assign`, {
+    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.ASSIGN(id), {
       assigned_to: assignedTo,
     })
     return this.extractData(response)
   }
 
   async addIncidentUpdate(id: string, update: IncidentUpdate): Promise<Incident> {
-    const response = await this.post<Incident>(`/incidents/${id}/updates`, update)
+    const response = await this.post<Incident>(API_ENDPOINTS.INCIDENTS.ADD_UPDATE(id), update)
     return this.extractData(response)
   }
 
@@ -139,7 +140,7 @@ export class IncidentService extends BaseService {
   }
 
   async deleteIncident(id: string): Promise<void> {
-    await this.delete(`/incidents/${id}`)
+    await this.delete(API_ENDPOINTS.INCIDENTS.BY_ID(id))
   }
 
   async exportIncidents(

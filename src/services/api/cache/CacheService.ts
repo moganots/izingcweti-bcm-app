@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   type CacheEntry,
   type CacheStats,
@@ -19,7 +20,7 @@ export interface CacheQueryParams {
 export class CacheService extends BaseService {
   async getEntry(key: string): Promise<CacheEntry | undefined> {
     try {
-      const response = await this.get<CacheEntry>(`/cache/${encodeURIComponent(key)}`)
+      const response = await this.get<CacheEntry>(API_ENDPOINTS.CACHE.BY_KEY(key))
       return this.extractData(response)
     } catch (err: any) {
       if (err.status === 404) {
@@ -42,41 +43,33 @@ export class CacheService extends BaseService {
     tags?: string[]
   ): Promise<CacheEntry> {
     const request: SetCacheRequest = { key, value, ttl_seconds: ttlSeconds ?? 0, tags: tags ?? [] }
-    const response = await this.post<CacheEntry>(`/cache/${encodeURIComponent(key)}`, request)
+    const response = await this.post<CacheEntry>(API_ENDPOINTS.CACHE.BY_KEY(key), request)
     return this.extractData(response)
   }
 
   async deleteEntry(key: string): Promise<void> {
-    await this.delete(`/cache/${encodeURIComponent(key)}`)
+    await this.delete(API_ENDPOINTS.CACHE.BY_KEY(key))
   }
 
   async clearAll(): Promise<void> {
-    await this.post('/cache/clear-all')
+    await this.post(API_ENDPOINTS.CACHE.CLEAR_ALL)
   }
 
   async clearByTags(tags: string[]): Promise<{ cleared: number }> {
-    const response = await this.post<{ cleared: number }>('/cache/delete-by-tags', { tags })
+    const response = await this.post<{ cleared: number }>(
+      API_ENDPOINTS.CACHE.DELETE_BY_TAGS(tags.join(',')),
+      { tags }
+    )
     return this.extractData(response)
   }
 
   async getStats(): Promise<CacheStats> {
-    const response = await this.get<CacheStats>('/cache/stats')
-    return this.extractData(response)
-  }
-
-  async getKeys(pattern?: string): Promise<string[]> {
-    if (pattern) {
-      const response = await this.get<string[]>(
-        `/cache/pattern?pattern=${encodeURIComponent(pattern)}`
-      )
-      return this.extractData(response)
-    }
-    const response = await this.get<string[]>('/cache/keys')
+    const response = await this.get<CacheStats>(API_ENDPOINTS.CACHE.STATS)
     return this.extractData(response)
   }
 
   async query(params: CacheQueryParams): Promise<PaginatedResponse<CacheEntry>> {
-    return this.getPaginated<CacheEntry>('/cache', params as Record<string, any>)
+    return this.getPaginated<CacheEntry>(API_ENDPOINTS.CACHE.BASE, params as Record<string, any>)
   }
 
   async remember<T = any>(
@@ -97,7 +90,7 @@ export class CacheService extends BaseService {
 
   async getMany(keys: string[]): Promise<Map<string, any>> {
     const request: BulkCacheRequest = { entries: keys.map((key) => ({ key, value: null })) }
-    const response = await this.post<BulkCacheResponse>('/cache/bulk', request)
+    const response = await this.post<BulkCacheResponse>(API_ENDPOINTS.CACHE.BULK, request)
     const data = this.extractData(response)
     const result = new Map<string, any>()
     data.entries.forEach((entry) => {
@@ -110,39 +103,12 @@ export class CacheService extends BaseService {
     entries: Array<{ key: string; value: any; ttl_seconds?: number; tags?: string[] }>
   ): Promise<void> {
     const request: BulkCacheRequest = { entries }
-    await this.post('/cache/bulk', request)
-  }
-
-  async increment(key: string, delta: number = 1, ttlSeconds?: number): Promise<number> {
-    const response = await this.post<{ value: number }>(
-      `/cache/${encodeURIComponent(key)}/increment`,
-      {
-        delta,
-        ttl: ttlSeconds,
-      }
-    )
-    return this.extractData(response).value
-  }
-
-  async decrement(key: string, delta: number = 1, ttlSeconds?: number): Promise<number> {
-    const response = await this.post<{ value: number }>(
-      `/cache/${encodeURIComponent(key)}/decrement`,
-      {
-        delta,
-        ttl: ttlSeconds,
-      }
-    )
-    return this.extractData(response).value
+    await this.post(API_ENDPOINTS.CACHE.BULK, request)
   }
 
   async hasKey(key: string): Promise<boolean> {
-    const response = await this.get<{ exists: boolean }>(`/cache/${encodeURIComponent(key)}/exists`)
+    const response = await this.get<{ exists: boolean }>(API_ENDPOINTS.CACHE.EXISTS(key))
     return this.extractData(response).exists
-  }
-
-  async getTTL(key: string): Promise<number | null> {
-    const response = await this.get<{ ttl: number | null }>(`/cache/${encodeURIComponent(key)}/ttl`)
-    return this.extractData(response).ttl
   }
 
   async updateTTL(key: string, ttlSeconds: number): Promise<void> {
@@ -154,18 +120,53 @@ export class CacheService extends BaseService {
     return stats.size
   }
 
-  async warmUp(keys: string[]): Promise<{ warmed: number; failed: number }> {
-    const response = await this.post<{ warmed: number; failed: number }>('/cache/warm-up', { keys })
-    return this.extractData(response)
-  }
-
   async getHitRatio(): Promise<number> {
     const stats = await this.getStats()
     return stats.hit_ratio
   }
 
   async cleanExpired(): Promise<CacheCleanupResult> {
-    const response = await this.post<CacheCleanupResult>('/cache/clean-expired')
+    const response = await this.post<CacheCleanupResult>(API_ENDPOINTS.CACHE.CLEAN_EXPIRED)
+    return this.extractData(response)
+  }
+
+  async getKeys(pattern?: string): Promise<string[]> {
+    if (pattern) {
+      const response = await this.get<string[]>(
+        `${API_ENDPOINTS.CACHE.BY_PATTERN}?pattern=${encodeURIComponent(pattern)}`
+      )
+      return this.extractData(response)
+    }
+    const response = await this.get<string[]>(API_ENDPOINTS.CACHE_EXTRA.KEYS)
+    return this.extractData(response)
+  }
+
+  async increment(key: string, delta: number = 1, ttlSeconds?: number): Promise<number> {
+    const response = await this.post<{ value: number }>(API_ENDPOINTS.CACHE_EXTRA.INCREMENT(key), {
+      delta,
+      ttl: ttlSeconds,
+    })
+    return this.extractData(response).value
+  }
+
+  async decrement(key: string, delta: number = 1, ttlSeconds?: number): Promise<number> {
+    const response = await this.post<{ value: number }>(API_ENDPOINTS.CACHE_EXTRA.DECREMENT(key), {
+      delta,
+      ttl: ttlSeconds,
+    })
+    return this.extractData(response).value
+  }
+
+  async getTTL(key: string): Promise<number | null> {
+    const response = await this.get<{ ttl: number | null }>(API_ENDPOINTS.CACHE_EXTRA.TTL(key))
+    return this.extractData(response).ttl
+  }
+
+  async warmUp(keys: string[]): Promise<{ warmed: number; failed: number }> {
+    const response = await this.post<{ warmed: number; failed: number }>(
+      API_ENDPOINTS.CACHE_EXTRA.WARM_UP,
+      { keys }
+    )
     return this.extractData(response)
   }
 }

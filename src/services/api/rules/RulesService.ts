@@ -1,4 +1,5 @@
 import { BaseService } from './../../BaseService'
+import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   RuleType,
   RuleTrigger,
@@ -21,40 +22,40 @@ import {
 
 export class RulesService extends BaseService {
   async getRules(params?: RuleQueryParams): Promise<PaginatedResponse<Rule>> {
-    return this.getPaginated<Rule>('/rules', params as Record<string, any>)
+    return this.getPaginated<Rule>(API_ENDPOINTS.RULES.BASE, params as Record<string, any>)
   }
 
   async getRule(id: string): Promise<Rule> {
-    const response = await this.get<Rule>(`/rules/${id}`)
+    const response = await this.get<Rule>(API_ENDPOINTS.RULES.BY_ID(id))
     return this.extractData(response)
   }
 
   async createRule(data: CreateRuleRequest): Promise<Rule> {
-    const response = await this.post<Rule>('/rules', data)
+    const response = await this.post<Rule>(API_ENDPOINTS.RULES.BASE, data)
     return this.extractData(response)
   }
 
   async updateRule(id: string, data: UpdateRuleRequest): Promise<Rule> {
-    const response = await this.put<Rule>(`/rules/${id}`, data)
+    const response = await this.put<Rule>(API_ENDPOINTS.RULES.BY_ID(id), data)
     return this.extractData(response)
   }
 
   async deleteRule(id: string): Promise<void> {
-    await this.delete(`/rules/${id}`)
+    await this.delete(API_ENDPOINTS.RULES.BY_ID(id))
   }
 
   async activateRule(id: string): Promise<Rule> {
-    const response = await this.patch<Rule>(`/rules/${id}/activate`)
+    const response = await this.patch<Rule>(API_ENDPOINTS.RULES.ACTIVATE(id))
     return this.extractData(response)
   }
 
   async deactivateRule(id: string): Promise<Rule> {
-    const response = await this.patch<Rule>(`/rules/${id}/deactivate`)
+    const response = await this.patch<Rule>(API_ENDPOINTS.RULES.DEACTIVATE(id))
     return this.extractData(response)
   }
 
   async archiveRule(id: string): Promise<Rule> {
-    const response = await this.patch<Rule>(`/rules/${id}/archive`)
+    const response = await this.patch<Rule>(API_ENDPOINTS.RULES.ARCHIVE(id))
     return this.extractData(response)
   }
 
@@ -64,7 +65,7 @@ export class RulesService extends BaseService {
   }
 
   async testRule(data: RuleTestRequest): Promise<RuleTestResult> {
-    const response = await this.post<RuleTestResult>('/rules/test', data)
+    const response = await this.post<RuleTestResult>(API_ENDPOINTS.RULES.TEST(data.rule_id), data)
     return this.extractData(response)
   }
 
@@ -74,7 +75,7 @@ export class RulesService extends BaseService {
     entityType: string,
     contextData?: Record<string, any>
   ): Promise<RuleExecutionLog> {
-    const response = await this.post<RuleExecutionLog>(`/rules/${id}/execute`, {
+    const response = await this.post<RuleExecutionLog>(API_ENDPOINTS.RULES.EXECUTE(id), {
       entity_id: entityId,
       entity_type: entityType,
       context_data: contextData,
@@ -84,7 +85,7 @@ export class RulesService extends BaseService {
 
   async getStats(organisationId?: string): Promise<RuleStatistics> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<RuleStatistics>('/rules/stats', params)
+    const response = await this.get<RuleStatistics>(API_ENDPOINTS.RULES.STATISTICS, params)
     return this.extractData(response)
   }
 
@@ -93,7 +94,7 @@ export class RulesService extends BaseService {
     params?: RuleExecutionQueryParams
   ): Promise<PaginatedResponse<RuleExecutionLog>> {
     return this.getPaginated<RuleExecutionLog>(
-      `/rules/${ruleId}/logs`,
+      API_ENDPOINTS.RULES.EXECUTION_LOGS(ruleId),
       params as Record<string, any>
     )
   }
@@ -109,7 +110,7 @@ export class RulesService extends BaseService {
     by_date: Array<{ date: string; count: number }>
   }> {
     const params = days ? { days } : undefined
-    const response = await this.get(`/rules/${ruleId}/execution-stats`, params)
+    const response = await this.get(API_ENDPOINTS.RULES.EXECUTION_STATS(ruleId), params)
     return this.extractData(response)
   }
 
