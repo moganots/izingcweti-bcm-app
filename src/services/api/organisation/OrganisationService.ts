@@ -1,102 +1,111 @@
-import { BaseService } from '../../BaseService'
-import type { Organisation, BusinessUnit, Department, Document } from './../../../models/entities'
-import { API_ENDPOINTS } from './../../../utils/constants'
-import type {
-  BulkImportResult,
-  CreateOrganisationRequest,
-  ExportOptions,
-  OrganisationDashboard,
-  OrganisationQueryParams,
-  OrganisationStats,
-  PaginatedResponse,
-  UpdateOrganisationRequest,
-} from './../../../types'
+import { BaseService } from './../../BaseService'
+import {
+  IndustryType,
+  MaturityScore,
+  type Organisation,
+  type BusinessUnit,
+  type Department,
+  type CreateOrganisationRequest,
+  type UpdateOrganisationRequest,
+  type PaginatedResponse,
+} from './../../../modules'
 
-/**
- * Organisation API Service
- */
+export interface OrganisationQueryParams {
+  tenant_id?: string
+  industry_type?: IndustryType
+  maturity_score?: MaturityScore
+  page?: number
+  limit?: number
+  search?: string
+}
+
+export interface OrganisationStats {
+  total: number
+  byIndustry: Record<string, number>
+  byMaturity: Record<string, number>
+  activeCount: number
+}
+
+export interface OrganisationDashboard {
+  totalBusinessUnits: number
+  totalDepartments: number
+  totalUsers: number
+  totalBCPs: number
+  complianceRate: number
+}
+
+export interface BulkImportResult {
+  imported: number
+  updated: number
+  failed: number
+  errors: string[]
+}
+
+export interface ExportOptions {
+  format?: 'csv' | 'json'
+  include?: string[]
+}
+
 export class OrganisationService extends BaseService {
-  // ============================================
-  // Organisation CRUD
-  // ============================================
-
   async getOrganisations(
     params?: OrganisationQueryParams
   ): Promise<PaginatedResponse<Organisation>> {
-    return this.getPaginated<Organisation>(
-      API_ENDPOINTS.ORGANISATIONS.BASE,
-      params as Record<string, any>
-    )
+    return this.getPaginated<Organisation>('/organisations', params as Record<string, any>)
   }
 
   async getOrganisation(
     id: string,
     include?: string[]
-  ): Promise<
-    Organisation & {
-      business_units?: BusinessUnit[]
-      documents?: Document[]
-    }
-  > {
-    const params: Record<string, any> = {}
-    if (include?.length) params.include = include.join(',')
-
-    const response = await this.get<Organisation>(API_ENDPOINTS.ORGANISATIONS.BY_ID(id), params)
+  ): Promise<Organisation & { business_units?: BusinessUnit[]; documents?: any[] }> {
+    const params = include ? { include: include.join(',') } : undefined
+    const response = await this.get<Organisation>(`/organisations/${id}`, params)
     return this.extractData(response)
   }
 
   async createOrganisation(data: CreateOrganisationRequest): Promise<Organisation> {
-    const response = await this.post<Organisation>(API_ENDPOINTS.ORGANISATIONS.BASE, data)
+    const response = await this.post<Organisation>('/organisations', data)
     return this.extractData(response)
   }
 
   async updateOrganisation(id: string, data: UpdateOrganisationRequest): Promise<Organisation> {
-    const response = await this.put<Organisation>(API_ENDPOINTS.ORGANISATIONS.BY_ID(id), data)
+    const response = await this.put<Organisation>(`/organisations/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteOrganisation(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.ORGANISATIONS.BY_ID(id))
+    await this.delete(`/organisations/${id}`)
   }
 
   async permanentlyDeleteOrganisation(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.ORGANISATIONS.PERMANENT_DELETE(id))
+    await this.delete(`/organisations/${id}/permanent`)
   }
 
   async restoreOrganisation(id: string): Promise<Organisation> {
-    const response = await this.post<Organisation>(API_ENDPOINTS.ORGANISATIONS.RESTORE(id))
+    const response = await this.post<Organisation>(`/organisations/${id}/restore`)
     return this.extractData(response)
   }
 
   async getDashboard(organisationId: string): Promise<OrganisationDashboard> {
     const response = await this.get<OrganisationDashboard>(
-      API_ENDPOINTS.ORGANISATIONS.DASHBOARD(organisationId)
+      `/organisations/${organisationId}/dashboard`
     )
     return this.extractData(response)
   }
 
   async getStats(organisationId?: string): Promise<OrganisationStats> {
-    const params: Record<string, any> = {}
-    if (organisationId) params.organisation_id = organisationId
-
-    const response = await this.get<OrganisationStats>(API_ENDPOINTS.ORGANISATIONS.STATS, params)
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<OrganisationStats>('/organisations/stats', params)
     return this.extractData(response)
   }
 
   async getOrganisationHierarchy(organisationId: string): Promise<{
     organisation: Organisation
-    business_units: Array<{
-      business_unit: BusinessUnit
-      departments: Department[]
-    }>
+    business_units: Array<{ business_unit: BusinessUnit; departments: Department[] }>
   }> {
     const response = await this.get<{
       organisation: Organisation
-      business_units: Array<{
-        business_unit: BusinessUnit
-        departments: Department[]
-      }>
-    }>(API_ENDPOINTS.ORGANISATIONS.HIERARCHY(organisationId))
+      business_units: Array<{ business_unit: BusinessUnit; departments: Department[] }>
+    }>(`/organisations/${organisationId}/hierarchy`)
     return this.extractData(response)
   }
 
@@ -118,7 +127,7 @@ export class OrganisationService extends BaseService {
       }>
     }>
   }> {
-    const response = await this.get(API_ENDPOINTS.ORGANISATIONS.TREE(organisationId))
+    const response = await this.get(`/organisations/${organisationId}/tree`)
     return this.extractData(response)
   }
 
@@ -127,14 +136,19 @@ export class OrganisationService extends BaseService {
     excludeId?: string
   ): Promise<{ valid: boolean; message?: string }> {
     const response = await this.post<{ valid: boolean; message?: string }>(
-      API_ENDPOINTS.ORGANISATIONS.VALIDATE_NAME,
+      '/organisations/validate-name',
       { name, exclude_id: excludeId }
     )
     return this.extractData(response)
   }
 
-  async getIndustryTypes(): Promise<string[]> {
-    const response = await this.get<string[]>(API_ENDPOINTS.ORGANISATIONS.INDUSTRY_TYPES)
+  async getIndustryTypes(): Promise<IndustryType[]> {
+    const response = await this.get<IndustryType[]>('/organisations/industry-types')
+    return this.extractData(response)
+  }
+
+  async getMaturityScores(): Promise<MaturityScore[]> {
+    const response = await this.get<MaturityScore[]>('/organisations/maturity-scores')
     return this.extractData(response)
   }
 
@@ -142,16 +156,13 @@ export class OrganisationService extends BaseService {
     query: string,
     params?: OrganisationQueryParams
   ): Promise<PaginatedResponse<Organisation>> {
-    return this.getPaginated<Organisation>(API_ENDPOINTS.ORGANISATIONS.SEARCH, {
-      ...params,
-      q: query,
-    } as Record<string, any>)
+    return this.getOrganisations({ ...params, search: query })
   }
 
   async bulkImportOrganisations(
     organisations: CreateOrganisationRequest[]
   ): Promise<BulkImportResult> {
-    const response = await this.post<BulkImportResult>(API_ENDPOINTS.ORGANISATIONS.BULK_IMPORT, {
+    const response = await this.post<BulkImportResult>('/organisations/bulk-import', {
       organisations,
     })
     return this.extractData(response)
@@ -160,12 +171,21 @@ export class OrganisationService extends BaseService {
   async exportOrganisations(params?: ExportOptions): Promise<void> {
     const format = params?.format || 'csv'
     await this.download(
-      API_ENDPOINTS.ORGANISATIONS.EXPORT,
+      '/organisations/export',
       `organisations_export_${new Date().toISOString().split('T')[0]}.${format}`,
       { params: params as Record<string, any> }
     )
   }
+
+  async getOrganisationsByTenant(tenantId: string): Promise<PaginatedResponse<Organisation>> {
+    return this.getOrganisations({ tenant_id: tenantId })
+  }
+
+  async getOrganisationsByIndustry(
+    industryType: IndustryType
+  ): Promise<PaginatedResponse<Organisation>> {
+    return this.getOrganisations({ industry_type: industryType })
+  }
 }
 
-// Export singleton
 export const organisationService = new OrganisationService()

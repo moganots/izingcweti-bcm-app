@@ -1,597 +1,294 @@
-import { BaseService } from '../../BaseService'
-import { Risk, RiskStats, RiskMatrixCell } from './../../../models/entities'
-import { API_ENDPOINTS } from './../../../utils/constants'
+import { BaseService } from './../../BaseService'
 import {
-  RiskQueryParams,
-  PaginatedResponse,
-  CreateRiskRequest,
-  UpdateRiskRequest,
-  ReassessRiskRequest,
-} from './../../../types'
+  // Enums
+  RiskCategory,
+  RiskStatus,
+  RiskTreatment,
+  ImpactSeverity,
+  RiskScoreLevel,
+  getRiskScoreLevel,
+  getRiskColor,
+  // Types
+  type Risk,
+  type MitigatingControl,
+  type RiskMitigationPlan,
+  type RiskMitigationAction,
+  type RiskHeatmapSummary,
+  type RiskMatrixData,
+  type RiskHeatmapData,
+  type RiskTrendData,
+  type RiskTrendAnalysis,
+  type CreateRiskRequest,
+  type UpdateRiskRequest,
+  type AssessRiskRequest,
+  type RiskQueryParams,
+  // Shared Types
+  type PaginatedResponse,
+} from './../../../modules'
 
-// ============================================
-// Helper Functions for Rounding
-// ============================================
-
-/**
- * Round a number to specified decimal places
- * @param value - Number to round
- * @param decimals - Number of decimal places (default: 0)
- * @returns Rounded number
- */
-function roundNumber(value: number, decimals: number = 0): number {
-  if (typeof value !== 'number' || isNaN(value)) return 0
-  const multiplier = Math.pow(10, decimals)
-  return Math.round(value * multiplier) / multiplier
-}
-
-/**
- * Round likelihood value (0-1 range) to 1 decimal place
- */
-function roundLikelihood(value: number): number {
-  return roundNumber(value, 1)
-}
-
-/**
- * Round risk score values (0-10 range) to 1 decimal place
- */
-function roundRiskScore(value: number): number {
-  return roundNumber(value, 1)
-}
-
-/**
- * Round percentage values to 1 decimal place
- */
-function roundPercentage(value: number): number {
-  return roundNumber(value, 1)
-}
-
-/**
- * Round count values to whole numbers
- */
-function roundCount(value: number): number {
-  return Math.round(value)
-}
-
-/**
- * Round and validate risk data object
- */
-function roundRiskData(risk: Risk): Risk {
-  return {
-    ...risk,
-    likelihood: roundLikelihood(risk.likelihood),
-    inherent_risk_score: roundRiskScore(risk.inherent_risk_score),
-    residual_risk_score: roundRiskScore(risk.residual_risk_score),
-  }
-}
-
-/**
- * Round risk statistics
- */
-function roundRiskStats(stats: RiskStats): RiskStats {
-  return {
-    total: roundCount(stats.total),
-    critical: roundCount(stats.critical),
-    high: roundCount(stats.high),
-    medium: roundCount(stats.medium),
-    low: roundCount(stats.low),
-    mitigated: roundCount(stats.mitigated),
-    byCategory: stats.byCategory,
-    bySeverity: stats.bySeverity,
-  }
-}
-
-/**
- * Round risk matrix cell
- */
-function roundRiskMatrixCell(cell: RiskMatrixCell): RiskMatrixCell {
-  return {
-    ...cell,
-    likelihood: roundLikelihood(cell.likelihood),
-    score: roundRiskScore(cell.score),
-    count: roundCount(cell.count),
-  }
-}
-
-/**
- * Risk API Service
- * All numeric values are rounded to appropriate decimal places
- */
 export class RiskService extends BaseService {
-  // ============================================
   // Core CRUD Operations
-  // ============================================
-
-  /**
-   * Get all risks with pagination (rounded)
-   */
   async getRisks(params?: RiskQueryParams): Promise<PaginatedResponse<Risk>> {
-    const queryParams: Record<string, any> = { ...params }
-
-    // Handle organisation filter
-    if (params?.organisation_id) {
-      const response = await this.getPaginated<Risk>(
-        API_ENDPOINTS.RISKS.BY_ORGANISATION(params.organisation_id),
-        queryParams
-      )
-      if (response.data && response.data.length > 0) {
-        response.data = response.data.map(roundRiskData)
-      }
-      return response
-    }
-
-    // Handle category filter
-    if (params?.risk_category) {
-      const response = await this.getPaginated<Risk>(
-        API_ENDPOINTS.RISKS.BY_CATEGORY(params.risk_category),
-        queryParams
-      )
-      if (response.data && response.data.length > 0) {
-        response.data = response.data.map(roundRiskData)
-      }
-      return response
-    }
-
-    // Default: get all risks
-    const response = await this.getPaginated<Risk>(API_ENDPOINTS.RISKS.BASE, queryParams)
-    if (response.data && response.data.length > 0) {
-      response.data = response.data.map(roundRiskData)
-    }
-    return response
+    return this.getPaginated<Risk>('/risks', params as Record<string, any>)
   }
 
-  /**
-   * Get risk by ID (rounded)
-   */
   async getRisk(id: string): Promise<Risk> {
-    const response = await this.get<Risk>(API_ENDPOINTS.RISKS.BY_ID(id))
-    const risk = this.extractData(response)
-    return roundRiskData(risk)
+    const response = await this.get<Risk>(`/risks/${id}`)
+    return this.extractData(response)
   }
 
-  /**
-   * Create a new risk (validate and round input)
-   */
   async createRisk(data: CreateRiskRequest): Promise<Risk> {
-    const roundedData: CreateRiskRequest = {
-      ...data,
-      likelihood: roundLikelihood(data.likelihood),
-      inherent_risk_score: roundRiskScore(data.inherent_risk_score),
-      residual_risk_score: roundRiskScore(data.residual_risk_score),
-    }
-
-    const response = await this.post<Risk>(API_ENDPOINTS.RISKS.BASE, roundedData)
-    const risk = this.extractData(response)
-    return roundRiskData(risk)
+    const response = await this.post<Risk>('/risks', data)
+    return this.extractData(response)
   }
 
-  /**
-   * Update a risk (validate and round input)
-   */
   async updateRisk(id: string, data: UpdateRiskRequest): Promise<Risk> {
-    const roundedData: UpdateRiskRequest = {
-      ...data,
-      likelihood: data.likelihood !== undefined ? roundLikelihood(data.likelihood) : undefined,
-      inherent_risk_score:
-        data.inherent_risk_score !== undefined
-          ? roundRiskScore(data.inherent_risk_score)
-          : undefined,
-      residual_risk_score:
-        data.residual_risk_score !== undefined
-          ? roundRiskScore(data.residual_risk_score)
-          : undefined,
-    } as any
-
-    const response = await this.put<Risk>(API_ENDPOINTS.RISKS.BY_ID(id), roundedData)
-    const risk = this.extractData(response)
-    return roundRiskData(risk)
+    const response = await this.put<Risk>(`/risks/${id}`, data)
+    return this.extractData(response)
   }
 
-  /**
-   * Delete a risk
-   */
   async deleteRisk(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.RISKS.BY_ID(id))
+    await this.delete(`/risks/${id}`)
   }
 
-  // ============================================
-  // Risk Assessment Operations
-  // ============================================
-
-  /**
-   * Reassess a risk (round input values)
-   */
-  async reassessRisk(id: string, data: ReassessRiskRequest): Promise<Risk> {
-    const roundedData: ReassessRiskRequest = {
-      likelihood: roundLikelihood(data.likelihood),
-      impact_severity: data.impact_severity,
-      inherent_risk_score: roundRiskScore(data.inherent_risk_score),
-      residual_risk_score: roundRiskScore(data.residual_risk_score),
-    }
-
-    const response = await this.patch<Risk>(API_ENDPOINTS.RISKS.ASSESS(id), roundedData)
-    const risk = this.extractData(response)
-    return roundRiskData(risk)
+  // Risk Assessment
+  async assessRisk(id: string, data: AssessRiskRequest): Promise<Risk> {
+    const response = await this.post<Risk>(`/risks/${id}/assess`, data)
+    return this.extractData(response)
   }
 
-  // ============================================
-  // Risk Level Filters
-  // ============================================
-
-  /**
-   * Get high risks (score >= HIGH threshold)
-   */
-  async getHighRisks(threshold?: number): Promise<PaginatedResponse<Risk>> {
-    const params: Record<string, unknown> = {}
-    if (threshold !== undefined && threshold !== null) {
-      params.min_inherent_score = roundRiskScore(threshold)
-    } else {
-      params.min_inherent_score = 8 // HIGH threshold
-    }
-    return this.getRisks(params as RiskQueryParams)
+  async approveRisk(id: string, notes?: string): Promise<Risk> {
+    const response = await this.post<Risk>(`/risks/${id}/approve`, { approval_notes: notes })
+    return this.extractData(response)
   }
 
-  /**
-   * Get critical risks (score >= CRITICAL threshold)
-   */
-  async getCriticalRisks(): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({ min_inherent_score: 8.5 } as RiskQueryParams)
+  async assignRisk(id: string, assignedTo: string): Promise<Risk> {
+    const response = await this.post<Risk>(`/risks/${id}/assign`, { assigned_to: assignedTo })
+    return this.extractData(response)
   }
 
-  /**
-   * Get low risks (score <= LOW threshold)
-   */
-  async getLowRisks(): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({ max_inherent_score: 3 } as RiskQueryParams)
+  async closeRisk(id: string): Promise<Risk> {
+    const response = await this.post<Risk>(`/risks/${id}/close`)
+    return this.extractData(response)
   }
 
-  /**
-   * Get medium risks (score between LOW and HIGH thresholds)
-   */
-  async getMediumRisks(): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({
-      min_inherent_score: 3,
-      max_inherent_score: 6,
-    } as RiskQueryParams)
+  async reassessRisk(id: string, data: AssessRiskRequest): Promise<Risk> {
+    return this.assessRisk(id, data)
   }
 
-  // ============================================
-  // Category and Severity Filters
-  // ============================================
-
-  /**
-   * Get risks by category
-   */
-  async getRisksByCategory(
-    category: string,
-    params?: RiskQueryParams
-  ): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({ ...params, risk_category: category } as RiskQueryParams)
-  }
-
-  /**
-   * Get risks by impact severity
-   */
-  async getRisksBySeverity(
-    severity: string,
-    params?: RiskQueryParams
-  ): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({ ...params, impact_severity: severity } as RiskQueryParams)
-  }
-
-  /**
-   * Get risks by category and severity
-   */
-  async getRisksByCategoryAndSeverity(
-    category: string,
-    severity: string
-  ): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({
-      risk_category: category,
-      impact_severity: severity,
-    } as RiskQueryParams)
-  }
-
-  // ============================================
-  // Organisation Filters
-  // ============================================
-
-  /**
-   * Get risks by organisation
-   */
+  // Risk Filters
   async getRisksByOrganisation(
     organisationId: string,
     params?: RiskQueryParams
   ): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({ ...params, organisation_id: organisationId } as RiskQueryParams)
+    return this.getRisks({ ...params, organisation_id: organisationId })
   }
 
-  // ============================================
-  // Score Range Filters
-  // ============================================
-
-  /**
-   * Get risks by score range (rounded)
-   */
-  async getRisksByScoreRange(
-    minScore: number,
-    maxScore: number,
+  async getRisksByCategory(
+    category: RiskCategory,
     params?: RiskQueryParams
   ): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({
-      ...params,
-      min_inherent_score: roundRiskScore(minScore),
-      max_inherent_score: roundRiskScore(maxScore),
-    } as RiskQueryParams)
+    return this.getRisks({ ...params, risk_category: category })
   }
 
-  // ============================================
-  // Mitigation Controls
-  // ============================================
+  async getRisksByStatus(
+    status: RiskStatus,
+    params?: RiskQueryParams
+  ): Promise<PaginatedResponse<Risk>> {
+    return this.getRisks({ ...params, status })
+  }
 
-  /**
-   * Add mitigation controls to a risk
-   */
-  async addMitigationControls(id: string, controlIds: string[]): Promise<Risk> {
-    const response = await this.patch<Risk>(API_ENDPOINTS.RISKS.MITIGATE(id), {
-      mitigation_control_ids: controlIds,
+  async getHighRisks(threshold: number = 15): Promise<PaginatedResponse<Risk>> {
+    return this.getRisks({ min_inherent_score: threshold })
+  }
+
+  async getCriticalRisks(threshold: number = 20): Promise<PaginatedResponse<Risk>> {
+    return this.getRisks({ min_inherent_score: threshold })
+  }
+
+  async getMyAssignedRisks(): Promise<PaginatedResponse<Risk>> {
+    return this.getPaginated<Risk>('/risks/my-assigned')
+  }
+
+  async getOverdueReviews(): Promise<PaginatedResponse<Risk>> {
+    return this.getPaginated<Risk>('/risks/overdue-reviews')
+  }
+
+  // Risk Mitigation
+  async addMitigatingControl(riskId: string, control: MitigatingControl): Promise<Risk> {
+    const risk = await this.getRisk(riskId)
+    const controls = risk.mitigating_controls || []
+    const response = await this.put<Risk>(`/risks/${riskId}`, {
+      mitigating_controls: [...controls, control],
     })
-    const risk = this.extractData(response)
-    return roundRiskData(risk)
+    return this.extractData(response)
   }
 
-  /**
-   * Remove a mitigation control from a risk
-   */
-  async removeMitigationControl(id: string, controlId: string): Promise<Risk> {
-    const risk = await this.getRisk(id)
-    const currentControls = risk.mitigation_control_ids || []
-    const updatedControls = currentControls.filter((cid) => cid !== controlId)
-    const response = await this.patch<Risk>(API_ENDPOINTS.RISKS.MITIGATE(id), {
-      mitigation_control_ids: updatedControls,
+  async updateMitigatingControl(
+    riskId: string,
+    controlId: string,
+    updates: Partial<MitigatingControl>
+  ): Promise<Risk> {
+    const risk = await this.getRisk(riskId)
+    const controls = (risk.mitigating_controls || []).map((c) =>
+      c.control_id === controlId ? { ...c, ...updates } : c
+    )
+    const response = await this.put<Risk>(`/risks/${riskId}`, { mitigating_controls: controls })
+    return this.extractData(response)
+  }
+
+  async removeMitigatingControl(riskId: string, controlId: string): Promise<Risk> {
+    const risk = await this.getRisk(riskId)
+    const controls = (risk.mitigating_controls || []).filter((c) => c.control_id !== controlId)
+    const response = await this.put<Risk>(`/risks/${riskId}`, { mitigating_controls: controls })
+    return this.extractData(response)
+  }
+
+  async createMitigationPlan(
+    riskId: string,
+    plan: Omit<RiskMitigationPlan, 'risk_id'>
+  ): Promise<RiskMitigationPlan> {
+    const response = await this.post<RiskMitigationPlan>(`/risks/${riskId}/mitigation-plan`, plan)
+    return this.extractData(response)
+  }
+
+  async updateMitigationAction(
+    riskId: string,
+    actionId: string,
+    updates: Partial<RiskMitigationAction>
+  ): Promise<RiskMitigationAction> {
+    const response = await this.patch<RiskMitigationAction>(
+      `/risks/${riskId}/mitigation-plan/actions/${actionId}`,
+      updates
+    )
+    return this.extractData(response)
+  }
+
+  // Risk Analytics & Visualization
+  async getRiskMatrix(organisationId: string): Promise<RiskMatrixData[]> {
+    const response = await this.get<RiskMatrixData[]>(`/risks/${organisationId}/matrix`)
+    return this.extractData(response)
+  }
+
+  async getRiskHeatmap(organisationId: string): Promise<RiskHeatmapData> {
+    const response = await this.get<RiskHeatmapData>(`/risks/${organisationId}/heatmap`)
+    return this.extractData(response)
+  }
+
+  async getRiskTrends(organisationId: string, period: string = 'month'): Promise<RiskTrendData[]> {
+    const response = await this.get<RiskTrendData[]>(`/risks/${organisationId}/trends`, { period })
+    return this.extractData(response)
+  }
+
+  async getRiskTrendAnalysis(
+    organisationId: string,
+    months: number = 12
+  ): Promise<RiskTrendAnalysis> {
+    const response = await this.get<RiskTrendAnalysis>(`/risks/${organisationId}/trend-analysis`, {
+      months,
     })
-    const updatedRisk = this.extractData(response)
-    return roundRiskData(updatedRisk)
+    return this.extractData(response)
   }
 
-  /**
-   * Get risks needing mitigation (high or critical risks with no controls)
-   */
-  async getRisksNeedingMitigation(): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({
-      needs_mitigation: true,
-      min_inherent_score: 6,
-    } as RiskQueryParams)
-  }
-
-  // ============================================
-  // Statistics and Analytics
-  // ============================================
-
-  /**
-   * Get risk statistics (rounded)
-   */
-  async getStats(organisationId?: string): Promise<RiskStats> {
-    let url = API_ENDPOINTS.RISKS.STATS('')
-    if (organisationId) {
-      url = API_ENDPOINTS.RISKS.STATS(organisationId)
-    }
-    const response = await this.get<RiskStats>(url)
-    const stats = this.extractData(response)
-    return roundRiskStats(stats)
-  }
-
-  /**
-   * Get risk heat map data (rounded)
-   */
-  async getRiskHeatMap(organisationId?: string): Promise<RiskMatrixCell[]> {
-    let url = API_ENDPOINTS.RISKS.MATRIX('')
-    if (organisationId) {
-      url = API_ENDPOINTS.RISKS.MATRIX(organisationId)
-    }
-    const response = await this.get<RiskMatrixCell[]>(url)
-    const cells = this.extractData(response)
-    return cells.map(roundRiskMatrixCell)
-  }
-
-  /**
-   * Get risk summary for dashboard (rounded)
-   */
-  async getSummary(organisationId?: string): Promise<{
+  // Statistics
+  async getRiskStats(organisationId?: string): Promise<{
     total: number
     critical: number
     high: number
     medium: number
     low: number
-    mitigated: number
-    needsAttention: number
-    complianceRate: number
-  }> {
-    const stats = await this.getStats(organisationId)
-
-    return {
-      total: roundCount(stats.total),
-      critical: roundCount(stats.critical),
-      high: roundCount(stats.high),
-      medium: roundCount(stats.medium),
-      low: roundCount(stats.low),
-      mitigated: roundCount(stats.mitigated),
-      needsAttention: roundCount((stats.critical || 0) + (stats.high || 0)),
-      complianceRate: roundPercentage(
-        stats.total > 0 ? ((stats.total - (stats.critical || 0)) / stats.total) * 100 : 100
-      ),
-    }
-  }
-
-  /**
-   * Get risk distribution by category (rounded)
-   */
-  async getRiskDistribution(organisationId?: string): Promise<{
     byCategory: Record<string, number>
-    total: number
+    byStatus: Record<string, number>
+    averageScore: number
   }> {
-    const stats = await this.getStats(organisationId)
-    const roundedByCategory: Record<string, number> = {}
-
-    for (const [category, count] of Object.entries(stats.byCategory || {})) {
-      roundedByCategory[category] = roundCount(count)
-    }
-
-    return {
-      byCategory: roundedByCategory,
-      total: roundCount(stats.total),
-    }
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<{
+      total: number
+      critical: number
+      high: number
+      medium: number
+      low: number
+      byCategory: Record<string, number>
+      byStatus: Record<string, number>
+      averageScore: number
+    }>('/risks/statistics', params)
+    return this.extractData(response)
   }
 
-  /**
-   * Get risk trends over time (rounded)
-   */
-  async getRiskTrends(
-    period: string = 'month',
-    organisationId?: string
-  ): Promise<Array<{ period: string; high: number; medium: number; low: number; total: number }>> {
-    const response = await this.get<
-      Array<{ period: string; high: number; medium: number; low: number; total: number }>
-    >(`${API_ENDPOINTS.RISKS.BASE}/trends`, { period, organisation_id: organisationId })
-    const trends = this.extractData(response)
-
-    return trends.map((trend) => ({
-      period: trend.period,
-      high: roundCount(trend.high),
-      medium: roundCount(trend.medium),
-      low: roundCount(trend.low),
-      total: roundCount(trend.total),
-    }))
+  async getRiskHeatmapSummary(organisationId: string): Promise<RiskHeatmapSummary> {
+    const response = await this.get<RiskHeatmapSummary>(`/risks/${organisationId}/heatmap-summary`)
+    return this.extractData(response)
   }
 
-  // ============================================
-  // Search Operations
-  // ============================================
-
-  /**
-   * Search risks (results rounded automatically)
-   */
+  // Search & Export
   async searchRisks(query: string, params?: RiskQueryParams): Promise<PaginatedResponse<Risk>> {
-    return this.getRisks({
-      ...params,
-      search: query,
-    } as RiskQueryParams)
+    return this.getRisks({ ...params, search: query })
   }
 
-  // ============================================
-  // Export Operations
-  // ============================================
-
-  /**
-   * Export risks to file
-   */
   async exportRisks(
     organisationId: string,
     params?: {
-      risk_category?: string
+      risk_category?: RiskCategory
+      status?: RiskStatus
       min_score?: number
       max_score?: number
       format?: 'csv' | 'json'
     }
   ): Promise<void> {
     const format = params?.format || 'csv'
-    const exportParams: Record<string, any> = { ...params }
-
-    // Round score thresholds if provided
-    if (exportParams.min_score !== undefined) {
-      exportParams.min_score = roundRiskScore(exportParams.min_score)
-    }
-    if (exportParams.max_score !== undefined) {
-      exportParams.max_score = roundRiskScore(exportParams.max_score)
-    }
-
     await this.download(
-      API_ENDPOINTS.RISKS.EXPORT(organisationId),
+      `/risks/export/${organisationId}`,
       `risks_export_${new Date().toISOString().split('T')[0]}.${format}`,
-      { params: exportParams }
+      { params: params as Record<string, any> }
     )
   }
 
-  // ============================================
   // Bulk Operations
-  // ============================================
-
-  /**
-   * Bulk update risk status
-   */
-  async bulkUpdateStatus(
-    ids: string[],
-    updates: Partial<UpdateRiskRequest>
-  ): Promise<{ updated: number }> {
-    // Round numeric updates
-    const roundedUpdates: Partial<UpdateRiskRequest> = {
-      ...updates,
-      likelihood:
-        updates.likelihood !== undefined ? roundLikelihood(updates.likelihood) : undefined,
-      inherent_risk_score:
-        updates.inherent_risk_score !== undefined
-          ? roundRiskScore(updates.inherent_risk_score)
-          : undefined,
-      residual_risk_score:
-        updates.residual_risk_score !== undefined
-          ? roundRiskScore(updates.residual_risk_score)
-          : undefined,
-    } as any
-
-    const response = await this.post<{ updated: number }>(
-      `${API_ENDPOINTS.RISKS.BASE}/bulk-update`,
-      { ids, updates: roundedUpdates }
-    )
-    const result = this.extractData(response)
-    return { updated: roundCount(result.updated) }
+  async bulkUpdateStatus(ids: string[], status: RiskStatus): Promise<{ updated: number }> {
+    const response = await this.post<{ updated: number }>('/risks/bulk-update-status', {
+      ids,
+      status,
+    })
+    return this.extractData(response)
   }
 
-  /**
-   * Bulk delete risks
-   */
-  async bulkDeleteRisks(ids: string[]): Promise<{ deleted: number }> {
-    const response = await this.post<{ deleted: number }>(
-      `${API_ENDPOINTS.RISKS.BASE}/bulk-delete`,
-      { ids }
-    )
-    const result = this.extractData(response)
-    return { deleted: roundCount(result.deleted) }
+  async bulkAssign(ids: string[], assignedTo: string): Promise<{ updated: number }> {
+    const response = await this.post<{ updated: number }>('/risks/bulk-assign', {
+      ids,
+      assigned_to: assignedTo,
+    })
+    return this.extractData(response)
   }
 
-  // ============================================
-  // Validation Operations
-  // ============================================
+  async bulkDelete(ids: string[]): Promise<{ deleted: number }> {
+    const response = await this.post<{ deleted: number }>('/risks/bulk-delete', { ids })
+    return this.extractData(response)
+  }
 
-  /**
-   * Validate risk scores before creation/update
-   */
-  async validateRiskScores(data: {
-    likelihood: number
-    inherent_risk_score: number
-    residual_risk_score: number
-  }): Promise<{ valid: boolean; message?: string }> {
-    try {
-      if (data.likelihood < 0 || data.likelihood > 1) {
-        return { valid: false, message: 'Likelihood must be between 0 and 1' }
-      }
-      if (data.inherent_risk_score < 0) {
-        return { valid: false, message: 'Inherent risk score must be a positive number' }
-      }
-      if (data.residual_risk_score < 0) {
-        return { valid: false, message: 'Residual risk score must be a positive number' }
-      }
-      if (data.residual_risk_score > data.inherent_risk_score) {
-        return {
-          valid: false,
-          message: 'Residual risk score cannot be greater than inherent risk score',
-        }
-      }
-      return { valid: true }
-    } catch (error: any) {
-      return { valid: false, message: error.message }
-    }
+  // Helper Methods
+  getRiskScoreLevel(score: number): RiskScoreLevel {
+    return getRiskScoreLevel(score)
+  }
+
+  getRiskColor(score: number): string {
+    return getRiskColor(score)
+  }
+
+  getRiskCategories(): RiskCategory[] {
+    return Object.values(RiskCategory)
+  }
+
+  getRiskStatuses(): RiskStatus[] {
+    return Object.values(RiskStatus)
+  }
+
+  getRiskTreatments(): RiskTreatment[] {
+    return Object.values(RiskTreatment)
+  }
+
+  getImpactSeverities(): ImpactSeverity[] {
+    return Object.values(ImpactSeverity)
   }
 }
 
-// Export singleton
 export const riskService = new RiskService()

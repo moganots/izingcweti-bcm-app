@@ -16,6 +16,7 @@ export enum DashboardRole {
   USER = 'USER',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Dashboard Module - Types
 // ============================================
@@ -86,10 +87,9 @@ export interface IncidentTrend {
   avgResolutionTime: number
 }
 
-export interface DashboardQueryParams {
+export interface DashboardQueryParams extends QueryParams {
   period?: 'day' | 'week' | 'month' | 'quarter' | 'year'
   organisation_id?: string
-  limit?: number
   start_date?: string
   end_date?: string
 }

@@ -45,6 +45,7 @@ export enum WorkflowPriority {
   BACKGROUND = 5,
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Workflow Module - Types
 // ============================================
@@ -201,7 +202,7 @@ export interface EscalateWorkflowRequest {
   reason: string
 }
 
-export interface WorkflowQueryParams {
+export interface WorkflowQueryParams extends QueryParams {
   workflow_type?: string
   workflow_state?: string
   priority?: number
@@ -216,6 +217,4 @@ export interface WorkflowQueryParams {
   overdue_only?: boolean
   escalated_only?: boolean
   escalation_level?: number
-  page?: number
-  limit?: number
 }

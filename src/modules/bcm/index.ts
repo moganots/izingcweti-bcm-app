@@ -54,6 +54,7 @@ export enum BCMLifecyclePhase {
   CONTINUOUS_IMPROVEMENT = 'CONTINUOUS_IMPROVEMENT',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // BCM Module - Types
 // ============================================
@@ -398,17 +399,15 @@ export interface ExpiringPlan {
 }
 
 // Query Parameter Types
-export interface CriticalFunctionQueryParams {
+export interface CriticalFunctionQueryParams extends QueryParams {
   department_id?: string
   name?: string
   max_tolerable_outage?: string
   has_dependencies?: boolean
   bia_completed?: boolean
-  page?: number
-  limit?: number
 }
 
-export interface BIAQueryParams {
+export interface BIAQueryParams extends QueryParams {
   function_id?: string
   impact_level?: 'Low' | 'Med' | 'High'
   department_id?: string
@@ -417,11 +416,9 @@ export interface BIAQueryParams {
   assessed_after?: string
   assessed_before?: string
   organisation_id?: string
-  page?: number
-  limit?: number
 }
 
-export interface BCPQueryParams {
+export interface BCPQueryParams extends QueryParams {
   plan_status?: string
   function_id?: string
   organisation_id?: string
@@ -431,11 +428,9 @@ export interface BCPQueryParams {
   has_strategies?: boolean
   has_tests?: boolean
   has_documents?: boolean
-  page?: number
-  limit?: number
 }
 
-export interface RecoveryStrategyQueryParams {
+export interface RecoveryStrategyQueryParams extends QueryParams {
   bcp_id?: string
   strategy_type?: string
   min_success_rate?: number
@@ -443,11 +438,9 @@ export interface RecoveryStrategyQueryParams {
   min_cost?: number
   max_cost?: number
   organisation_id?: string
-  page?: number
-  limit?: number
 }
 
-export interface ExerciseTestQueryParams {
+export interface ExerciseTestQueryParams extends QueryParams {
   test_type?: string
   bcp_id?: string
   passed?: boolean
@@ -457,6 +450,4 @@ export interface ExerciseTestQueryParams {
   participant?: string
   upcoming_only?: boolean
   overdue_only?: boolean
-  page?: number
-  limit?: number
 }

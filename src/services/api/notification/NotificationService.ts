@@ -1,209 +1,156 @@
-import { BaseService } from '../../BaseService'
+import { BaseService } from './../../BaseService'
 import {
-  Notification,
-  NotificationCounts,
-  NotificationPreference,
-} from './../../../models/entities'
-import { API_ENDPOINTS } from './../../../utils/constants'
-import { NotificationQueryParams, PaginatedResponse } from './../../../types'
+  NotificationType,
+  NotificationStatus,
+  type Notification,
+  type NotificationPreference,
+  type NotificationTemplate,
+  type UserNotificationSettings,
+  type NotificationSummary,
+  type CreateNotificationRequest,
+  type UpdatePreferencesRequest,
+  type NotificationBatchRequest,
+  type NotificationBatchResult,
+  type NotificationQueryParams,
+  type NotificationCounts,
+  type PaginatedResponse,
+} from './../../../modules'
 
-/**
- * Update Notification Preferences Request
- */
-export interface UpdatePreferencesRequest {
-  notification_type: string
-  email_enabled?: boolean
-  sms_enabled?: boolean
-  push_enabled?: boolean
-  in_app_enabled?: boolean
-}
-
-/**
- * Bulk Delete Request
- */
-export interface BulkDeleteRequest {
-  notification_ids: string[]
-}
-
-/**
- * Notification API Service
- * Aligned with backend routes
- */
 export class NotificationService extends BaseService {
-  /**
-   * Get current user's notifications with pagination
-   * GET /api/notifications
-   */
   async getNotifications(
     params?: NotificationQueryParams
   ): Promise<PaginatedResponse<Notification>> {
-    return this.getPaginated<Notification>(API_ENDPOINTS.NOTIFICATIONS.BASE, params)
+    return this.getPaginated<Notification>('/notifications', params as Record<string, any>)
   }
 
-  /**
-   * Get notification by ID
-   * GET /api/notifications/:uuid
-   */
   async getNotification(id: string): Promise<Notification> {
-    const response = await this.get<Notification>(API_ENDPOINTS.NOTIFICATIONS.BY_ID(id))
+    const response = await this.get<Notification>(`/notifications/${id}`)
     return this.extractData(response)
   }
 
-  /**
-   * Get unread notifications
-   * GET /api/notifications/unread
-   */
   async getUnreadNotifications(): Promise<PaginatedResponse<Notification>> {
-    return this.getPaginated<Notification>(API_ENDPOINTS.NOTIFICATIONS.UNREAD)
+    return this.getPaginated<Notification>('/notifications/unread')
   }
 
-  /**
-   * Get notification counts
-   * GET /api/notifications/counts
-   */
   async getNotificationCounts(): Promise<NotificationCounts> {
-    const response = await this.get<NotificationCounts>(API_ENDPOINTS.NOTIFICATIONS.COUNTS)
+    const response = await this.get<NotificationCounts>('/notifications/counts')
     return this.extractData(response)
   }
 
-  /**
-   * Get notifications by status
-   * GET /api/notifications/status/:status
-   */
-  async getNotificationsByStatus(status: string): Promise<PaginatedResponse<Notification>> {
-    const url = `/notifications/status/${status}`
-    return this.getPaginated<Notification>(url)
+  async getNotificationsByStatus(
+    status: NotificationStatus
+  ): Promise<PaginatedResponse<Notification>> {
+    return this.getPaginated<Notification>(`/notifications/status/${status}`)
   }
 
-  /**
-   * Get notifications by type
-   * GET /api/notifications/type/:type
-   */
-  async getNotificationsByType(type: string): Promise<PaginatedResponse<Notification>> {
-    const url = `/notifications/type/${type}`
-    return this.getPaginated<Notification>(url)
+  async getNotificationsByType(type: NotificationType): Promise<PaginatedResponse<Notification>> {
+    return this.getPaginated<Notification>(`/notifications/type/${type}`)
   }
 
-  /**
-   * Mark notification as read
-   * PATCH /api/notifications/:uuid/read
-   */
   async markAsRead(id: string): Promise<void> {
-    await this.patch(API_ENDPOINTS.NOTIFICATIONS.MARK_READ(id))
+    await this.patch(`/notifications/${id}/read`)
   }
 
-  /**
-   * Mark notification as unread
-   * PATCH /api/notifications/:uuid/unread
-   */
   async markAsUnread(id: string): Promise<void> {
-    const url = `/notifications/${id}/unread`
-    await this.patch(url)
+    await this.patch(`/notifications/${id}/unread`)
   }
 
-  /**
-   * Mark all notifications as read
-   * PATCH /api/notifications/mark-all-read
-   */
   async markAllAsRead(): Promise<void> {
-    await this.patch(API_ENDPOINTS.NOTIFICATIONS.MARK_ALL_READ)
+    await this.patch('/notifications/mark-all-read')
   }
 
-  /**
-   * Archive a notification
-   * PATCH /api/notifications/:uuid/archive
-   */
   async archive(id: string): Promise<void> {
-    await this.patch(API_ENDPOINTS.NOTIFICATIONS.ARCHIVE(id))
+    await this.patch(`/notifications/${id}/archive`)
   }
 
-  /**
-   * Dismiss a notification
-   * PATCH /api/notifications/:uuid/dismiss
-   */
   async dismiss(id: string): Promise<void> {
-    await this.patch(API_ENDPOINTS.NOTIFICATIONS.DISMISS(id))
+    await this.patch(`/notifications/${id}/dismiss`)
   }
 
-  /**
-   * Delete notification (soft delete)
-   * DELETE /api/notifications/:uuid
-   */
   async deleteNotification(id: string): Promise<void> {
-    await this.delete(`${API_ENDPOINTS.NOTIFICATIONS.BASE}/${id}`)
+    await this.delete(`/notifications/${id}`)
   }
 
-  /**
-   * Permanently delete notification
-   * DELETE /api/notifications/:uuid/permanent
-   */
   async permanentDelete(id: string): Promise<void> {
-    const url = `/notifications/${id}/permanent`
-    await this.delete(url)
+    await this.delete(`/notifications/${id}/permanent`)
   }
 
-  /**
-   * Get notification preferences
-   * GET /api/notifications/preferences
-   */
   async getPreferences(): Promise<NotificationPreference[]> {
-    const response = await this.get<NotificationPreference[]>(
-      API_ENDPOINTS.NOTIFICATIONS.PREFERENCES
-    )
+    const response = await this.get<NotificationPreference[]>('/notifications/preferences')
     return this.extractData(response)
   }
 
-  /**
-   * Update notification preferences
-   * PUT /api/notifications/preferences
-   */
   async updatePreferences(data: UpdatePreferencesRequest): Promise<NotificationPreference> {
-    const response = await this.put<NotificationPreference>(
-      API_ENDPOINTS.NOTIFICATIONS.PREFERENCES,
-      data
-    )
+    const response = await this.put<NotificationPreference>('/notifications/preferences', data)
     return this.extractData(response)
   }
 
-  /**
-   * Create a notification (admin)
-   * POST /api/notifications
-   */
-  async createNotification(data: Partial<Notification>): Promise<Notification> {
-    const response = await this.post<Notification>(API_ENDPOINTS.NOTIFICATIONS.BASE, data)
+  async createNotification(data: CreateNotificationRequest): Promise<Notification> {
+    const response = await this.post<Notification>('/notifications', data)
     return this.extractData(response)
   }
 
-  /**
-   * Bulk create notifications (admin)
-   * POST /api/notifications/bulk
-   */
-  async bulkCreateNotifications(
-    notifications: Partial<Notification>[]
-  ): Promise<{ created: number }> {
-    const response = await this.post<{ created: number }>(
-      `${API_ENDPOINTS.NOTIFICATIONS.BASE}/bulk`,
-      {
-        notifications,
-      }
-    )
+  async bulkCreateNotifications(data: NotificationBatchRequest): Promise<NotificationBatchResult> {
+    const response = await this.post<NotificationBatchResult>('/notifications/bulk', data)
     return this.extractData(response)
   }
 
-  /**
-   * Bulk delete notifications (admin)
-   * POST /api/notifications/bulk/delete
-   */
   async bulkDeleteNotifications(notificationIds: string[]): Promise<{ deleted: number }> {
-    const response = await this.post<{ deleted: number }>(
-      `${API_ENDPOINTS.NOTIFICATIONS.BASE}/bulk/delete`,
-      {
-        notification_ids: notificationIds,
-      }
+    const response = await this.post<{ deleted: number }>('/notifications/bulk-delete', {
+      notification_ids: notificationIds,
+    })
+    return this.extractData(response)
+  }
+
+  async getUserSettings(userId: string): Promise<UserNotificationSettings> {
+    const response = await this.get<UserNotificationSettings>(`/notifications/settings/${userId}`)
+    return this.extractData(response)
+  }
+
+  async updateUserSettings(
+    userId: string,
+    settings: Partial<UserNotificationSettings>
+  ): Promise<UserNotificationSettings> {
+    const response = await this.put<UserNotificationSettings>(
+      `/notifications/settings/${userId}`,
+      settings
     )
     return this.extractData(response)
+  }
+
+  async trackClick(notificationId: string, actionUrl: string): Promise<void> {
+    await this.post(`/notifications/${notificationId}/track-click`, { action_url: actionUrl })
+  }
+
+  async getNotificationSummary(startDate?: string, endDate?: string): Promise<NotificationSummary> {
+    const params = { start_date: startDate, end_date: endDate }
+    const response = await this.get<NotificationSummary>('/notifications/summary', params)
+    return this.extractData(response)
+  }
+
+  async getNotificationTemplates(): Promise<NotificationTemplate[]> {
+    const response = await this.get<NotificationTemplate[]>('/notifications/templates')
+    return this.extractData(response)
+  }
+
+  async createNotificationTemplate(
+    data: Partial<NotificationTemplate>
+  ): Promise<NotificationTemplate> {
+    const response = await this.post<NotificationTemplate>('/notifications/templates', data)
+    return this.extractData(response)
+  }
+
+  async updateNotificationTemplate(
+    id: string,
+    data: Partial<NotificationTemplate>
+  ): Promise<NotificationTemplate> {
+    const response = await this.put<NotificationTemplate>(`/notifications/templates/${id}`, data)
+    return this.extractData(response)
+  }
+
+  async deleteNotificationTemplate(id: string): Promise<void> {
+    await this.delete(`/notifications/templates/${id}`)
   }
 }
 
-// Export singleton
 export const notificationService = new NotificationService()

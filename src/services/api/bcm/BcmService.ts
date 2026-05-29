@@ -1,40 +1,60 @@
 import { BaseService } from '../../BaseService'
-import { API_ENDPOINTS } from '../../../utils/constants'
 import {
-  CriticalFunction,
-  BusinessImpactAssessment,
-  BusinessContinuityPlan,
-  RecoveryStrategy,
-  ExerciseTest,
-  ComplianceRecord,
-} from './../../../models/entities'
-import type { PaginatedResponse, QueryParams } from './../../../types'
+  // Enums
+  BCMPlanStatus,
+  RecoveryPriority,
+  BCMLifecyclePhase,
+  // Types
+  type CriticalFunction,
+  type BusinessImpactAssessment,
+  type BusinessContinuityPlan,
+  type RecoveryStrategy,
+  type ExerciseTest,
+  type BCMLifecycleStatus,
+  type LifecycleTask,
+  type BCMMetrics,
+  type BCMDashboardData,
+  type CreateBCPRequest,
+  type CreateBIARequest,
+  type CreateRecoveryStrategyRequest,
+  type RecordTestResultRequest,
+  type ValidateBCPRequest,
+  type BCPValidationResult,
+  type BIAAnalysisRequest,
+  type BIAAnalysisResult,
+  type BIASummary,
+  type BCPProgress,
+  type TestStatistics,
+  type StrategyComparison,
+  type MaturityAssessment,
+  type LifecycleProgress,
+  type CriticalFunctionQueryParams,
+  type BIAQueryParams,
+  type BCPQueryParams,
+  type RecoveryStrategyQueryParams,
+  type ExerciseTestQueryParams,
+  // Shared Types
+  type PaginatedResponse,
+} from './../../../modules'
 
-/**
- * BCM API Service
- * Handles all Business Continuity Management operations
- */
 export class BcmService extends BaseService {
-  // ============================================
   // Critical Functions
-  // ============================================
-
-  async getCriticalFunctions(params?: QueryParams): Promise<PaginatedResponse<CriticalFunction>> {
-    return this.getPaginated<CriticalFunction>(API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BASE, params)
+  async getCriticalFunctions(
+    params?: CriticalFunctionQueryParams
+  ): Promise<PaginatedResponse<CriticalFunction>> {
+    return this.getPaginated<CriticalFunction>(
+      '/bcm/critical-functions',
+      params as Record<string, any>
+    )
   }
 
   async getCriticalFunction(id: string): Promise<CriticalFunction> {
-    const response = await this.get<CriticalFunction>(
-      API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BY_ID(id)
-    )
+    const response = await this.get<CriticalFunction>(`/bcm/critical-functions/${id}`)
     return this.extractData(response)
   }
 
   async createCriticalFunction(data: Partial<CriticalFunction>): Promise<CriticalFunction> {
-    const response = await this.post<CriticalFunction>(
-      API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BASE,
-      data
-    )
+    const response = await this.post<CriticalFunction>('/bcm/critical-functions', data)
     return this.extractData(response)
   }
 
@@ -42,383 +62,306 @@ export class BcmService extends BaseService {
     id: string,
     data: Partial<CriticalFunction>
   ): Promise<CriticalFunction> {
-    const response = await this.put<CriticalFunction>(
-      API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BY_ID(id),
-      data
-    )
+    const response = await this.put<CriticalFunction>(`/bcm/critical-functions/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteCriticalFunction(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BY_ID(id))
+    await this.delete(`/bcm/critical-functions/${id}`)
   }
 
   async getCriticalFunctionsByDepartment(
     departmentId: string
   ): Promise<PaginatedResponse<CriticalFunction>> {
-    return this.getPaginated<CriticalFunction>(
-      API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BY_DEPARTMENT(departmentId)
-    )
+    return this.getCriticalFunctions({ department_id: departmentId })
   }
 
-  async getCriticalFunctionsByOrganisation(
-    organisationId: string
+  async getCriticalFunctionsByPriority(
+    priority: RecoveryPriority
   ): Promise<PaginatedResponse<CriticalFunction>> {
-    return this.getPaginated<CriticalFunction>(
-      API_ENDPOINTS.BCM.CRITICAL_FUNCTIONS.BY_ORGANISATION(organisationId)
-    )
+    return this.getPaginated<CriticalFunction>(`/bcm/critical-functions/priority/${priority}`)
   }
 
-  // ============================================
-  // Business Impact Assessments
-  // ============================================
+  async getFunctionsRequiringBCP(): Promise<CriticalFunction[]> {
+    const response = await this.get<CriticalFunction[]>('/bcm/critical-functions/requires-bcp')
+    return this.extractData(response)
+  }
 
-  async getBIAs(params?: QueryParams): Promise<PaginatedResponse<BusinessImpactAssessment>> {
-    return this.getPaginated<BusinessImpactAssessment>(API_ENDPOINTS.BCM.BIA.BASE, params)
+  // Business Impact Assessments
+  async getBIAs(params?: BIAQueryParams): Promise<PaginatedResponse<BusinessImpactAssessment>> {
+    return this.getPaginated<BusinessImpactAssessment>(
+      '/bcm/impact-assessments',
+      params as Record<string, any>
+    )
   }
 
   async getBIA(id: string): Promise<BusinessImpactAssessment> {
-    const response = await this.get<BusinessImpactAssessment>(API_ENDPOINTS.BCM.BIA.BY_ID(id))
+    const response = await this.get<BusinessImpactAssessment>(`/bcm/impact-assessments/${id}`)
     return this.extractData(response)
   }
 
-  async createBIA(data: Partial<BusinessImpactAssessment>): Promise<BusinessImpactAssessment> {
-    const response = await this.post<BusinessImpactAssessment>(API_ENDPOINTS.BCM.BIA.BASE, data)
+  async createBIA(data: CreateBIARequest): Promise<BusinessImpactAssessment> {
+    const response = await this.post<BusinessImpactAssessment>('/bcm/impact-assessments', data)
     return this.extractData(response)
   }
 
-  async updateBIA(
-    id: string,
-    data: Partial<BusinessImpactAssessment>
-  ): Promise<BusinessImpactAssessment> {
-    const response = await this.put<BusinessImpactAssessment>(API_ENDPOINTS.BCM.BIA.BY_ID(id), data)
+  async updateBIA(id: string, data: Partial<CreateBIARequest>): Promise<BusinessImpactAssessment> {
+    const response = await this.put<BusinessImpactAssessment>(`/bcm/impact-assessments/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteBIA(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.BCM.BIA.BY_ID(id))
+    await this.delete(`/bcm/impact-assessments/${id}`)
   }
 
   async getBIAByFunction(functionId: string): Promise<BusinessImpactAssessment> {
     const response = await this.get<BusinessImpactAssessment>(
-      API_ENDPOINTS.BCM.BIA.BY_FUNCTION(functionId)
+      `/bcm/impact-assessments/function/${functionId}`
     )
     return this.extractData(response)
   }
 
-  async getBIAByOrganisation(
-    organisationId: string
-  ): Promise<PaginatedResponse<BusinessImpactAssessment>> {
-    return this.getPaginated<BusinessImpactAssessment>(
-      API_ENDPOINTS.BCM.BIA.BY_ORGANISATION(organisationId)
-    )
-  }
-
-  // Fixed: Use proper endpoint for BIA stats
-  async getBIAStats(): Promise<any> {
-    const response = await this.get(`${API_ENDPOINTS.BCM.BIA.BASE}/stats`)
+  async getBIASummary(organisationId?: string): Promise<BIASummary> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<BIASummary>('/bcm/impact-assessments/summary', params)
     return this.extractData(response)
   }
 
-  // ============================================
+  async analyzeBIA(data: BIAAnalysisRequest): Promise<BIAAnalysisResult> {
+    const response = await this.post<BIAAnalysisResult>('/bcm/impact-assessments/analyze', data)
+    return this.extractData(response)
+  }
+
   // Business Continuity Plans
-  // ============================================
-
-  async getBCPs(params?: QueryParams): Promise<PaginatedResponse<BusinessContinuityPlan>> {
-    return this.getPaginated<BusinessContinuityPlan>(API_ENDPOINTS.BCM.BCP.BASE, params)
+  async getBCPs(params?: BCPQueryParams): Promise<PaginatedResponse<BusinessContinuityPlan>> {
+    return this.getPaginated<BusinessContinuityPlan>('/bcm/plans', params as Record<string, any>)
   }
 
   async getBCP(id: string): Promise<BusinessContinuityPlan> {
-    const response = await this.get<BusinessContinuityPlan>(API_ENDPOINTS.BCM.BCP.BY_ID(id))
+    const response = await this.get<BusinessContinuityPlan>(`/bcm/plans/${id}`)
     return this.extractData(response)
   }
 
-  async createBCP(data: Partial<BusinessContinuityPlan>): Promise<BusinessContinuityPlan> {
-    const response = await this.post<BusinessContinuityPlan>(API_ENDPOINTS.BCM.BCP.BASE, data)
+  async createBCP(data: CreateBCPRequest): Promise<BusinessContinuityPlan> {
+    const response = await this.post<BusinessContinuityPlan>('/bcm/plans', data)
     return this.extractData(response)
   }
 
-  async updateBCP(
-    id: string,
-    data: Partial<BusinessContinuityPlan>
-  ): Promise<BusinessContinuityPlan> {
-    const response = await this.put<BusinessContinuityPlan>(API_ENDPOINTS.BCM.BCP.BY_ID(id), data)
+  async updateBCP(id: string, data: Partial<CreateBCPRequest>): Promise<BusinessContinuityPlan> {
+    const response = await this.put<BusinessContinuityPlan>(`/bcm/plans/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteBCP(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.BCM.BCP.BY_ID(id))
+    await this.delete(`/bcm/plans/${id}`)
   }
 
   async getBCPByFunction(functionId: string): Promise<BusinessContinuityPlan> {
-    const response = await this.get<BusinessContinuityPlan>(
-      API_ENDPOINTS.BCM.BCP.BY_FUNCTION(functionId)
-    )
+    const response = await this.get<BusinessContinuityPlan>(`/bcm/plans/function/${functionId}`)
     return this.extractData(response)
   }
 
-  async getBCPByOrganisation(
-    organisationId: string
-  ): Promise<PaginatedResponse<BusinessContinuityPlan>> {
-    return this.getPaginated<BusinessContinuityPlan>(
-      API_ENDPOINTS.BCM.BCP.BY_ORGANISATION(organisationId)
-    )
-  }
-
-  // Fixed: Use proper endpoint for active BCPs
-  async getActiveBCPs(): Promise<PaginatedResponse<BusinessContinuityPlan>> {
-    return this.getPaginated<BusinessContinuityPlan>(`${API_ENDPOINTS.BCM.BCP.BASE}?status=ACTIVE`)
-  }
-
-  async approveBCP(id: string): Promise<BusinessContinuityPlan> {
-    const response = await this.patch<BusinessContinuityPlan>(API_ENDPOINTS.BCM.BCP.APPROVE(id))
+  async approveBCP(id: string, approverId?: string): Promise<BusinessContinuityPlan> {
+    const response = await this.post<BusinessContinuityPlan>(`/bcm/plans/${id}/approve`, {
+      approved_by: approverId,
+    })
     return this.extractData(response)
   }
 
-  // Fixed: Use proper endpoint for archive
   async archiveBCP(id: string): Promise<BusinessContinuityPlan> {
-    const response = await this.patch<BusinessContinuityPlan>(
-      `${API_ENDPOINTS.BCM.BCP.BY_ID(id)}/archive`
-    )
+    const response = await this.post<BusinessContinuityPlan>(`/bcm/plans/${id}/archive`)
     return this.extractData(response)
   }
 
   async activateBCP(id: string): Promise<BusinessContinuityPlan> {
-    const response = await this.patch<BusinessContinuityPlan>(
-      `${API_ENDPOINTS.BCM.BCP.BY_ID(id)}/activate`
-    )
+    const response = await this.post<BusinessContinuityPlan>(`/bcm/plans/${id}/activate`)
     return this.extractData(response)
   }
 
-  async reviewBCP(id: string, data?: { comments?: string }): Promise<BusinessContinuityPlan> {
-    const response = await this.post<BusinessContinuityPlan>(
-      API_ENDPOINTS.BCM.BCP.REVIEW(id),
-      data || {}
-    )
+  async validateBCP(data: ValidateBCPRequest): Promise<BCPValidationResult> {
+    const response = await this.post<BCPValidationResult>('/bcm/plans/validate', data)
     return this.extractData(response)
   }
 
-  async exportBCP(id: string, format: 'pdf' | 'docx' = 'pdf'): Promise<void> {
-    await this.download(
-      API_ENDPOINTS.BCM.BCP.EXPORT(id),
-      `bcp_${id}_${new Date().toISOString().split('T')[0]}.${format}`,
-      { params: { format } }
-    )
+  async getBCPProgress(organisationId?: string): Promise<BCPProgress[]> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<BCPProgress[]>('/bcm/plans/progress', params)
+    return this.extractData(response)
   }
 
-  // ============================================
+  async getActiveBCPs(): Promise<PaginatedResponse<BusinessContinuityPlan>> {
+    return this.getBCPs({ plan_status: BCMPlanStatus.ACTIVE })
+  }
+
+  async getPlansDueForReview(): Promise<PaginatedResponse<BusinessContinuityPlan>> {
+    return this.getPaginated<BusinessContinuityPlan>('/bcm/plans/due-for-review')
+  }
+
   // Recovery Strategies
-  // ============================================
-
-  async getRecoveryStrategies(params?: QueryParams): Promise<PaginatedResponse<RecoveryStrategy>> {
-    return this.getPaginated<RecoveryStrategy>(API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BASE, params)
+  async getRecoveryStrategies(
+    params?: RecoveryStrategyQueryParams
+  ): Promise<PaginatedResponse<RecoveryStrategy>> {
+    return this.getPaginated<RecoveryStrategy>(
+      '/bcm/recovery-strategies',
+      params as Record<string, any>
+    )
   }
 
   async getRecoveryStrategy(id: string): Promise<RecoveryStrategy> {
-    const response = await this.get<RecoveryStrategy>(
-      API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BY_ID(id)
-    )
+    const response = await this.get<RecoveryStrategy>(`/bcm/recovery-strategies/${id}`)
     return this.extractData(response)
   }
 
-  async createRecoveryStrategy(data: Partial<RecoveryStrategy>): Promise<RecoveryStrategy> {
-    const response = await this.post<RecoveryStrategy>(
-      API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BASE,
-      data
-    )
+  async createRecoveryStrategy(data: CreateRecoveryStrategyRequest): Promise<RecoveryStrategy> {
+    const response = await this.post<RecoveryStrategy>('/bcm/recovery-strategies', data)
     return this.extractData(response)
   }
 
   async updateRecoveryStrategy(
     id: string,
-    data: Partial<RecoveryStrategy>
+    data: Partial<CreateRecoveryStrategyRequest>
   ): Promise<RecoveryStrategy> {
-    const response = await this.put<RecoveryStrategy>(
-      API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BY_ID(id),
-      data
-    )
+    const response = await this.put<RecoveryStrategy>(`/bcm/recovery-strategies/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteRecoveryStrategy(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BY_ID(id))
+    await this.delete(`/bcm/recovery-strategies/${id}`)
   }
 
   async getRecoveryStrategiesByBCP(bcpId: string): Promise<PaginatedResponse<RecoveryStrategy>> {
-    return this.getPaginated<RecoveryStrategy>(API_ENDPOINTS.BCM.RECOVERY_STRATEGIES.BY_BCP(bcpId))
+    return this.getRecoveryStrategies({ bcp_id: bcpId })
   }
 
-  // ============================================
-  // Exercise Tests
-  // ============================================
+  async compareRecoveryStrategies(bcpId: string): Promise<StrategyComparison[]> {
+    const response = await this.get<StrategyComparison[]>(
+      `/bcm/recovery-strategies/${bcpId}/compare`
+    )
+    return this.extractData(response)
+  }
 
-  async getExerciseTests(params?: QueryParams): Promise<PaginatedResponse<ExerciseTest>> {
-    return this.getPaginated<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.BASE, params)
+  // Exercise Tests
+  async getExerciseTests(
+    params?: ExerciseTestQueryParams
+  ): Promise<PaginatedResponse<ExerciseTest>> {
+    return this.getPaginated<ExerciseTest>('/bcm/exercise-tests', params as Record<string, any>)
   }
 
   async getExerciseTest(id: string): Promise<ExerciseTest> {
-    const response = await this.get<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.BY_ID(id))
+    const response = await this.get<ExerciseTest>(`/bcm/exercise-tests/${id}`)
     return this.extractData(response)
   }
 
   async createExerciseTest(data: Partial<ExerciseTest>): Promise<ExerciseTest> {
-    const response = await this.post<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.BASE, data)
+    const response = await this.post<ExerciseTest>('/bcm/exercise-tests', data)
     return this.extractData(response)
   }
 
   async updateExerciseTest(id: string, data: Partial<ExerciseTest>): Promise<ExerciseTest> {
-    const response = await this.put<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.BY_ID(id), data)
+    const response = await this.put<ExerciseTest>(`/bcm/exercise-tests/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteExerciseTest(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.BCM.EXERCISE_TESTS.BY_ID(id))
+    await this.delete(`/bcm/exercise-tests/${id}`)
   }
 
-  // Fixed: Use proper endpoint for recording test results
-  async recordTestResult(
-    id: string,
-    data: {
-      passed: boolean
-      lessons_learned: string
-      corrective_actions: string
-    }
-  ): Promise<ExerciseTest> {
-    const response = await this.patch<ExerciseTest>(
-      API_ENDPOINTS.BCM.EXERCISE_TESTS.COMPLETE(id),
-      data
-    )
+  async recordTestResult(id: string, data: RecordTestResultRequest): Promise<ExerciseTest> {
+    const response = await this.post<ExerciseTest>(`/bcm/exercise-tests/${id}/record-result`, data)
     return this.extractData(response)
   }
 
-  // Fixed: Use proper endpoints for test queries
+  async getExerciseTestsByBCP(bcpId: string): Promise<PaginatedResponse<ExerciseTest>> {
+    return this.getExerciseTests({ bcp_id: bcpId })
+  }
+
+  async getTestStatistics(organisationId?: string): Promise<TestStatistics> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<TestStatistics>('/bcm/exercise-tests/statistics', params)
+    return this.extractData(response)
+  }
+
   async getUpcomingTests(): Promise<PaginatedResponse<ExerciseTest>> {
-    return this.getPaginated<ExerciseTest>(
-      `${API_ENDPOINTS.BCM.EXERCISE_TESTS.BASE}?status=UPCOMING`
-    )
+    return this.getExerciseTests({ upcoming_only: true })
   }
 
   async getOverdueTests(): Promise<PaginatedResponse<ExerciseTest>> {
-    return this.getPaginated<ExerciseTest>(
-      `${API_ENDPOINTS.BCM.EXERCISE_TESTS.BASE}?status=OVERDUE`
-    )
+    return this.getExerciseTests({ overdue_only: true })
   }
 
-  async getCompletedTests(): Promise<PaginatedResponse<ExerciseTest>> {
-    return this.getPaginated<ExerciseTest>(
-      `${API_ENDPOINTS.BCM.EXERCISE_TESTS.BASE}?status=COMPLETED`
-    )
+  // BCM Lifecycle
+  async getLifecycleStatus(organisationId: string): Promise<BCMLifecycleStatus> {
+    const response = await this.get<BCMLifecycleStatus>(`/bcm/lifecycle/${organisationId}`)
+    return this.extractData(response)
   }
 
-  async getExerciseTestsByBCP(bcpId: string): Promise<PaginatedResponse<ExerciseTest>> {
-    return this.getPaginated<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.BY_BCP(bcpId))
-  }
-
-  async scheduleTest(id: string, scheduledDate: string): Promise<ExerciseTest> {
-    const response = await this.patch<ExerciseTest>(API_ENDPOINTS.BCM.EXERCISE_TESTS.SCHEDULE(id), {
-      date: scheduledDate,
+  async updateLifecyclePhase(
+    organisationId: string,
+    phase: BCMLifecyclePhase,
+    progress: number
+  ): Promise<BCMLifecycleStatus> {
+    const response = await this.patch<BCMLifecycleStatus>(`/bcm/lifecycle/${organisationId}`, {
+      phase,
+      progress_percentage: progress,
     })
     return this.extractData(response)
   }
 
-  // ============================================
-  // Compliance Records
-  // ============================================
-
-  async getComplianceRecords(params?: QueryParams): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BASE, params)
-  }
-
-  async getComplianceRecord(id: string): Promise<ComplianceRecord> {
-    const response = await this.get<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
-    return this.extractData(response)
-  }
-
-  async createComplianceRecord(data: Partial<ComplianceRecord>): Promise<ComplianceRecord> {
-    const response = await this.post<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BASE, data)
-    return this.extractData(response)
-  }
-
-  async updateComplianceRecord(
-    id: string,
-    data: Partial<ComplianceRecord>
-  ): Promise<ComplianceRecord> {
-    const response = await this.put<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id), data)
-    return this.extractData(response)
-  }
-
-  async deleteComplianceRecord(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
-  }
-
-  async getComplianceByOrganisation(
-    organisationId: string
-  ): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>(
-      API_ENDPOINTS.COMPLIANCE.BY_ORGANISATION(organisationId)
-    )
-  }
-
-  // Fixed: Use proper endpoint for overdue audits
-  async getOverdueAudits(): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>(`${API_ENDPOINTS.COMPLIANCE.BASE}?status=OVERDUE`)
-  }
-
-  // Fixed: Use proper endpoint for upcoming audits
-  async getUpcomingAudits(days?: number): Promise<PaginatedResponse<ComplianceRecord>> {
-    const params: Record<string, unknown> = {}
-    if (days !== undefined && days !== null) {
-      params.days = days
-    }
-    return this.getPaginated<ComplianceRecord>(
-      `${API_ENDPOINTS.COMPLIANCE.BASE}?status=UPCOMING`,
-      params
-    )
-  }
-
-  async getComplianceByStandard(standard: string): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_STANDARD(standard))
-  }
-
-  async updateComplianceStatus(id: string, status: string): Promise<ComplianceRecord> {
-    const response = await this.patch<ComplianceRecord>(
-      API_ENDPOINTS.COMPLIANCE.UPDATE_STATUS(id),
-      {
-        compliance_status: status,
-      }
+  async getLifecycleProgress(organisationId: string): Promise<LifecycleProgress[]> {
+    const response = await this.get<LifecycleProgress[]>(
+      `/bcm/lifecycle/${organisationId}/progress`
     )
     return this.extractData(response)
   }
 
-  async getComplianceStats(organisationId: string): Promise<any> {
-    const response = await this.get(API_ENDPOINTS.COMPLIANCE.STATS(organisationId))
+  async updateLifecycleTask(
+    organisationId: string,
+    taskId: string,
+    status: LifecycleTask['status']
+  ): Promise<BCMLifecycleStatus> {
+    const response = await this.patch<BCMLifecycleStatus>(
+      `/bcm/lifecycle/${organisationId}/tasks/${taskId}`,
+      { status }
+    )
     return this.extractData(response)
   }
 
-  async getComplianceGaps(organisationId: string): Promise<any[]> {
-    const response = await this.get(API_ENDPOINTS.COMPLIANCE.GAPS(organisationId))
+  // Dashboard & Metrics
+  async getBCMMetrics(organisationId?: string): Promise<BCMMetrics> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<BCMMetrics>('/bcm/metrics', params)
     return this.extractData(response)
   }
 
-  // ============================================
-  // Departments
-  // ============================================
-
-  async getDepartments(params?: QueryParams): Promise<PaginatedResponse<any>> {
-    return this.getPaginated(API_ENDPOINTS.ORGANISATIONS.DEPARTMENTS.BASE, params)
-  }
-
-  async getDepartment(id: string): Promise<any> {
-    const response = await this.get(API_ENDPOINTS.ORGANISATIONS.DEPARTMENTS.BY_ID(id))
+  async getBCMDashboardData(organisationId?: string): Promise<BCMDashboardData> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<BCMDashboardData>('/bcm/dashboard', params)
     return this.extractData(response)
   }
 
-  async getDepartmentsByBusinessUnit(businessUnitId: string): Promise<PaginatedResponse<any>> {
-    return this.getPaginated(
-      `${API_ENDPOINTS.ORGANISATIONS.DEPARTMENTS.BASE}?business_id=${businessUnitId}`
+  // Maturity Assessment
+  async getMaturityAssessment(organisationId?: string): Promise<MaturityAssessment[]> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<MaturityAssessment[]>('/bcm/maturity-assessment', params)
+    return this.extractData(response)
+  }
+
+  // Export Operations
+  async exportBCP(id: string, format: 'pdf' | 'docx' = 'pdf'): Promise<void> {
+    await this.download(
+      `/bcm/plans/${id}/export`,
+      `bcp_${id}_${new Date().toISOString().split('T')[0]}.${format}`,
+      { params: { format } }
+    )
+  }
+
+  async exportBIAData(organisationId: string, format: 'csv' | 'json' = 'csv'): Promise<void> {
+    await this.download(
+      `/bcm/impact-assessments/export/${organisationId}`,
+      `bia_export_${new Date().toISOString().split('T')[0]}.${format}`,
+      { params: { format } }
     )
   }
 }
 
-// Export singleton
 export const bcmService = new BcmService()

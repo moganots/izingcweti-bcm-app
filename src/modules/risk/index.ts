@@ -67,6 +67,7 @@ export function getRiskColor(score: number): string {
 // Risk Module - Types
 // ============================================
 
+import { QueryParams } from 'src/shared/types/common.types'
 import { BaseEntity } from '../../core/base/base.entity'
 
 export interface MitigatingControl {
@@ -258,7 +259,8 @@ export interface AssessRiskRequest {
   mitigating_controls?: MitigatingControl[]
 }
 
-export interface RiskQueryParams {
+export interface RiskQueryParams extends QueryParams {
+  status?: RiskStatus
   risk_category?: string
   impact_severity?: string
   organisation_id?: string
@@ -273,6 +275,4 @@ export interface RiskQueryParams {
   high_only?: boolean
   critical_only?: boolean
   threshold?: number
-  page?: number
-  limit?: number
 }

@@ -1,12 +1,23 @@
-import { BaseService } from '../../BaseService'
-import { API_ENDPOINTS } from './../../../utils/constants'
-import type { Document, DocumentVersion } from './../../../models/entities'
-import type {
-  CreateDocumentRequest,
-  UpdateDocumentRequest,
-  DocumentQueryParams,
-  PaginatedResponse,
-} from './../../../types'
+import { BaseService } from './../../BaseService'
+import {
+  DocumentType,
+  DocumentStatus,
+  AccessLevel,
+  type Document,
+  type DocumentVersion,
+  type DocumentTemplate,
+  type DocumentStats,
+  type UploadDocumentRequest,
+  type UpdateDocumentRequest,
+  type ApproveDocumentRequest,
+  type RejectDocumentRequest,
+  type GenerateDocumentFromTemplateRequest,
+  type DocumentSearchParams,
+  type DocumentBulkOperationRequest,
+  type DocumentBulkOperationResult,
+  type DocumentQueryParams,
+  type PaginatedResponse,
+} from './../../../modules'
 
 export interface DocumentUploadProgress {
   loaded: number
@@ -20,50 +31,40 @@ export interface DocumentVerificationResult {
   message?: string
 }
 
-/**
- * Document API Service
- */
 export class DocumentService extends BaseService {
-  // ============================================
-  // Document CRUD
-  // ============================================
-
   async getDocuments(params?: DocumentQueryParams): Promise<PaginatedResponse<Document>> {
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, params as Record<string, any>)
+    return this.getPaginated<Document>('/documents', params as Record<string, any>)
   }
 
   async getDocument(id: string): Promise<Document> {
-    const response = await this.get<Document>(API_ENDPOINTS.DOCUMENTS.BY_ID(id))
+    const response = await this.get<Document>(`/documents/${id}`)
     return this.extractData(response)
   }
 
-  async createDocument(data: CreateDocumentRequest): Promise<Document> {
+  async createDocument(data: UploadDocumentRequest & { file: File }): Promise<Document> {
     const formData = new FormData()
     formData.append('title', data.title)
     if (data.description) formData.append('description', data.description)
     formData.append('document_type', data.document_type)
-    formData.append('access_level', data.access_level)
+    formData.append('access_level', data.access_level || AccessLevel.INTERNAL)
     formData.append('file', data.file)
+    formData.append('organisation_id', data.organisation_id)
     if (data.tags) formData.append('tags', JSON.stringify(data.tags))
     if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata))
     if (data.expires_at) formData.append('expires_at', data.expires_at)
 
-    const response = await this.upload<Document>(API_ENDPOINTS.DOCUMENTS.BASE, formData)
+    const response = await this.upload<Document>('/documents', formData)
     return this.extractData(response)
   }
 
   async updateDocument(id: string, data: UpdateDocumentRequest): Promise<Document> {
-    const response = await this.put<Document>(API_ENDPOINTS.DOCUMENTS.BY_ID(id), data)
+    const response = await this.put<Document>(`/documents/${id}`, data)
     return this.extractData(response)
   }
 
   async deleteDocument(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.DOCUMENTS.BY_ID(id))
+    await this.delete(`/documents/${id}`)
   }
-
-  // ============================================
-  // Document Operations
-  // ============================================
 
   async uploadNewVersion(
     id: string,
@@ -74,7 +75,7 @@ export class DocumentService extends BaseService {
     formData.append('file', file)
 
     const response = await this.upload<Document>(
-      API_ENDPOINTS.DOCUMENTS.UPLOAD_VERSION(id),
+      `/documents/${id}/new-version`,
       formData,
       (percent) => {
         if (onProgress) {
@@ -86,48 +87,48 @@ export class DocumentService extends BaseService {
   }
 
   async downloadDocument(id: string, filename?: string): Promise<void> {
-    await this.download(API_ENDPOINTS.DOCUMENTS.DOWNLOAD(id), filename)
+    await this.download(`/documents/${id}/download`, filename)
   }
 
   async previewDocument(id: string): Promise<string> {
-    const response = await this.get<{ url: string }>(API_ENDPOINTS.DOCUMENTS.PREVIEW(id))
+    const response = await this.get<{ url: string }>(`/documents/${id}/preview`)
     return this.extractData(response).url
   }
 
   async getDocumentVersions(id: string): Promise<DocumentVersion[]> {
-    const response = await this.get<DocumentVersion[]>(API_ENDPOINTS.DOCUMENTS.VERSIONS(id))
+    const response = await this.get<DocumentVersion[]>(`/documents/${id}/versions`)
     return this.extractData(response)
   }
 
   async restoreVersion(id: string, versionNumber: number): Promise<Document> {
-    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.RESTORE_VERSION(id), {
+    const response = await this.post<Document>(`/documents/${id}/restore-version`, {
       version_number: versionNumber,
     })
     return this.extractData(response)
   }
 
-  async approveDocument(id: string, comments?: string): Promise<Document> {
-    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.APPROVE(id), { comments })
+  async approveDocument(id: string, request?: ApproveDocumentRequest): Promise<Document> {
+    const response = await this.post<Document>(`/documents/${id}/approve`, request || {})
     return this.extractData(response)
   }
 
-  async rejectDocument(id: string, reason: string): Promise<Document> {
-    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.REJECT(id), { reason })
+  async rejectDocument(id: string, request: RejectDocumentRequest): Promise<Document> {
+    const response = await this.post<Document>(`/documents/${id}/reject`, request)
     return this.extractData(response)
   }
 
   async archiveDocument(id: string): Promise<Document> {
-    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.ARCHIVE(id))
+    const response = await this.post<Document>(`/documents/${id}/archive`)
     return this.extractData(response)
   }
 
   async publishDocument(id: string): Promise<Document> {
-    const response = await this.post<Document>(API_ENDPOINTS.DOCUMENTS.PUBLISH(id))
+    const response = await this.post<Document>(`/documents/${id}/publish`)
     return this.extractData(response)
   }
 
   async verifyDocument(id: string): Promise<DocumentVerificationResult> {
-    const response = await this.get<DocumentVerificationResult>(API_ENDPOINTS.DOCUMENTS.VERIFY(id))
+    const response = await this.get<DocumentVerificationResult>(`/documents/${id}/verify`)
     return this.extractData(response)
   }
 
@@ -135,79 +136,88 @@ export class DocumentService extends BaseService {
     organisationId: string,
     params?: DocumentQueryParams
   ): Promise<PaginatedResponse<Document>> {
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, {
-      ...params,
-      organisation_id: organisationId,
-    } as Record<string, any>)
+    return this.getDocuments({ ...params, organisation_id: organisationId })
   }
 
   async getDocumentsByType(
-    documentType: string,
+    documentType: DocumentType,
     organisationId?: string
   ): Promise<PaginatedResponse<Document>> {
-    const params: Record<string, any> = { document_type: documentType }
+    const params: DocumentQueryParams = { document_type: documentType }
     if (organisationId) params.organisation_id = organisationId
-
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, params)
+    return this.getDocuments(params)
   }
 
   async getDocumentsByStatus(
-    status: string,
+    status: DocumentStatus,
     organisationId?: string
   ): Promise<PaginatedResponse<Document>> {
-    const params: Record<string, any> = { status }
+    const params: DocumentQueryParams = { status }
     if (organisationId) params.organisation_id = organisationId
-
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, params)
+    return this.getDocuments(params)
   }
 
   async searchDocuments(
     query: string,
     organisationId?: string
   ): Promise<PaginatedResponse<Document>> {
-    const params: Record<string, any> = { search: query }
-    if (organisationId) params.organisation_id = organisationId
-
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.SEARCH, params)
+    const params: DocumentSearchParams = { query }
+    if (organisationId) {
+      params.organisation_id = organisationId
+    }
+    return this.getPaginated<Document>('/documents/search', params as Record<string, any>)
   }
 
   async searchByTags(
     tags: string[],
     organisationId?: string
   ): Promise<PaginatedResponse<Document>> {
-    const params: Record<string, any> = { tags: tags.join(',') }
-    if (organisationId) params.organisation_id = organisationId
-
-    return this.getPaginated<Document>(API_ENDPOINTS.DOCUMENTS.BASE, params)
+    const params: DocumentQueryParams = { tags: tags!?.join(',') }
+    if (organisationId) {
+      params.organisation_id = organisationId
+    }
+    return this.getDocuments(params)
   }
 
-  async getDocumentStats(organisationId: string): Promise<{
-    total: number
-    by_type: Record<string, number>
-    by_status: Record<string, number>
-    total_size: number
-    recent_uploads: Document[]
-  }> {
-    const response = await this.get<{
-      total: number
-      by_type: Record<string, number>
-      by_status: Record<string, number>
-      total_size: number
-      recent_uploads: Document[]
-    }>(API_ENDPOINTS.DOCUMENTS.STATS(organisationId))
+  async getDocumentStats(organisationId: string): Promise<DocumentStats> {
+    const response = await this.get<DocumentStats>(`/documents/stats/${organisationId}`)
     return this.extractData(response)
   }
 
   async bulkDownload(docIds: string[]): Promise<void> {
     await this.download(
-      API_ENDPOINTS.DOCUMENTS.BULK_DOWNLOAD,
+      '/documents/bulk-download',
       `documents_bulk_${new Date().toISOString().split('T')[0]}.zip`,
       { params: { ids: docIds.join(',') } }
     )
   }
 
   async updateDocumentTags(id: string, tags: string[]): Promise<Document> {
-    const response = await this.patch<Document>(API_ENDPOINTS.DOCUMENTS.TAGS(id), { tags })
+    const response = await this.patch<Document>(`/documents/${id}/tags`, { tags })
+    return this.extractData(response)
+  }
+
+  async bulkOperation(request: DocumentBulkOperationRequest): Promise<DocumentBulkOperationResult> {
+    const response = await this.post<DocumentBulkOperationResult>(
+      '/documents/bulk-operation',
+      request
+    )
+    return this.extractData(response)
+  }
+
+  async getDocumentTemplates(documentType?: DocumentType): Promise<DocumentTemplate[]> {
+    const params = documentType ? { document_type: documentType } : undefined
+    const response = await this.get<DocumentTemplate[]>('/documents/templates', params)
+    return this.extractData(response)
+  }
+
+  async generateFromTemplate(
+    request: GenerateDocumentFromTemplateRequest
+  ): Promise<{ document: Document; downloadUrl: string }> {
+    const response = await this.post<{ document: Document; downloadUrl: string }>(
+      '/documents/generate-from-template',
+      request
+    )
     return this.extractData(response)
   }
 }

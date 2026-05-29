@@ -48,6 +48,7 @@ export enum AccessLevel {
   PRIVATE = 'PRIVATE',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Document Module - Types
 // ============================================
@@ -207,7 +208,7 @@ export interface DocumentBulkOperationResult {
   errors: Array<{ document_id: string; error: string }>
 }
 
-export interface DocumentQueryParams {
+export interface DocumentQueryParams extends QueryParams {
   document_type?: string
   status?: string
   organisation_id?: string
@@ -222,6 +223,4 @@ export interface DocumentQueryParams {
   pending_approval?: boolean
   expired?: boolean
   has_versions?: boolean
-  page?: number
-  limit?: number
 }

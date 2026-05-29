@@ -43,6 +43,7 @@ export enum NotificationChannel {
   PUSH = 'PUSH',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Notification Module - Types
 // ============================================
@@ -179,7 +180,7 @@ export interface NotificationBatchResult {
   errors: Array<{ recipient: string; error: string }>
 }
 
-export interface NotificationQueryParams {
+export interface NotificationQueryParams extends QueryParams {
   notification_type?: string
   priority?: string
   status?: string
@@ -189,6 +190,4 @@ export interface NotificationQueryParams {
   created_after?: string
   created_before?: string
   scheduled_only?: boolean
-  page?: number
-  limit?: number
 }

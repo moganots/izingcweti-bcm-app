@@ -28,6 +28,7 @@ export enum EscalationStatus {
   DECLINED = 'DECLINED',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Incident Module - Types
 // ============================================
@@ -180,7 +181,7 @@ export interface CloseIncidentRequest {
   closed_at?: string
 }
 
-export interface IncidentQueryParams {
+export interface IncidentQueryParams extends QueryParams {
   incident_severity?: string
   organisation_id?: string
   bcp_id?: string
@@ -191,6 +192,5 @@ export interface IncidentQueryParams {
   closed_after?: string
   closed_before?: string
   root_cause_search?: string
-  page?: number
-  limit?: number
+  business_continuity_plan_id_activated?: string
 }

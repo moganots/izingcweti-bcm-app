@@ -44,7 +44,7 @@ export interface CreateCacheDTO {
 /**
  * Cache Query Parameters
  */
-export interface CacheQueryParams {
+export interface CacheQueryParams extends QueryParams {
   tags?: string
   pattern?: string
   limit?: number

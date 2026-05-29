@@ -64,7 +64,7 @@ export interface AuditLog {
 /**
  * Audit Query Parameters
  */
-export interface AuditQueryParams {
+export interface AuditQueryParams extends QueryParams {
   user_id?: string
   organisation_id?: string
   action?: AuditAction

@@ -1,175 +1,118 @@
-import { BaseService } from '../../BaseService'
-import { API_ENDPOINTS } from './../../../utils/constants'
-import type { IncidentQueryParams, PaginatedResponse, QueryParams } from './../../../types'
-import type { Incident, IncidentSeverity, IncidentStats } from './../../../models/entities'
+import { BaseService } from './../../BaseService'
+import {
+  IncidentSeverity,
+  type Incident,
+  type IncidentUpdate,
+  type IncidentResponsePlan,
+  type ResponseAction,
+  type IncidentRecoveryMetrics,
+  type IncidentReport,
+  type IncidentTimeline,
+  type CreateIncidentRequest,
+  type UpdateIncidentRequest,
+  type EscalateIncidentRequest,
+  type CloseIncidentRequest,
+  type IncidentQueryParams,
+  type IncidentDashboardStats,
+  type PaginatedResponse,
+} from './../../../modules'
 
-/**
- * Create Incident DTO
- */
-export interface CreateIncidentDTO {
-  organisation_id: string
-  incident_severity: string
-  root_cause: string
-  business_continuity_plan_id_activated: string
-  recovery_actual_time?: string
-}
-
-/**
- * Update Incident DTO
- */
-export interface UpdateIncidentDTO {
-  incident_severity?: string
-  root_cause?: string
-  business_continuity_plan_id_activated?: string
-  recovery_actual_time?: string
-}
-
-/**
- * Close Incident DTO
- */
-export interface CloseIncidentDTO {
-  closed_at: string
-}
-
-/**
- * Incident API Service
- */
 export class IncidentService extends BaseService {
-  /**
-   * Get all incidents with pagination
-   */
   async getIncidents(params?: IncidentQueryParams): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, params)
+    return this.getPaginated<Incident>('/incidents', params as Record<string, any>)
   }
 
-  /**
-   * Get incident by ID
-   */
   async getIncident(id: string): Promise<Incident> {
-    const response = await this.get<Incident>(API_ENDPOINTS.INCIDENTS.BY_ID(id))
+    const response = await this.get<Incident>(`/incidents/${id}`)
     return this.extractData(response)
   }
 
-  /**
-   * Create a new incident
-   */
-  async createIncident(data: CreateIncidentDTO): Promise<Incident> {
-    const response = await this.post<Incident>(API_ENDPOINTS.INCIDENTS.BASE, data)
+  async createIncident(data: CreateIncidentRequest): Promise<Incident> {
+    const response = await this.post<Incident>('/incidents', data)
     return this.extractData(response)
   }
 
-  /**
-   * Update an incident
-   */
-  async updateIncident(id: string, data: UpdateIncidentDTO): Promise<Incident> {
-    const response = await this.put<Incident>(API_ENDPOINTS.INCIDENTS.BY_ID(id), data)
+  async updateIncident(id: string, data: UpdateIncidentRequest): Promise<Incident> {
+    const response = await this.put<Incident>(`/incidents/${id}`, data)
     return this.extractData(response)
   }
 
-  /**
-   * Close an incident
-   */
-  async closeIncident(id: string, data: CloseIncidentDTO): Promise<Incident> {
-    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.CLOSE(id), data)
+  async closeIncident(id: string, data: CloseIncidentRequest): Promise<Incident> {
+    const response = await this.patch<Incident>(`/incidents/${id}/close`, data)
     return this.extractData(response)
   }
 
-  /**
-   * Reopen a closed incident
-   * Fixed: Use proper endpoint (reopen via update with closed_at = null)
-   */
   async reopenIncident(id: string): Promise<Incident> {
-    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.BY_ID(id), {
-      closed_at: null,
+    const response = await this.patch<Incident>(`/incidents/${id}/reopen`)
+    return this.extractData(response)
+  }
+
+  async escalateIncident(id: string, data: EscalateIncidentRequest): Promise<Incident> {
+    const response = await this.patch<Incident>(`/incidents/${id}/escalate`, data)
+    return this.extractData(response)
+  }
+
+  async assignIncident(id: string, assignedTo: string): Promise<Incident> {
+    const response = await this.patch<Incident>(`/incidents/${id}/assign`, {
+      assigned_to: assignedTo,
     })
     return this.extractData(response)
   }
 
-  /**
-   * Escalate an incident
-   */
-  async escalateIncident(id: string): Promise<Incident> {
-    const response = await this.patch<Incident>(API_ENDPOINTS.INCIDENTS.ESCALATE(id))
+  async addIncidentUpdate(id: string, update: IncidentUpdate): Promise<Incident> {
+    const response = await this.post<Incident>(`/incidents/${id}/updates`, update)
     return this.extractData(response)
   }
 
-  /**
-   * Get active incidents
-   * Fixed: Use query parameter instead of missing constant
-   */
-  async getActiveIncidents(params?: QueryParams): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>(`${API_ENDPOINTS.INCIDENTS.BASE}?status=active`, params)
+  async getActiveIncidents(params?: IncidentQueryParams): Promise<PaginatedResponse<Incident>> {
+    return this.getIncidents({ ...params, active_only: true })
   }
 
-  /**
-   * Get critical incidents
-   * Fixed: Use query parameter instead of missing constant
-   */
-  async getCriticalIncidents(params?: QueryParams): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>(`${API_ENDPOINTS.INCIDENTS.BASE}?severity=Critical`, params)
+  async getCriticalIncidents(params?: IncidentQueryParams): Promise<PaginatedResponse<Incident>> {
+    return this.getIncidents({ ...params, incident_severity: IncidentSeverity.CRITICAL })
   }
 
-  /**
-   * Get high severity incidents
-   */
-  async getHighSeverityIncidents(params?: QueryParams): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>(`${API_ENDPOINTS.INCIDENTS.BASE}?severity=High`, params)
+  async getHighSeverityIncidents(
+    params?: IncidentQueryParams
+  ): Promise<PaginatedResponse<Incident>> {
+    return this.getIncidents({ ...params, incident_severity: IncidentSeverity.HIGH })
   }
 
-  /**
-   * Get incidents by organisation
-   */
   async getIncidentsByOrganisation(
     organisationId: string,
     params?: IncidentQueryParams
   ): Promise<PaginatedResponse<Incident>> {
-    const queryParams = { ...params, organisation_id: organisationId }
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, queryParams)
+    return this.getIncidents({ ...params, organisation_id: organisationId })
   }
 
-  /**
-   * Get incidents by severity
-   */
   async getIncidentsBySeverity(
-    severity: string,
+    severity: IncidentSeverity,
     params?: IncidentQueryParams
   ): Promise<PaginatedResponse<Incident>> {
-    const queryParams = { ...params, incident_severity: severity as IncidentSeverity }
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, queryParams)
+    return this.getIncidents({ ...params, incident_severity: severity })
   }
 
-  /**
-   * Get incidents by date range
-   */
   async getIncidentsByDateRange(
     startDate: string,
     endDate: string,
     params?: IncidentQueryParams
   ): Promise<PaginatedResponse<Incident>> {
-    const queryParams = {
-      ...params,
-      declared_after: startDate,
-      declared_before: endDate,
-    }
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, queryParams)
+    return this.getIncidents({ ...params, declared_after: startDate, declared_before: endDate })
   }
 
-  /**
-   * Get incident statistics
-   * Fixed: Use API_ENDPOINTS.INCIDENTS.STATS
-   */
-  async getStats(organisationId?: string): Promise<IncidentStats> {
-    let url = API_ENDPOINTS.INCIDENTS.STATS('')
-    if (organisationId) {
-      url = API_ENDPOINTS.INCIDENTS.STATS(organisationId)
-    }
-    const response = await this.get<IncidentStats>(url)
+  async getIncidentsByBCP(
+    bcpId: string,
+    params?: IncidentQueryParams
+  ): Promise<PaginatedResponse<Incident>> {
+    return this.getIncidents({ ...params, business_continuity_plan_id_activated: bcpId })
+  }
+
+  async getStats(organisationId?: string): Promise<IncidentDashboardStats> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<IncidentDashboardStats>('/incidents/stats', params)
     return this.extractData(response)
   }
 
-  /**
-   * Get incident summary for dashboard
-   */
   async getSummary(organisationId?: string): Promise<{
     total: number
     active: number
@@ -185,66 +128,83 @@ export class IncidentService extends BaseService {
     return {
       total: stats.total,
       active: stats.active,
-      resolved: stats.active > 0 ? stats.active : 0,
+      resolved: stats.active,
       closed: stats.closed,
       critical: stats.critical,
-      high: stats.bySeverity?.High || 0,
-      medium: stats.bySeverity?.Medium || 0,
-      low: stats.bySeverity?.Low || 0,
-      avgResolutionTimeHours: stats.avgResolutionTime || 0,
+      high: stats.high,
+      medium: stats.medium,
+      low: stats.low,
+      avgResolutionTimeHours: stats.average_resolution_hours,
     }
   }
 
-  /**
-   * Delete an incident (soft delete)
-   */
   async deleteIncident(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.INCIDENTS.BY_ID(id))
+    await this.delete(`/incidents/${id}`)
   }
 
-  /**
-   * Export incidents
-   */
   async exportIncidents(
     organisationId: string,
-    params?: {
-      start_date?: string
-      end_date?: string
-      format?: 'csv' | 'json'
-    }
+    params?: { start_date?: string; end_date?: string; format?: 'csv' | 'json' }
   ): Promise<void> {
     const format = params?.format || 'csv'
     await this.download(
-      API_ENDPOINTS.INCIDENTS.EXPORT(organisationId),
+      `/incidents/export/${organisationId}`,
       `incidents_export_${new Date().toISOString().split('T')[0]}.${format}`,
-      { params }
+      { params: params as Record<string, any> }
     )
   }
 
-  /**
-   * Search incidents
-   */
   async searchIncidents(
     query: string,
     params?: IncidentQueryParams
   ): Promise<PaginatedResponse<Incident>> {
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.SEARCH, {
-      ...params,
-      search: query,
-    })
+    return this.getIncidents({ ...params, root_cause_search: query })
   }
 
-  /**
-   * Get incidents by BCP activated
-   */
-  async getIncidentsByBCP(
-    bcpId: string,
-    params?: IncidentQueryParams
-  ): Promise<PaginatedResponse<Incident>> {
-    const queryParams = { ...params, business_continuity_plan_id_activated: bcpId }
-    return this.getPaginated<Incident>(API_ENDPOINTS.INCIDENTS.BASE, queryParams)
+  async getIncidentResponsePlan(incidentId: string): Promise<IncidentResponsePlan> {
+    const response = await this.get<IncidentResponsePlan>(`/incidents/${incidentId}/response-plan`)
+    return this.extractData(response)
+  }
+
+  async activateResponsePlan(incidentId: string, planId: string): Promise<IncidentResponsePlan> {
+    const response = await this.post<IncidentResponsePlan>(
+      `/incidents/${incidentId}/activate-plan`,
+      { plan_id: planId }
+    )
+    return this.extractData(response)
+  }
+
+  async updateResponseAction(
+    incidentId: string,
+    actionId: string,
+    updates: Partial<ResponseAction>
+  ): Promise<ResponseAction> {
+    const response = await this.patch<ResponseAction>(
+      `/incidents/${incidentId}/response-plan/actions/${actionId}`,
+      updates
+    )
+    return this.extractData(response)
+  }
+
+  async getRecoveryMetrics(incidentId: string): Promise<IncidentRecoveryMetrics> {
+    const response = await this.get<IncidentRecoveryMetrics>(
+      `/incidents/${incidentId}/recovery-metrics`
+    )
+    return this.extractData(response)
+  }
+
+  async getIncidentReport(
+    incidentId: string,
+    reportType: IncidentReport['report_type']
+  ): Promise<IncidentReport> {
+    const response = await this.get<IncidentReport>(`/incidents/${incidentId}/report/${reportType}`)
+    return this.extractData(response)
+  }
+
+  async getIncidentTimeline(incidentId: string): Promise<IncidentTimeline> {
+    const response = await this.get<IncidentTimeline>(`/incidents/${incidentId}/timeline`)
+    return this.extractData(response)
   }
 }
 
-// Export singleton
 export const incidentService = new IncidentService()

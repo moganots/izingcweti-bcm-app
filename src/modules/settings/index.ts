@@ -39,6 +39,7 @@ export enum SyncMode {
   WIFI_ONLY = 'wifi_only',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Settings Module - Types
 // ============================================
@@ -150,13 +151,11 @@ export interface UpdateSettingsRequest {
   custom_settings?: Record<string, any>
 }
 
-export interface SettingsQueryParams {
+export interface SettingsQueryParams extends QueryParams {
   user_id?: string
   organisation_id?: string
   category?: SettingCategory
   is_system_default?: boolean
-  page?: number
-  limit?: number
 }
 
 export interface BulkUpdateSettingsRequest {

@@ -1,179 +1,335 @@
-import type { AxiosRequestConfig } from 'axios'
-import { apiClient } from '../boot/axios'
-import type { ApiResponse, PaginatedResponse, PaginationParams } from '../types'
+import type { ApiResponse, PaginatedResponse, QueryParams } from '../modules'
+import { API_BASE_URL, API_TIMEOUT } from '../core/constants/api.constants'
 
-/**
- * Raw API response format from backend
- */
-interface RawApiResponse<T = any> {
-  status: string
-  message?: string
-  data: T
-  requestId?: string
-  timestamp?: string
-  apiVersion?: string
+export interface RequestOptions extends RequestInit {
+  params?: Record<string, any>
+  timeout?: number
+  skipAuth?: boolean
 }
 
-/**
- * Base API Service
- * Provides common HTTP methods for all API services
- */
-export abstract class BaseService {
-  /**
-   * GET request
-   */
+export interface UploadProgressCallback {
+  (percent: number): void
+}
+
+export class BaseService {
+  protected baseUrl: string
+  protected defaultTimeout: number
+
+  constructor(baseUrl: string = API_BASE_URL, timeout: number = API_TIMEOUT) {
+    this.baseUrl = baseUrl
+    this.defaultTimeout = timeout
+  }
+
+  protected getAuthToken(): string | null {
+    return localStorage.getItem('auth_token')
+  }
+
+  protected getRefreshToken(): string | null {
+    return localStorage.getItem('refresh_token')
+  }
+
+  protected setAuthToken(token: string): void {
+    localStorage.setItem('auth_token', token)
+  }
+
+  protected setRefreshToken(token: string): void {
+    localStorage.setItem('refresh_token', token)
+  }
+
+  protected clearAuthTokens(): void {
+    localStorage.removeItem('auth_token')
+    localStorage.removeItem('refresh_token')
+  }
+
+  protected async request<T = any>(
+    endpoint: string,
+    options: RequestOptions = {}
+  ): Promise<ApiResponse<T>> {
+    const url = this.buildUrl(endpoint, options.params)
+    const headers = this.buildHeaders(options.headers, options.skipAuth)
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), options.timeout || this.defaultTimeout)
+
+    try {
+      const response = await fetch(url, {
+        ...options,
+        headers,
+        signal: controller.signal,
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw this.handleError(response.status, errorData)
+      }
+
+      const data = await response.json()
+      return data as ApiResponse<T>
+    } catch (error) {
+      clearTimeout(timeoutId)
+      throw this.handleNetworkError(error)
+    }
+  }
+
   protected async get<T = any>(
-    url: string,
-    params?: Record<string, any>,
-    config?: AxiosRequestConfig
+    endpoint: string,
+    params?: Record<string, any>
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.get<ApiResponse<T>>(url, { ...config, params })
-    return response.data
+    const requestOptions: RequestOptions = { method: 'GET' }
+    if (params !== undefined) {
+      requestOptions.params = params
+    }
+    return this.request<T>(endpoint, requestOptions)
   }
 
-  /**
-   * GET paginated request
-   */
-  protected async getPaginated<T = any>(
-    url: string,
-    params?: PaginationParams,
-    config?: AxiosRequestConfig
-  ): Promise<PaginatedResponse<T>> {
-    const response = await apiClient.get<PaginatedResponse<T>>(url, {
-      ...config,
-      params,
-    })
-    return response.data
-  }
-
-  /**
-   * POST request
-   */
   protected async post<T = any>(
-    url: string,
+    endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    params?: Record<string, any>
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.post<ApiResponse<T>>(url, data, config)
-    return response.data
+    const requestOptions: RequestOptions = {
+      method: 'POST',
+    }
+    if (data !== undefined) {
+      requestOptions.body = JSON.stringify(data)
+    }
+    if (params !== undefined) {
+      requestOptions.params = params
+    }
+    return this.request<T>(endpoint, requestOptions)
   }
 
-  /**
-   * PUT request
-   */
   protected async put<T = any>(
-    url: string,
+    endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    params?: Record<string, any>
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.put<ApiResponse<T>>(url, data, config)
-    return response.data
+    const requestOptions: RequestOptions = {
+      method: 'PUT',
+    }
+    if (data !== undefined) {
+      requestOptions.body = JSON.stringify(data)
+    }
+    if (params !== undefined) {
+      requestOptions.params = params
+    }
+    return this.request<T>(endpoint, requestOptions)
   }
 
-  /**
-   * PATCH request
-   */
   protected async patch<T = any>(
-    url: string,
+    endpoint: string,
     data?: any,
-    config?: AxiosRequestConfig
+    params?: Record<string, any>
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.patch<ApiResponse<T>>(url, data, config)
-    return response.data
+    const requestOptions: RequestOptions = {
+      method: 'PATCH',
+    }
+    if (data !== undefined) {
+      requestOptions.body = JSON.stringify(data)
+    }
+    if (params !== undefined) {
+      requestOptions.params = params
+    }
+    return this.request<T>(endpoint, requestOptions)
   }
 
-  /**
-   * DELETE request
-   */
   protected async delete<T = any>(
-    url: string,
-    config?: AxiosRequestConfig
+    endpoint: string,
+    params?: Record<string, any>
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.delete<ApiResponse<T>>(url, config)
-    return response.data
+    const requestOptions: RequestOptions = { method: 'DELETE' }
+    if (params !== undefined) {
+      requestOptions.params = params
+    }
+    return this.request<T>(endpoint, requestOptions)
   }
 
-  /**
-   * Upload file(s)
-   */
   protected async upload<T = any>(
-    url: string,
+    endpoint: string,
     formData: FormData,
-    onProgress?: (progress: number) => void,
-    config?: AxiosRequestConfig
+    onProgress?: UploadProgressCallback
   ): Promise<ApiResponse<T>> {
-    const response = await apiClient.post<ApiResponse<T>>(url, formData, {
-      ...config,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        ...config?.headers,
-      },
-      onUploadProgress: (progressEvent: any) => {
-        if (onProgress && progressEvent.total) {
-          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total)
-          onProgress(progress)
+    const url = this.buildUrl(endpoint)
+    const headers = this.buildHeaders({}, false)
+
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest()
+      xhr.open('POST', url)
+
+      // Set headers
+      Object.entries(headers).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+          xhr.setRequestHeader(key, String(value))
         }
-      },
+      })
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable && onProgress) {
+          const percent = (e.loaded / e.total) * 100
+          onProgress(percent)
+        }
+      })
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const response = JSON.parse(xhr.responseText) as ApiResponse<T>
+            resolve(response)
+          } catch {
+            resolve({
+              success: true,
+              data: xhr.responseText as T,
+              timestamp: new Date().toISOString(),
+            })
+          }
+        } else {
+          reject(this.handleError(xhr.status, {}))
+        }
+      }
+
+      xhr.onerror = () => reject(this.handleNetworkError(new Error('Network error')))
+      xhr.send(formData)
     })
-    return response.data
   }
 
-  /**
-   * Download file
-   */
   protected async download(
-    url: string,
+    endpoint: string,
     filename?: string,
-    config?: AxiosRequestConfig
+    options?: { method?: string; params?: Record<string, any> }
   ): Promise<void> {
-    const response = await apiClient.get(url, {
-      ...config,
-      responseType: 'blob',
+    const url = this.buildUrl(endpoint, options?.params)
+    const headers = this.buildHeaders({}, false)
+
+    const response = await fetch(url, {
+      method: options?.method || 'GET',
+      headers,
     })
 
-    const blob = new Blob([response.data])
+    if (!response.ok) {
+      throw this.handleError(response.status, {})
+    }
+
+    const blob = await response.blob()
     const downloadUrl = URL.createObjectURL(blob)
-    const link = document.createElement('a')
-    link.href = downloadUrl
-    link.download = filename || 'download'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    a.download = filename || `download_${Date.now()}`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
     URL.revokeObjectURL(downloadUrl)
   }
 
-  /**
-   * Extract data from API response
-   * Handles both formats: { success: true, data } and { status: 'success', data }
-   */
-  protected extractData<T>(response: ApiResponse<T> | RawApiResponse<T>): T {
-    // Check for the raw API response format (status: 'success')
-    if ('status' in response && response.status === 'success') {
-      return (response as RawApiResponse<T>).data
+  protected async getPaginated<T = any>(
+    endpoint: string,
+    params?: QueryParams
+  ): Promise<PaginatedResponse<T>> {
+    const response = await this.get<{ data: T[]; total: number; page: number; limit: number }>(
+      endpoint,
+      params as Record<string, any> | undefined
+    )
+    const data = this.extractData(response)
+
+    return {
+      success: true,
+      data: data.data || [],
+      total: data.total || 0,
+      page: data.page || 1,
+      limit: data.limit || 10,
+      totalPages: Math.ceil((data.total || 0) / (data.limit || 10)),
+      hasMore: (data.page || 1) * (data.limit || 10) < (data.total || 0),
+      timestamp: new Date().toISOString(),
     }
-    
-    // Check for the standard format (success: true)
-    if ('success' in response && response.success === true) {
-      return (response as ApiResponse<T>).data
-    }
-    
-    throw new Error((response as any).message || 'Request failed')
   }
 
-  /**
-   * Build query string from params object
-   */
-  protected buildQueryString(params: Record<string, any>): string {
+  protected extractData<T = any>(response: ApiResponse<T>): T {
+    return response.data
+  }
+
+  protected buildUrl(endpoint: string, params?: Record<string, any>): string {
+    const url = endpoint.startsWith('http') ? endpoint : `${this.baseUrl}${endpoint}`
+    if (!params) return url
+
     const searchParams = new URLSearchParams()
     Object.entries(params).forEach(([key, value]) => {
-      if (value !== undefined && value !== null && value !== '') {
-        if (Array.isArray(value)) {
-          value.forEach((v) => searchParams.append(key, String(v)))
-        } else {
-          searchParams.append(key, String(value))
-        }
+      if (value !== undefined && value !== null) {
+        searchParams.append(key, String(value))
       }
     })
-    return searchParams.toString()
+    const queryString = searchParams.toString()
+    return queryString ? `${url}?${queryString}` : url
+  }
+
+  protected buildHeaders(customHeaders?: HeadersInit, skipAuth?: boolean): HeadersInit {
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    }
+
+    // Add custom headers
+    if (customHeaders) {
+      if (customHeaders instanceof Headers) {
+        customHeaders.forEach((value, key) => {
+          headers[key] = value
+        })
+      } else if (Array.isArray(customHeaders)) {
+        customHeaders.forEach(([key, value]) => {
+          headers[key] = value
+        })
+      } else {
+        Object.entries(customHeaders).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) {
+            headers[key] = String(value)
+          }
+        })
+      }
+    }
+
+    if (!skipAuth) {
+      const token = this.getAuthToken()
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`
+      }
+    }
+
+    return headers
+  }
+
+  protected handleError(status: number, data: any): Error {
+    const message = data?.message || data?.error || `HTTP ${status}: Request failed`
+    const error = new Error(message) as any
+    error.status = status
+    error.code = data?.code
+    error.details = data?.errors
+    return error
+  }
+
+  protected handleNetworkError(error: any): Error {
+    if (error.name === 'AbortError') {
+      return new Error('Request timeout')
+    }
+    return new Error(error.message || 'Network error')
+  }
+
+  protected async refreshAuthToken(): Promise<boolean> {
+    try {
+      const refreshToken = this.getRefreshToken()
+      if (!refreshToken) return false
+
+      const response = await this.post<{ access_token: string }>('/auth/refresh', {
+        refresh_token: refreshToken,
+      })
+      const data = this.extractData(response)
+
+      if (data.access_token) {
+        this.setAuthToken(data.access_token)
+        return true
+      }
+      return false
+    } catch {
+      return false
+    }
   }
 }

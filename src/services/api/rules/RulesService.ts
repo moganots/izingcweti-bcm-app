@@ -1,118 +1,96 @@
-import { BaseService } from '../../BaseService'
-import { Rule, RuleExecutionLog, RuleStats } from './../../../models/entities'
-import { API_ENDPOINTS } from './../../../utils/constants'
-import { PaginatedResponse } from './../../../types'
+import { BaseService } from './../../BaseService'
+import {
+  RuleType,
+  RuleTrigger,
+  RuleStatus,
+  type Rule,
+  type RuleSchedule,
+  type RuleExecutionLog,
+  type RuleExecutionSchedule,
+  type CreateRuleRequest,
+  type UpdateRuleRequest,
+  type RuleTestRequest,
+  type RuleTestResult,
+  type RuleValidationRequest,
+  type RuleValidationResult,
+  type RuleQueryParams,
+  type RuleExecutionQueryParams,
+  type RuleStatistics,
+  type PaginatedResponse,
+} from './../../../modules'
 
-/**
- * Rules API Service
- */
 export class RulesService extends BaseService {
-  /**
-   * Get all rules with pagination
-   */
-  async getRules(params?: any): Promise<PaginatedResponse<Rule>> {
-    return this.getPaginated<Rule>(API_ENDPOINTS.RULES.BASE, params)
+  async getRules(params?: RuleQueryParams): Promise<PaginatedResponse<Rule>> {
+    return this.getPaginated<Rule>('/rules', params as Record<string, any>)
   }
 
-  /**
-   * Get rule by ID
-   */
   async getRule(id: string): Promise<Rule> {
-    const response = await this.get<Rule>(API_ENDPOINTS.RULES.BY_ID(id))
+    const response = await this.get<Rule>(`/rules/${id}`)
     return this.extractData(response)
   }
 
-  /**
-   * Create a new rule
-   */
-  async createRule(data: Partial<Rule>): Promise<Rule> {
-    const response = await this.post<Rule>(API_ENDPOINTS.RULES.BASE, data)
+  async createRule(data: CreateRuleRequest): Promise<Rule> {
+    const response = await this.post<Rule>('/rules', data)
     return this.extractData(response)
   }
 
-  /**
-   * Update a rule
-   */
-  async updateRule(id: string, data: Partial<Rule>): Promise<Rule> {
-    const response = await this.put<Rule>(API_ENDPOINTS.RULES.BY_ID(id), data)
+  async updateRule(id: string, data: UpdateRuleRequest): Promise<Rule> {
+    const response = await this.put<Rule>(`/rules/${id}`, data)
     return this.extractData(response)
   }
 
-  /**
-   * Delete a rule
-   */
   async deleteRule(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.RULES.BY_ID(id))
+    await this.delete(`/rules/${id}`)
   }
 
-  /**
-   * Activate a rule
-   */
   async activateRule(id: string): Promise<Rule> {
     const response = await this.patch<Rule>(`/rules/${id}/activate`)
     return this.extractData(response)
   }
 
-  /**
-   * Deactivate a rule
-   */
   async deactivateRule(id: string): Promise<Rule> {
     const response = await this.patch<Rule>(`/rules/${id}/deactivate`)
     return this.extractData(response)
   }
 
-  /**
-   * Duplicate a rule
-   */
+  async archiveRule(id: string): Promise<Rule> {
+    const response = await this.patch<Rule>(`/rules/${id}/archive`)
+    return this.extractData(response)
+  }
+
   async duplicateRule(id: string, newName: string): Promise<Rule> {
-    const response = await this.post<Rule>(`/rules/${id}/duplicate`, {
-      name: newName,
+    const response = await this.post<Rule>(`/rules/${id}/duplicate`, { name: newName })
+    return this.extractData(response)
+  }
+
+  async testRule(data: RuleTestRequest): Promise<RuleTestResult> {
+    const response = await this.post<RuleTestResult>('/rules/test', data)
+    return this.extractData(response)
+  }
+
+  async executeRule(
+    id: string,
+    entityId: string,
+    entityType: string,
+    contextData?: Record<string, any>
+  ): Promise<RuleExecutionLog> {
+    const response = await this.post<RuleExecutionLog>(`/rules/${id}/execute`, {
+      entity_id: entityId,
+      entity_type: entityType,
+      context_data: contextData,
     })
     return this.extractData(response)
   }
 
-  /**
-   * Test a rule without saving
-   */
-  async testRule(data: { conditions: any[]; actions: any[]; test_data: any }): Promise<{
-    success: boolean
-    conditions_met: boolean
-    execution_time_ms: number
-    results: Array<{ action: string; success: boolean; result: any }>
-    error?: string
-  }> {
-    const response = await this.post('/rules/test', data)
+  async getStats(organisationId?: string): Promise<RuleStatistics> {
+    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const response = await this.get<RuleStatistics>('/rules/stats', params)
     return this.extractData(response)
   }
 
-  /**
-   * Execute a rule manually
-   */
-  async executeRule(
-    id: string,
-    data: { entity_id: string; entity_type: string; context_data?: any }
-  ): Promise<RuleExecutionLog> {
-    const response = await this.post<RuleExecutionLog>(API_ENDPOINTS.RULES.EXECUTE(id), data)
-    return this.extractData(response)
-  }
-
-  /**
-   * Get rule statistics
-   */
-  async getStats(organisationId?: string): Promise<RuleStats> {
-    const params: Record<string, any> = {}
-    if (organisationId) params.organisation_id = organisationId
-
-    const response = await this.get<RuleStats>('/rules/stats', params)
-    return this.extractData(response)
-  }
-
-  /**
-   * Get execution logs for a rule
-   */
   async getExecutionLogs(
     ruleId: string,
-    params?: { page?: number; limit?: number }
+    params?: RuleExecutionQueryParams
   ): Promise<PaginatedResponse<RuleExecutionLog>> {
     return this.getPaginated<RuleExecutionLog>(
       `/rules/${ruleId}/logs`,
@@ -120,9 +98,6 @@ export class RulesService extends BaseService {
     )
   }
 
-  /**
-   * Get execution statistics for a rule
-   */
   async getExecutionStats(
     ruleId: string,
     days?: number
@@ -133,34 +108,76 @@ export class RulesService extends BaseService {
     avg_execution_time: number
     by_date: Array<{ date: string; count: number }>
   }> {
-    const params: Record<string, any> = {}
-    if (days) params.days = days
-
+    const params = days ? { days } : undefined
     const response = await this.get(`/rules/${ruleId}/execution-stats`, params)
     return this.extractData(response)
   }
 
-  /**
-   * Get rules by entity type
-   */
-  async getRulesByEntityType(entityType: string, params?: any): Promise<PaginatedResponse<Rule>> {
-    return this.getPaginated<Rule>(API_ENDPOINTS.RULES.BASE, {
-      ...params,
-      entity_type: entityType,
-    })
+  async getRulesByEntityType(
+    entityType: string,
+    params?: RuleQueryParams
+  ): Promise<PaginatedResponse<Rule>> {
+    return this.getRules({ ...params, entity_type: entityType })
   }
 
-  /**
-   * Get active rules by trigger and entity
-   */
-  async getActiveRulesByTrigger(trigger: string, entityType: string): Promise<Rule[]> {
-    const response = await this.get<Rule[]>(API_ENDPOINTS.RULES.ACTIVE, {
+  async getActiveRulesByTrigger(trigger: RuleTrigger, entityType: string): Promise<Rule[]> {
+    const response = await this.get<Rule[]>(`/rules/active`, {
       rule_trigger: trigger,
       entity_type: entityType,
     })
     return this.extractData(response)
   }
+
+  async validateRule(data: RuleValidationRequest): Promise<RuleValidationResult> {
+    const response = await this.post<RuleValidationResult>('/rules/validate', data)
+    return this.extractData(response)
+  }
+
+  async getRuleExecutionSchedule(ruleId: string): Promise<RuleExecutionSchedule> {
+    const response = await this.get<RuleExecutionSchedule>(`/rules/${ruleId}/schedule`)
+    return this.extractData(response)
+  }
+
+  async updateRuleExecutionSchedule(
+    ruleId: string,
+    schedule: RuleSchedule
+  ): Promise<RuleExecutionSchedule> {
+    const response = await this.put<RuleExecutionSchedule>(`/rules/${ruleId}/schedule`, schedule)
+    return this.extractData(response)
+  }
+
+  async getRulesByType(
+    ruleType: RuleType,
+    params?: RuleQueryParams
+  ): Promise<PaginatedResponse<Rule>> {
+    return this.getRules({ ...params, rule_type: ruleType })
+  }
+
+  async getRulesByStatus(
+    status: RuleStatus,
+    params?: RuleQueryParams
+  ): Promise<PaginatedResponse<Rule>> {
+    return this.getRules({ ...params, status })
+  }
+
+  async getActiveRules(params?: RuleQueryParams): Promise<PaginatedResponse<Rule>> {
+    return this.getRules({ ...params, is_active: true })
+  }
+
+  async bulkActivateRules(ids: string[]): Promise<{ activated: number }> {
+    const response = await this.post<{ activated: number }>('/rules/bulk-activate', { ids })
+    return this.extractData(response)
+  }
+
+  async bulkDeactivateRules(ids: string[]): Promise<{ deactivated: number }> {
+    const response = await this.post<{ deactivated: number }>('/rules/bulk-deactivate', { ids })
+    return this.extractData(response)
+  }
+
+  async bulkDeleteRules(ids: string[]): Promise<{ deleted: number }> {
+    const response = await this.post<{ deleted: number }>('/rules/bulk-delete', { ids })
+    return this.extractData(response)
+  }
 }
 
-// Export singleton
 export const rulesService = new RulesService()

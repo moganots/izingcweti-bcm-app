@@ -23,6 +23,7 @@ export enum QuestionType {
   ESSAY = 'ESSAY',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Training Module - Types
 // ============================================
@@ -160,12 +161,10 @@ export interface SubmitQuizRequest {
   answers: Record<string, string | string[]>
 }
 
-export interface TrainingQueryParams {
+export interface TrainingQueryParams extends QueryParams {
   status?: TrainingStatus
   type?: TrainingType
   user_id?: string
   course_id?: string
   assigned_only?: boolean
-  page?: number
-  limit?: number
 }

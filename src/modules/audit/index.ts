@@ -2,6 +2,7 @@
 // Audit Module - Enums
 // ============================================
 
+import { QueryParams } from "src/shared/types/common.types"
 import { BaseEntity } from "../../core/base/base.entity"
 import { Organisation } from "../organisation"
 import { User } from "../user"
@@ -209,7 +210,7 @@ export interface GetAuditLogsParams {
   end_date?: string
 }
 
-export interface AuditQueryParams {
+export interface AuditQueryParams extends QueryParams {
   user_id?: string
   organisation_id?: string
   action?: string
@@ -221,8 +222,6 @@ export interface AuditQueryParams {
   end_date?: string
   search?: string
   sensitive_only?: boolean
-  page?: number
-  limit?: number
   sort_by?: string
   sort_order?: 'ASC' | 'DESC'
 }

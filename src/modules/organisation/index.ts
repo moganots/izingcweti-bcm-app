@@ -82,9 +82,25 @@ export interface CreateBusinessUnitRequest {
   head_user_id?: string
 }
 
+export interface UpdateBusinessUnitRequest {
+  name?: string
+  organisation_id?: string
+  criticality_score?: CriticalityScore
+  head_user_id?: string
+}
+
 export interface CreateDepartmentRequest {
   name: string
   business_unit_id: string
+  description?: string
+  recovery_time_objective_hours?: number
+  recovery_point_objective_hours?: number
+  parent_department_id?: string
+}
+
+export interface UpdateDepartmentRequest {
+  name?: string
+  business_unit_id?: string
   description?: string
   recovery_time_objective_hours?: number
   recovery_point_objective_hours?: number

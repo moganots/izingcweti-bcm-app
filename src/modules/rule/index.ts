@@ -79,6 +79,7 @@ export enum ComparisonOperator {
   MATCHES_REGEX = 'MATCHES_REGEX',
 }
 
+import { QueryParams } from 'src/shared/types/common.types'
 // ============================================
 // Rule Module - Types
 // ============================================
@@ -254,24 +255,20 @@ export interface RuleValidationResult {
   performance_estimate_ms?: number
 }
 
-export interface RuleQueryParams {
+export interface RuleQueryParams extends QueryParams {
   rule_type?: string
   rule_trigger?: string
   status?: string
   entity_type?: string
   organisation_id?: string
   is_active?: boolean
-  page?: number
-  limit?: number
 }
 
-export interface RuleExecutionQueryParams {
+export interface RuleExecutionQueryParams extends QueryParams {
   rule_id?: string
   entity_id?: string
   entity_type?: string
   success?: boolean
   start_date?: string
   end_date?: string
-  page?: number
-  limit?: number
 }
