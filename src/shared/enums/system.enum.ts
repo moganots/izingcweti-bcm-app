@@ -1,3 +1,9 @@
+export enum SyncStatus {
+  PENDING = 'PENDING',
+  SYNCED = 'SYNCED',
+  CONFLICT = 'CONFLICT',
+}
+
 export enum OperationType {
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',
@@ -107,18 +113,4 @@ export enum DateRangePreset {
   LAST_7_DAYS = 'last_7_days',
   LAST_30_DAYS = 'last_30_days',
   LAST_90_DAYS = 'last_90_days',
-}
-
-export interface RecentActivity {
-  id: string
-  type: string
-  action: string
-  description: string
-  user: {
-    uuid: string
-    email: string
-  }
-  timestamp: string
-  entity_type: string
-  entity_id: string
 }

@@ -1,4 +1,4 @@
-import { SyncStatus } from '../../modules/sync/enums/sync.enum'
+import { SyncStatus } from "src/shared/enums/system.enum"
 
 export interface BaseEntity {
   uuid: string
