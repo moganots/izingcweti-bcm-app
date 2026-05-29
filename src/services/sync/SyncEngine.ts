@@ -2,7 +2,6 @@ import { apiClient } from './../../boot/axios'
 import { BCMDatabase } from '../db/Database'
 import { NetworkMonitor } from './NetworkMonitor'
 import { ConflictResolver } from './ConflictResolver'
-import { API_ENDPOINTS } from './../../utils/constants'
 import type {
   PendingChange,
   SyncConflict,
@@ -14,6 +13,7 @@ import type {
   ConflictResolutionStrategy,
 } from './../../models/entities'
 import { SyncPriority, OperationType, SyncStatus } from './../../models/entities'
+import { API_ENDPOINTS } from 'src/core/constants/api.constants'
 
 /**
  * Sync Engine Service
@@ -408,7 +408,7 @@ export class SyncEngine {
     // If online, sync resolution to server
     if (this.networkMonitor.isOnline) {
       try {
-        await apiClient.post(API_ENDPOINTS.SYNC.RESOLVE_CONFLICT(conflictId), {
+        await apiClient.post(API_ENDPOINTS.SYNC.CONFLICT_RESOLVE(conflictId), {
           strategy: resolution.strategy,
           resolvedData: resolution.resolvedData,
           userId: resolution.userId || 'system',
@@ -590,7 +590,7 @@ export class SyncEngine {
 
     if (this.networkMonitor.isOnline) {
       try {
-        await apiClient.post(API_ENDPOINTS.SYNC.CLEAR_PENDING)
+        await apiClient.post(API_ENDPOINTS.SYNC.PENDING_CHANGES_CLEANUP)
       } catch (error) {
         console.warn('Failed to clear pending changes on server:', error)
       }

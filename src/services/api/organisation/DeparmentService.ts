@@ -98,7 +98,7 @@ export class DepartmentService extends BaseService {
       API_ENDPOINTS.DEPARTMENTS.BASE,
       params as Record<string, any>
     )
-    return response.data
+    return response.data ?? []
   }
 
   async getDepartmentsWithRPO(businessUnitId?: string): Promise<Department[]> {
@@ -108,7 +108,7 @@ export class DepartmentService extends BaseService {
       API_ENDPOINTS.DEPARTMENTS.BASE,
       params as Record<string, any>
     )
-    return response.data
+    return response.data ?? []
   }
 
   async getDepartmentTree(businessUnitId: string): Promise<DepartmentTreeNode[]> {

@@ -1,10 +1,11 @@
 import { Network } from '@capacitor/network'
 import { BaseService } from '../BaseService'
 import { ConnectionType, getConnectionType, CONNECTION_TYPE_LABELS } from './../../types'
-import type { NetworkStatus, ConnectionQuality, ApiResponse } from './../../types'
+import type { NetworkStatus, ConnectionQuality } from './../../types'
 import type { NetworkInfo } from './../../models/entities'
 import { useUiStore } from './../../stores/ui/ui.store'
-import { API_ENDPOINTS } from 'src/utils/constants'
+import { API_ENDPOINTS } from 'src/core/constants/api.constants'
+import { ApiResponse } from 'src/shared/types/common.types'
 
 // Health check response interface
 interface HealthCheckResponse extends ApiResponse {
@@ -12,7 +13,7 @@ interface HealthCheckResponse extends ApiResponse {
 }
 
 // Ping response interface
-interface PingResponse extends ApiResponse { }
+interface PingResponse extends ApiResponse {}
 
 /**
  * Network Monitor Service
@@ -191,7 +192,8 @@ export class NetworkMonitor extends BaseService {
     // Log changes
     if (previousOnline !== connected) {
       console.log(
-        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${CONNECTION_TYPE_LABELS[connectionType]
+        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${
+          CONNECTION_TYPE_LABELS[connectionType]
         })`
       )
     } else if (previousType !== connectionType) {
@@ -340,8 +342,7 @@ export class NetworkMonitor extends BaseService {
   async checkServerConnectivity(): Promise<boolean> {
     try {
       const response = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
-      const validStatuses = ['ok', 'success', 'connected', 'running', 'up', 'alive']
-      const isValid = response && validStatuses.includes(response?.status?.toLowerCase()!)
+      const isValid = response && response?.success
 
       if (isValid) {
         console.debug('✓ Server connectivity verified')

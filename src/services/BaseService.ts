@@ -1,4 +1,4 @@
-import type { ApiResponse, PaginatedResponse, QueryParams } from '../modules'
+import { ApiResponse, PaginatedResponse, QueryParams } from 'src/shared/types/common.types'
 import { API_BASE_URL, API_TIMEOUT } from '../core/constants/api.constants'
 
 export interface RequestOptions extends RequestInit {
@@ -245,7 +245,7 @@ export class BaseService {
   }
 
   protected extractData<T = any>(response: ApiResponse<T>): T {
-    return response.data
+    return response.data ?? ({} as T)
   }
 
   protected buildUrl(endpoint: string, params?: Record<string, any>): string {

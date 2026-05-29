@@ -27,7 +27,9 @@ export enum PlatformType {
 export enum Environment {
   LOCAL = 'local',
   DEVELOPMENT = 'development',
+  DR = 'disaster',
   STAGING = 'staging',
+  SIT = 'integration',
   PRODUCTION = 'production',
   TESTING = 'testing',
 }

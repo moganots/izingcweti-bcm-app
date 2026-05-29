@@ -15,8 +15,8 @@ import {
   type DashboardQueryParams,
   type CreateDashboardConfigRequest,
   type UpdateDashboardConfigRequest,
+  PaginatedResponse,
 } from './../../../modules'
-import { PaginatedResponse } from 'src/core/base/base.types'
 
 export class DashboardService extends BaseService {
   async getKPIs(organisationId?: string): Promise<DashboardKPIs> {

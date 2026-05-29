@@ -247,7 +247,7 @@ export class SyncService extends BaseService {
       total_entities: number
       synced_entities: number
       percentage: number
-    }>(API_ENDPOINTS.SYNC.SYNC_PROGRESS)
+    }>(API_ENDPOINTS.SYNC.STATUS)
     return this.extractData(response)
   }
 
