@@ -7,8 +7,8 @@ import { STORAGE_KEYS } from './constants'
 export interface AuthTokens {
   access_token: string
   refresh_token: string
-  expires_in?: number // Make optional to match both definitions
-  token_type?: string // Make optional
+  expires_in: number
+  token_type: string
 }
 
 // ============================================

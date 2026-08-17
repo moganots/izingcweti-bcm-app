@@ -1,8 +1,21 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User, LoginCredentials } from './../../models/entities/user/user.entity'
+import type {
+  User,
+  LoginCredentials,
+  AuthTokens,
+  RegistrationData,
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  AuthToken,
+  SessionInfo
+} from './../../models/entities/user/user.entity'
+import {
+  UserRole
+} from './../../models/entities/user/user.entity'
 import { authService } from './../../services/api/auth/AuthService'
-import { StorageUtils, AuthTokens } from './../../utils/storage.utils'
+import { StorageUtils } from './../../utils/storage.utils'
 
 export const useAuthStore = defineStore('auth', () => {
   // State
@@ -18,19 +31,9 @@ export const useAuthStore = defineStore('auth', () => {
   const userEmail = computed(() => user.value?.email || '')
   const userRole = computed(() => user.value?.role || '')
   const userOrganisationId = computed(() => user.value?.organisation_id || '')
+  const userDepartmentId = computed(() => user.value?.department_id || '')
   const isActive = computed(() => user.value?.is_active ?? false)
-  const isAdmin = computed(() => {
-    const adminRoles = [
-      'System Administrator',
-      'Super Admin',
-      'SYSTEM_ADMINISTRATOR',
-      'SUPER_ADMIN',
-    ]
-    return adminRoles.includes(userRole.value)
-  })
-  const isBCMManager = computed(
-    () => userRole.value === 'BCM Manager' || userRole.value === 'BCM_MANAGER'
-  )
+  const isEmailVerified = computed(() => user.value?.is_email_verified ?? false)
   const fullName = computed(() => {
     if (user.value?.first_name && user.value?.last_name) {
       return `${user.value.first_name} ${user.value.last_name}`
@@ -41,6 +44,50 @@ export const useAuthStore = defineStore('auth', () => {
       return namePart ? namePart.replace(/[._]/g, ' ') : 'User'
     }
     return 'User'
+  })
+
+  // Role-based computed properties
+  const isAdmin = computed(() => {
+    const adminRoles = [
+      UserRole.SYSTEM_ADMINISTRATOR,
+      UserRole.SUPER_ADMIN,
+      'System Administrator',
+      'Super Admin',
+    ]
+    return adminRoles.includes(userRole.value as UserRole)
+  })
+
+  const isBCMManager = computed(() => {
+    const managerRoles = [
+      UserRole.BCM_MANAGER,
+      'BCM Manager',
+    ]
+    return managerRoles.includes(userRole.value as UserRole)
+  })
+
+  const isRiskOwner = computed(() => {
+    return userRole.value === UserRole.RISK_OWNER || userRole.value === 'Risk Owner'
+  })
+
+  const isProcessOwner = computed(() => {
+    return userRole.value === UserRole.PROCESS_OWNER || userRole.value === 'Process Owner'
+  })
+
+  const isBCMCoordinator = computed(() => {
+    return userRole.value === UserRole.BCM_COORDINATOR || userRole.value === 'BCM Coordinator'
+  })
+
+  const isAccountLocked = computed(() => {
+    if (!user.value?.locked_until) return false
+    return new Date(user.value.locked_until) > new Date()
+  })
+
+  const lockRemainingTime = computed(() => {
+    if (!user.value?.locked_until) return null
+    const now = new Date()
+    const lockUntil = new Date(user.value.locked_until)
+    if (now >= lockUntil) return 0
+    return lockUntil.getTime() - now.getTime()
   })
 
   // Actions
@@ -60,7 +107,6 @@ export const useAuthStore = defineStore('auth', () => {
       const storedUser = StorageUtils.getUserData()
 
       if (storedTokens?.access_token && storedUser) {
-        // storedTokens already matches AuthTokens type
         tokens.value = storedTokens
         user.value = storedUser as User
 
@@ -120,8 +166,12 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         localStorage.removeItem('bcm_remembered_email')
       }
-      
-      console.log('Login successful:', { userId: response.user.uuid, email: response.user.email })
+
+      console.log('Login successful:', {
+        userId: response.user.uuid,
+        email: response.user.email,
+        role: response.user.role
+      })
     } catch (err: any) {
       console.error('Login error:', err)
       const message = err.response?.data?.message || err.message || 'Login failed'
@@ -132,13 +182,7 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function register(registrationData: {
-    email: string
-    password: string
-    firstName?: string
-    lastName?: string
-    organisation_id?: string
-  }): Promise<User> {
+  async function register(registrationData: RegistrationData): Promise<User> {
     isLoading.value = true
     error.value = null
 
@@ -174,16 +218,19 @@ export const useAuthStore = defineStore('auth', () => {
     }
 
     try {
-      const response = await authService.refreshToken(tokens.value.refresh_token)
+      const response = await authService.refreshToken()
 
-      const updatedTokens: AuthTokens = {
-        ...tokens.value,
-        access_token: response.access_token,
-        expires_in: response.expires_in,
+      if (response) {
+        const updatedTokens: AuthTokens = {
+          ...tokens.value,
+          access_token: response.access_token,
+          refresh_token: response.refresh_token || tokens.value.refresh_token,
+          expires_in: response.expires_in,
+        }
+
+        tokens.value = updatedTokens
+        StorageUtils.saveTokens(updatedTokens)
       }
-
-      tokens.value = updatedTokens
-      StorageUtils.saveTokens(updatedTokens)
     } catch (err: any) {
       console.error('Token refresh failed:', err)
       await logout()
@@ -216,10 +263,12 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      await authService.changePassword({
+      const request: ChangePasswordRequest = {
         current_password: currentPassword,
         new_password: newPassword,
-      })
+        confirm_password: newPassword,
+      }
+      await authService.changePassword(request)
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to change password'
       error.value = message
@@ -234,7 +283,8 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      await authService.forgotPassword({ email })
+      const request: ForgotPasswordRequest = { email }
+      await authService.forgotPassword(request)
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to send reset email'
       error.value = message
@@ -249,11 +299,12 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      await authService.resetPassword({
+      const request: ResetPasswordRequest = {
         token,
         new_password: newPassword,
         confirm_password: newPassword,
-      })
+      }
+      await authService.resetPassword(request)
     } catch (err: any) {
       const message = err.response?.data?.message || 'Failed to reset password'
       error.value = message
@@ -269,6 +320,18 @@ export const useAuthStore = defineStore('auth', () => {
       await authService.logout().catch(() => { })
     } finally {
       // Clear state regardless of server response
+      user.value = null
+      tokens.value = null
+      error.value = null
+      isInitialized.value = false
+      StorageUtils.clearTokens()
+    }
+  }
+
+  async function logoutAllDevices(): Promise<void> {
+    try {
+      await authService.logoutAllDevices()
+    } finally {
       user.value = null
       tokens.value = null
       error.value = null
@@ -294,6 +357,42 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function getSessions(): Promise<SessionInfo[]> {
+    try {
+      return await authService.getSessions()
+    } catch (err: any) {
+      console.error('Failed to get sessions:', err)
+      throw err
+    }
+  }
+
+  async function revokeSession(sessionId: string): Promise<void> {
+    try {
+      await authService.revokeSession(sessionId)
+    } catch (err: any) {
+      console.error('Failed to revoke session:', err)
+      throw err
+    }
+  }
+
+  async function getUserTokens(userId: string): Promise<AuthToken[]> {
+    try {
+      return await authService.getUserTokens(userId)
+    } catch (err: any) {
+      console.error('Failed to get user tokens:', err)
+      throw err
+    }
+  }
+
+  async function revokeToken(tokenId: string): Promise<void> {
+    try {
+      await authService.revokeToken(tokenId)
+    } catch (err: any) {
+      console.error('Failed to revoke token:', err)
+      throw err
+    }
+  }
+
   function hasRole(role: string | string[]): boolean {
     if (!user.value) return false
     const roles = Array.isArray(role) ? role : [role]
@@ -302,12 +401,46 @@ export const useAuthStore = defineStore('auth', () => {
     return roles.some((r) => r.toUpperCase() === normalizedUserRole)
   }
 
+  function hasPermission(permission: string): boolean {
+    // Implement permission checking based on user role
+    if (!user.value) return false
+
+    // Define role-based permissions
+    const permissions: Record<string, string[]> = {
+      'admin': [
+        UserRole.SYSTEM_ADMINISTRATOR,
+        UserRole.SUPER_ADMIN,
+        'System Administrator',
+        'Super Admin'
+      ],
+      'bcm_manager': [
+        UserRole.BCM_MANAGER,
+        'BCM Manager'
+      ],
+      'risk_owner': [
+        UserRole.RISK_OWNER,
+        'Risk Owner'
+      ],
+      'process_owner': [
+        UserRole.PROCESS_OWNER,
+        'Process Owner'
+      ],
+      'bcm_coordinator': [
+        UserRole.BCM_COORDINATOR,
+        'BCM Coordinator'
+      ]
+    }
+
+    const allowedRoles = permissions[permission] || []
+    return allowedRoles.includes(userRole.value as string)
+  }
+
   function parseJWT(token: string): Record<string, any> | null {
     try {
       const parts = token.split('.')
       if (parts.length !== 3) return null
       const base64Url = parts[1]
-      const base64 = base64Url!?.replace(/-/g, '+').replace(/_/g, '/')
+      const base64 = base64Url?.replace(/-/g, '+').replace(/_/g, '/') || ''
       const jsonPayload = decodeURIComponent(
         window
           .atob(base64)
@@ -345,10 +478,17 @@ export const useAuthStore = defineStore('auth', () => {
     userEmail,
     userRole,
     userOrganisationId,
+    userDepartmentId,
     isActive,
+    isEmailVerified,
+    fullName,
     isAdmin,
     isBCMManager,
-    fullName,
+    isRiskOwner,
+    isProcessOwner,
+    isBCMCoordinator,
+    isAccountLocked,
+    lockRemainingTime,
 
     // Actions
     initialize,
@@ -362,8 +502,14 @@ export const useAuthStore = defineStore('auth', () => {
     forgotPassword,
     resetPassword,
     logout,
+    logoutAllDevices,
     updateProfile,
+    getSessions,
+    revokeSession,
+    getUserTokens,
+    revokeToken,
     hasRole,
+    hasPermission,
     reset,
   }
 })

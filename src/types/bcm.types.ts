@@ -10,7 +10,7 @@ import {
   ExerciseTest,
   ComplianceRecord,
 } from 'src/models/entities'
-import { QueryParams } from './common.types'
+import { QueryParams } from 'src/shared/types/common.types'
 
 // ============================================
 // BCM Module Types

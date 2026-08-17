@@ -1,9 +1,9 @@
-import type { ApiResponse, PaginationParams } from './common.types'
-
 /**
  * API Type Definitions
  * Types for all API service communications
  */
+
+import { ApiResponse, PaginationParams } from "src/shared/types/common.types"
 
 // ============================================
 // HTTP Types

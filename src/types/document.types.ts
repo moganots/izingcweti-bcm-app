@@ -1,5 +1,4 @@
-import { QueryParams } from "./common.types";
-
+import { QueryParams } from "src/shared/types/common.types";
 
 /**
  * Document-specific query parameters

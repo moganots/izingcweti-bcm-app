@@ -1,15 +1,17 @@
 import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../core/constants/api.constants'
-import {
-  type AuthTokens,
-  type LoginCredentials,
-  type LoginResponse,
-  type ChangePasswordRequest,
-  type ForgotPasswordRequest,
-  type ResetPasswordRequest,
-  type AuthToken,
-  type SessionInfo,
-} from './../../../modules'
+import type {
+  AuthTokens,
+  LoginCredentials,
+  LoginResponse,
+  RegistrationData,
+  ChangePasswordRequest,
+  ForgotPasswordRequest,
+  ResetPasswordRequest,
+  AuthToken,
+  SessionInfo,
+  User,
+} from './../../../models/entities/user/user.entity'
 
 export class AuthService extends BaseService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
@@ -17,7 +19,7 @@ export class AuthService extends BaseService {
       access_token: string
       refresh_token: string
       expires_in: number
-      user: any
+      user: User
       requires_mfa?: boolean
       mfa_token?: string
     }>(API_ENDPOINTS.AUTH.LOGIN, credentials)
@@ -36,8 +38,18 @@ export class AuthService extends BaseService {
       },
       user: data.user,
       requires_mfa: data.requires_mfa ?? false,
-      mfa_token: data.mfa_token!,
+      mfa_token: data.mfa_token || '',
     }
+  }
+
+  async register(data: RegistrationData): Promise<User> {
+    const response = await this.post<User>(API_ENDPOINTS.AUTH.REGISTER, data)
+    return this.extractData(response)
+  }
+
+  async getProfile(): Promise<User> {
+    const response = await this.get<User>(API_ENDPOINTS.AUTH.PROFILE)
+    return this.extractData(response)
   }
 
   async logout(): Promise<void> {
@@ -63,11 +75,16 @@ export class AuthService extends BaseService {
 
       const response = await this.post<{
         access_token: string
-        refresh_token: string
+        refresh_token?: string
         expires_in: number
       }>(API_ENDPOINTS.AUTH.REFRESH, { refresh_token: refreshToken })
 
       const data = this.extractData(response)
+
+      // Validate response before updating tokens
+      if (!data || !data.access_token) {
+        throw new Error('Invalid refresh response')
+      }
 
       this.setAuthToken(data.access_token)
       if (data.refresh_token) {
@@ -80,7 +97,8 @@ export class AuthService extends BaseService {
         expires_in: data.expires_in,
         token_type: 'Bearer',
       }
-    } catch {
+    } catch (error) {
+      console.error('Token refresh failed:', error)
       this.clearAuthTokens()
       return null
     }
@@ -107,6 +125,13 @@ export class AuthService extends BaseService {
     await this.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, data)
   }
 
+  async verifyResetToken(token: string): Promise<{ email: string }> {
+    const response = await this.get<{ email: string }>(
+      API_ENDPOINTS.AUTH.VERIFY_RESET_TOKEN(token)
+    )
+    return this.extractData(response)
+  }
+
   async getSessions(): Promise<SessionInfo[]> {
     const response = await this.get<SessionInfo[]>(API_ENDPOINTS.AUTH.SESSIONS)
     return this.extractData(response)
@@ -117,11 +142,13 @@ export class AuthService extends BaseService {
   }
 
   async revokeOtherSessions(): Promise<void> {
-    await this.post('/auth/sessions/revoke-others')
+    await this.post(API_ENDPOINTS.AUTH.REVOKE_OTHERS)
   }
 
   async getUserTokens(userId: string): Promise<AuthToken[]> {
-    const response = await this.get<AuthToken[]>(API_ENDPOINTS.AUTH_TOKENS.BY_USER(userId))
+    const response = await this.get<AuthToken[]>(
+      API_ENDPOINTS.AUTH_TOKENS.BY_USER(userId)
+    )
     return this.extractData(response)
   }
 
@@ -138,14 +165,29 @@ export class AuthService extends BaseService {
     expired: number
     total_cleaned: number
   }> {
-    const response = await this.post<{ revoked: number; expired: number; total_cleaned: number }>(
-      API_ENDPOINTS.AUTH.CLEANUP
+    const response = await this.post<{
+      revoked: number
+      expired: number
+      total_cleaned: number
+    }>(API_ENDPOINTS.AUTH.CLEANUP)
+    return this.extractData(response)
+  }
+
+  async updateProfile(data: Partial<User>): Promise<User> {
+    const response = await this.patch<User>(API_ENDPOINTS.AUTH.PROFILE, data)
+    return this.extractData(response)
+  }
+
+  async updateUser(userId: string, data: Partial<User>): Promise<User> {
+    const response = await this.patch<User>(
+      API_ENDPOINTS.USERS.UPDATE(userId),
+      data
     )
     return this.extractData(response)
   }
 
-  async verifyResetToken(token: string): Promise<{ email: string }> {
-    const response = await this.get<{ email: string }>(API_ENDPOINTS.AUTH.VERIFY_RESET_TOKEN(token))
+  async getUserById(userId: string): Promise<User> {
+    const response = await this.get<User>(API_ENDPOINTS.USERS.GET(userId))
     return this.extractData(response)
   }
 }

@@ -32,9 +32,6 @@ export { DocumentService, documentService } from './documents/DocumentService'
 // Notifications
 export { NotificationService, notificationService } from './notification/NotificationService'
 
-// Synchronization
-export { SyncService, syncService } from './sync/SyncService'
-
 // Audit
 export { AuditService, auditService } from './audit/AuditService'
 
@@ -43,23 +40,3 @@ export { DashboardService, dashboardService } from './dashboard/DashboardService
 
 // Cache
 export { CacheService, cacheService } from './cache/CacheService'
-
-/**
- * Export types
- */
-
-// Incident Management
-export type {
-    CreateIncidentDTO,
-    UpdateIncidentDTO,
-    CloseIncidentDTO,
-} from './incident/IncidentService'
-
-// Document Management
-export type {
-    DocumentUploadProgress,
-    DocumentVerificationResult,
-} from './documents/DocumentService'
-
-// Notifications
-export type { UpdatePreferencesRequest } from './notification/NotificationService'

@@ -1,7 +1,6 @@
 // ============================================
 // Core Types
 // ============================================
-export * from './common.types'
 export * from './api.types'
 export * from './auth.types'
 
@@ -19,66 +18,6 @@ export * from './document.types'
 export * from './dashboard.types'
 export * from './settings.types'
 export * from './router.types'
-
-// ============================================
-// Re-export Commonly Used Types (for convenience)
-// ============================================
-
-// Common Types
-export type {
-  ApiResponse,
-  PaginatedResponse,
-  ApiError,
-  PaginationParams,
-  PaginationState,
-  QueryParams,
-  DateRange,
-  SortOption,
-  Toast,
-  ToastAction,
-  DialogOptions,
-  MenuItem,
-  BreadcrumbItem,
-  TabConfig,
-  FormField,
-  SelectOption,
-  ValidationRule,
-  LoadingState,
-  ErrorState,
-  EmptyState,
-  DeepPartial,
-  RecursivePartial,
-  Nullable,
-  OmitMultiple,
-  PickRequired,
-  ValueOf,
-  PartialRecord,
-  NonNullableFields,
-  AsyncStatus,
-  Theme,
-  Environment,
-  RouteMeta,
-  NavGroup,
-  NavItem,
-  FileInfo,
-  UploadProgress,
-  FileConstraints,
-  ChartDataPoint,
-  ChartSeries,
-  ChartOptions,
-  KeyboardHandler,
-  ClickHandler,
-  ChangeHandler,
-  SubmitHandler,
-  UUID,
-  ISO8601,
-  Timestamp,
-  Email,
-  URL,
-  Phone,
-  Currency,
-  Percentage,
-} from './common.types'
 
 // API Types
 export type {
@@ -193,7 +132,6 @@ export type {
 export type {
   DashboardData,
   DashboardKPIs as DashboardKPIsType,
-  RiskTrend as DashboardRiskTrend,
 } from './dashboard.types'
 
 // Settings Types
@@ -267,7 +205,7 @@ export type {
 
 export type { QueryOperator, TransactionMode } from './db.types'
 
-import { ApiError, ApiResponse, PaginatedResponse } from './common.types'
+import { ApiError, ApiResponse, PaginatedResponse } from 'src/shared/types/common.types'
 // Router Types (augmentation only)
 import './router.types'
 
@@ -278,7 +216,7 @@ import './router.types'
 /**
  * Extract data from API response with proper typing
  */
-export function extractApiData<T>(response: ApiResponse<T>): T {
+export function extractApiData<T>(response: ApiResponse<T>): T | undefined {
   if (!response.success) {
     throw new Error(response.message || 'API request failed')
   }
