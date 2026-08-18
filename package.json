@@ -42,8 +42,8 @@
     "build-release-apk-prod": "npx tsx build-apk.ts release prod",
     "clean:build": "yarn clean && yarn && yarn build",
     "sync:run:android:app": "npx cap add android && npx cap sync android && npx cap run android",
-    "clean:build:web": "cp -f .env_files/.env.local .env && yarn clean && yarn install && yarn build",
     "dev:chrome": "cp -f .env_files/.env.local .env && quasar dev -m spa --open --browser chrome",
+    "clean:build:chrome": "cp -f .env_files/.env.local .env && yarn clean && yarn install && yarn build && yarn dev:chrome",
     "build:serve": "cp -f .env_files/.env.local .env && yarn build && npx serve dist/spa"
   },
   "dependencies": {

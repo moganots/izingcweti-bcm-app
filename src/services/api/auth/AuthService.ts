@@ -15,30 +15,33 @@ import type {
 
 export class AuthService extends BaseService {
   async login(credentials: LoginCredentials): Promise<LoginResponse> {
+        if (!credentials || !credentials.email || !credentials.password) {
+      throw new Error('Email and password are required');
+    }
+
     const response = await this.post<{
-      access_token: string
-      refresh_token: string
+      accessToken: string
+      refreshToken: string
       expires_in: number
+      token_type: string
       user: User
-      requires_mfa?: boolean
-      mfa_token?: string
     }>(API_ENDPOINTS.AUTH.LOGIN, credentials)
 
     const data = this.extractData(response)
 
-    this.setAuthToken(data.access_token)
-    this.setRefreshToken(data.refresh_token)
+    this.setAuthToken(data.accessToken)
+    this.setRefreshToken(data.refreshToken)
 
     return {
       tokens: {
-        access_token: data.access_token,
-        refresh_token: data.refresh_token,
+        access_token: data.accessToken,
+        refresh_token: data.refreshToken,
         expires_in: data.expires_in,
-        token_type: 'Bearer',
+        token_type: data.token_type || 'Bearer',
       },
       user: data.user,
-      requires_mfa: data.requires_mfa ?? false,
-      mfa_token: data.mfa_token || '',
+      requires_mfa: false,
+      mfa_token: '',
     }
   }
 
