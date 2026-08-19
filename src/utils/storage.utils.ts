@@ -5,10 +5,10 @@ import { STORAGE_KEYS } from './constants'
  * Auth token interface - must match the one in auth.store.ts
  */
 export interface AuthTokens {
-  access_token: string
-  refresh_token: string
-  expires_in: number
-  token_type: string
+  accessToken: string
+  refreshToken: string
+  expiresIn: number
+  tokenType: string
 }
 
 // ============================================
@@ -101,6 +101,7 @@ export async function getTokensAsync(): Promise<AuthTokens | null> {
 export async function clearTokensAsync(): Promise<void> {
   await removeStorageItem(STORAGE_KEYS.AUTH_TOKEN)
   await removeStorageItem(STORAGE_KEYS.REFRESH_TOKEN)
+  await removeStorageItem(STORAGE_KEYS.EXPIRES_IN)
   await removeStorageItem(STORAGE_KEYS.USER_DATA)
 }
 
@@ -281,12 +282,27 @@ export const StorageUtils = {
 
   /** Save auth tokens synchronously */
   saveTokens: (tokens: AuthTokens): void => {
-    StorageUtils.setJSON(STORAGE_KEYS.AUTH_TOKEN, tokens)
+    localStorage.setItem(STORAGE_KEYS.AUTH_TOKEN, tokens.accessToken)
+    localStorage.setItem(STORAGE_KEYS.REFRESH_TOKEN, tokens.refreshToken)
+    localStorage.setItem(STORAGE_KEYS.EXPIRES_IN, String(tokens.expiresIn))
   },
 
   /** Get auth tokens synchronously */
   getTokens: (): AuthTokens | null => {
-    return StorageUtils.getJSON<AuthTokens>(STORAGE_KEYS.AUTH_TOKEN)
+    const accessToken = localStorage.getItem(STORAGE_KEYS.AUTH_TOKEN)
+    const refreshToken = localStorage.getItem(STORAGE_KEYS.REFRESH_TOKEN)
+    const expiresIn = localStorage.getItem(STORAGE_KEYS.EXPIRES_IN)
+
+    if (!accessToken || !refreshToken) {
+      return null
+    }
+
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: parseInt(expiresIn || '3600', 10),
+      tokenType: 'Bearer',
+    }
   },
 
   /** Clear auth tokens synchronously */
@@ -304,6 +320,25 @@ export const StorageUtils = {
   /** Get user data synchronously */
   getUserData: <T = any>(): T | null => {
     return StorageUtils.getJSON<T>(STORAGE_KEYS.USER_DATA)
+  },
+
+  // ==========================================
+  // Remembered Email Helpers
+  // ==========================================
+
+  /** Save remembered email synchronously */
+  saveRememberedEmail: (email: string): void => {
+    localStorage.setItem('bcm_remembered_email', email)
+  },
+
+  /** Get remembered email synchronously */
+  getRememberedEmail: (): string | null => {
+    return localStorage.getItem('bcm_remembered_email')
+  },
+
+  /** Clear remembered email synchronously */
+  clearRememberedEmail: (): void => {
+    localStorage.removeItem('bcm_remembered_email')
   },
 
   // ==========================================

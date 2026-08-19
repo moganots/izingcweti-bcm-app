@@ -105,17 +105,21 @@ export const DATE_FORMATS = {
   LONG: 'dd MMMM yyyy',
 } as const
 
+// ============================================
+// API Endpoints
+// ============================================
 export const API_ENDPOINTS = {
-  // API (general)
+  // ============================================
+  // Health & System Endpoints
+  // ============================================
   API: {
-    PING: '/api/ping',
-    VERSION: '/api/version',
-    SEARCH: '/api/search',
-    SERVER_TIME: '/api/server-time',
-    HEALTH: '/api/health',
+    PING: '/ping',
+    HEALTH: '/health',
   },
 
-  // Auth
+  // ============================================
+  // Auth Endpoints (auth.routes.ts)
+  // ============================================
   AUTH: {
     LOGIN: '/auth/login',
     REGISTER: '/auth/register',
@@ -123,40 +127,75 @@ export const API_ENDPOINTS = {
     LOGOUT_ALL: '/auth/logout-all',
     REFRESH: '/auth/refresh',
     VALIDATE: '/auth/validate',
-    PROFILE: '/auth/profile',
     CHANGE_PASSWORD: '/auth/change-password',
     FORGOT_PASSWORD: '/auth/forgot-password',
     RESET_PASSWORD: '/auth/reset-password',
     SESSIONS: '/auth/sessions',
-    SESSION: (id: string) => `/auth/sessions/${id}`,
-    REVOKE_OTHERS: '/auth/sessions/revoke-others',
+    SESSION: (tokenId: string) => `/auth/sessions/${tokenId}`,
     CLEANUP: '/auth/cleanup',
-    VERIFY_RESET_TOKEN: (token: string) => `/auth/verify-reset-token/${token}`,
-  },
-  AUTH_TOKENS: {
-    BY_USER: (userId: string) => `/auth/tokens/user/${userId}`,
-    REVOKE: (tokenId: string) => `/auth/tokens/${tokenId}/revoke`,
-    REVOKE_ALL: (userId: string) => `/auth/tokens/user/${userId}/revoke-all`,
-  },
-  USERS: {
-    GET: (id: string) => `/users/${id}`,
-    UPDATE: (id: string) => `/users/${id}`,
-    DELETE: (id: string) => `/users/${id}`,
-    LIST: '/users',
+    PROFILE: '/auth/users/profile',
   },
 
-  // Tenants
+  // ============================================
+  // Auth Token Endpoints (auth-token.routes.ts)
+  // ============================================
+  AUTH_TOKENS: {
+    BASE: '/auth/tokens',
+    BY_ID: (uuid: string) => `/auth/tokens/${uuid}`,
+    REVOKE: (uuid: string) => `/auth/tokens/${uuid}/revoke`,
+    REVOKE_ALL_BY_USER: (userId: string) => `/auth/tokens/users/${userId}/revoke-all`,
+    BY_USER_ID: (userId: string) => `/auth/tokens/users/${userId}`,
+    ACTIVE_BY_USER: (userId: string) => `/auth/tokens/users/${userId}/active`,
+    MY_TOKENS: '/auth/tokens/me/tokens',
+    REVOKE_CURRENT: '/auth/tokens/me/revoke',
+    BY_TOKEN_VALUE: (tokenValue: string) => `/auth/tokens/value/${tokenValue}`,
+    EXPIRED: '/auth/tokens/expired',
+    CLEANUP: '/auth/tokens/cleanup',
+  },
+
+  // ============================================
+  // Users Endpoints (user.routes.ts)
+  // ============================================
+  USERS: {
+    BASE: '/auth/users',
+    PROFILE: '/auth/users/profile',
+    CHANGE_PASSWORD: '/auth/users/profile/change-password',
+    LIST: '/auth/users',
+    ACTIVE: '/auth/users/active',
+    STATISTICS: '/auth/users/statistics',
+    BY_ROLE: (role: string) => `/auth/users/role/${role}`,
+    BY_ORGANISATION: (organisationId: string) => `/auth/users/organisation/${organisationId}`,
+    BY_ID: (uuid: string) => `/auth/users/${uuid}`,
+    UPDATE: (uuid: string) => `/auth/users/${uuid}`,
+    CHANGE_USER_PASSWORD: (uuid: string) => `/auth/users/${uuid}/change-password`,
+    UPDATE_TRAINING: (uuid: string) => `/auth/users/${uuid}/training-completed`,
+    DEACTIVATE: (uuid: string) => `/auth/users/${uuid}/deactivate`,
+    ACTIVATE: (uuid: string) => `/auth/users/${uuid}/activate`,
+    DELETE: (uuid: string) => `/auth/users/${uuid}`,
+    BULK_IMPORT: '/auth/users/bulk-import',
+    EXPORT: '/auth/users/export',
+    RESEND_INVITATION: (uuid: string) => `/auth/users/${uuid}/resend-invitation`,
+    PREFERENCES: (userId: string) => `/auth/users/${userId}/preferences`,
+    MY_SESSIONS: '/auth/users/sessions',
+    REVOKE_SESSION: (sessionId: string) => `/auth/users/sessions/${sessionId}`,
+    REVOKE_OTHER_MY_SESSIONS: '/auth/users/sessions/revoke-others',
+    ROLES: '/auth/users/roles',
+    VERIFY_EMAIL: '/auth/users/verify-email',
+    RESEND_VERIFICATION: '/auth/users/resend-verification',
+  },
+
+  // ============================================
+  // Tenants Endpoints (tenant.routes.ts)
+  // ============================================
   TENANTS: {
     BASE: '/tenants',
     STATISTICS: '/tenants/statistics',
-    BY_DOMAIN: (domainPrefix: string) => `/tenants/domain/${domainPrefix}`,
+    BY_DOMAIN_PREFIX: (domainPrefix: string) => `/tenants/domain/${domainPrefix}`,
     METRICS: (uuid: string) => `/tenants/${uuid}/metrics`,
     BY_ID: (uuid: string) => `/tenants/${uuid}`,
     UPDATE: (uuid: string) => `/tenants/${uuid}`,
     UPDATE_STATUS: (uuid: string) => `/tenants/${uuid}/status`,
     DELETE: (uuid: string) => `/tenants/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/tenants/${uuid}/permanent`,
-    RESTORE: (uuid: string) => `/tenants/${uuid}/restore`,
     AUDIT_LOGS: (tenantId: string) => `/tenants/${tenantId}/audit-logs`,
     AUDIT_SUMMARY: (tenantId: string) => `/tenants/${tenantId}/audit-logs/summary`,
     AUDIT_BY_ACTION: (tenantId: string, action: string) =>
@@ -164,7 +203,9 @@ export const API_ENDPOINTS = {
     AUDIT_TIMELINE: (tenantId: string) => `/tenants/${tenantId}/audit-logs/timeline`,
   },
 
-  // Organisations
+  // ============================================
+  // Organisations Endpoints (organisation.routes.ts)
+  // ============================================
   ORGANISATIONS: {
     BASE: '/organisations',
     STATISTICS: '/organisations/statistics',
@@ -173,19 +214,11 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/organisations/${uuid}`,
     UPDATE: (uuid: string) => `/organisations/${uuid}`,
     DELETE: (uuid: string) => `/organisations/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/organisations/${uuid}/permanent`,
-    RESTORE: (uuid: string) => `/organisations/${uuid}/restore`,
-    DASHBOARD: (organisationId: string) => `/organisations/${organisationId}/dashboard`,
-    HIERARCHY: (organisationId: string) => `/organisations/${organisationId}/hierarchy`,
-    TREE: (organisationId: string) => `/organisations/${organisationId}/tree`,
-    VALIDATE_NAME: '/organisations/validate-name',
-    INDUSTRY_TYPES: '/organisations/industry-types',
-    MATURITY_SCORES: '/organisations/maturity-scores',
-    BULK_IMPORT: '/organisations/bulk-import',
-    EXPORT: '/organisations/export',
   },
 
-  // Business Units
+  // ============================================
+  // Business Units Endpoints (business-unit.routes.ts)
+  // ============================================
   BUSINESS_UNITS: {
     BASE: '/business-units',
     STATISTICS: '/business-units/statistics',
@@ -193,19 +226,11 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/business-units/${uuid}`,
     UPDATE: (uuid: string) => `/business-units/${uuid}`,
     DELETE: (uuid: string) => `/business-units/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/business-units/${uuid}/permanent`,
-    RESTORE: (uuid: string) => `/business-units/${uuid}/restore`,
-    CRITICAL: (organisationId: string) => `/business-units/${organisationId}/critical`,
-    CRITICALITY_SCORES: '/business-units/criticality-scores',
-    BULK_IMPORT: (organisationId: string) => `/business-units/${organisationId}/bulk-import`,
-    EXPORT: (organisationId: string) => `/business-units/${organisationId}/export`,
-    HIERARCHY: (businessUnitId: string) => `/business-units/${businessUnitId}/hierarchy`,
-    ORGANISATION_HIERARCHY: (organisationId: string) =>
-      `/business-units/organisation/${organisationId}/hierarchy`,
-    VALIDATE_NAME: '/business-units/validate-name',
   },
 
-  // Departments
+  // ============================================
+  // Departments Endpoints (department.routes.ts)
+  // ============================================
   DEPARTMENTS: {
     BASE: '/departments',
     SEARCH: '/departments/search',
@@ -216,22 +241,15 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/departments/${uuid}`,
     UPDATE: (uuid: string) => `/departments/${uuid}`,
     DELETE: (uuid: string) => `/departments/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/departments/${uuid}/permanent`,
-    RESTORE: (uuid: string) => `/departments/${uuid}/restore`,
-    WITHOUT_BIA: (organisationId: string) => `/departments/${organisationId}/without-bia`,
-    HIERARCHY: (businessUnitId: string) => `/departments/${businessUnitId}/hierarchy`,
-    PATH: (departmentId: string) => `/departments/${departmentId}/path`,
-    MOVE: (departmentId: string) => `/departments/${departmentId}/move`,
-    VALIDATE_NAME: '/departments/validate-name',
-    BULK_IMPORT: (businessUnitId: string) => `/departments/${businessUnitId}/bulk-import`,
-    EXPORT: (businessUnitId: string) => `/departments/${businessUnitId}/export`,
   },
 
-  // Critical Functions
+  // ============================================
+  // Critical Functions Endpoints (critical-function.routes.ts)
+  // ============================================
   CRITICAL_FUNCTIONS: {
     BASE: '/bcm/critical-functions',
     SUMMARY: '/bcm/critical-functions/summary',
-    REQUIRES_BCP: '/bcm/critical-functions/requires-bcp',
+    FUNCTIONS_REQUIRING_BCP: '/bcm/critical-functions/requires-bcp',
     PRIORITY_SUMMARY: '/bcm/critical-functions/priority-summary',
     BY_DEPARTMENT: (departmentId: string) => `/bcm/critical-functions/department/${departmentId}`,
     BY_PRIORITY: (priority: string) => `/bcm/critical-functions/priority/${priority}`,
@@ -240,7 +258,9 @@ export const API_ENDPOINTS = {
     DELETE: (uuid: string) => `/bcm/critical-functions/${uuid}`,
   },
 
-  // BIA
+  // ============================================
+  // Business Impact Assessment Endpoints (business-impact-assessment.routes.ts)
+  // ============================================
   BIA: {
     BASE: '/bcm/impact-assessments',
     FINANCIAL_SUMMARY: '/bcm/impact-assessments/financial-summary',
@@ -249,11 +269,11 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
     UPDATE: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
     DELETE: (uuid: string) => `/bcm/impact-assessments/${uuid}`,
-    ANALYZE: '/bcm/impact-assessments/analyze',
-    EXPORT: (organisationId: string) => `/bcm/impact-assessments/export/${organisationId}`,
   },
 
-  // BCP
+  // ============================================
+  // Business Continuity Plans Endpoints (business-continuity-plan.routes.ts)
+  // ============================================
   BCP: {
     BASE: '/bcm/plans',
     ACTIVE: '/bcm/plans/active',
@@ -264,14 +284,12 @@ export const API_ENDPOINTS = {
     UPDATE: (uuid: string) => `/bcm/plans/${uuid}`,
     APPROVE: (uuid: string) => `/bcm/plans/${uuid}/approve`,
     ARCHIVE: (uuid: string) => `/bcm/plans/${uuid}/archive`,
-    ACTIVATE: (uuid: string) => `/bcm/plans/${uuid}/activate`,
     DELETE: (uuid: string) => `/bcm/plans/${uuid}`,
-    VALIDATE: '/bcm/plans/validate',
-    PROGRESS: '/bcm/plans/progress',
-    EXPORT: (id: string) => `/bcm/plans/${id}/export`,
   },
 
-  // Recovery Strategies
+  // ============================================
+  // Recovery Strategies Endpoints (recovery-strategy.routes.ts)
+  // ============================================
   RECOVERY_STRATEGIES: {
     BASE: '/bcm/recovery-strategies',
     HIGH_SUCCESS_RATE: '/bcm/recovery-strategies/high-success-rate',
@@ -281,37 +299,17 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
     UPDATE: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
     DELETE: (uuid: string) => `/bcm/recovery-strategies/${uuid}`,
-    COMPARE: (bcpId: string) => `/bcm/recovery-strategies/${bcpId}/compare`,
   },
 
-  // Exercise Tests
-  EXERCISE_TESTS: {
-    BASE: '/exercise-tests',
-    PASSED: '/exercise-tests/passed',
-    FAILED: '/exercise-tests/failed',
-    UPCOMING: '/exercise-tests/upcoming',
-    PAST: '/exercise-tests/past',
-    DATE_RANGE: '/exercise-tests/date-range',
-    BY_BCP: (bcpId: string) => `/exercise-tests/bcp/${bcpId}`,
-    BY_ID: (uuid: string) => `/exercise-tests/${uuid}`,
-    UPDATE: (uuid: string) => `/exercise-tests/${uuid}`,
-    RECORD_RESULT: (uuid: string) => `/exercise-tests/${uuid}/record-result`,
-    DELETE: (uuid: string) => `/exercise-tests/${uuid}`,
-    STATISTICS: '/bcm/exercise-tests/statistics',
-  },
-
-  // Risks
+  // ============================================
+  // Risks Endpoints (risk.routes.ts)
+  // ============================================
   RISKS: {
     BASE: '/risks',
     STATISTICS: '/risks/statistics',
-    HIGH: '/risks/high',
+    HIGH_RISKS: '/risks/high',
     MY_ASSIGNED: '/risks/my-assigned',
     OVERDUE_REVIEWS: '/risks/overdue-reviews',
-    MATRIX: (organisationId: string) => `/risks/${organisationId}/matrix`,
-    HEATMAP: (organisationId: string) => `/risks/${organisationId}/heatmap`,
-    HEATMAP_SUMMARY: (organisationId: string) => `/risks/${organisationId}/heatmap-summary`,
-    TRENDS: (organisationId: string) => `/risks/${organisationId}/trends`,
-    TREND_ANALYSIS: (organisationId: string) => `/risks/${organisationId}/trend-analysis`,
     BY_ID: (uuid: string) => `/risks/${uuid}`,
     UPDATE: (uuid: string) => `/risks/${uuid}`,
     ASSESS: (uuid: string) => `/risks/${uuid}/assess`,
@@ -319,16 +317,11 @@ export const API_ENDPOINTS = {
     ASSIGN: (uuid: string) => `/risks/${uuid}/assign`,
     CLOSE: (uuid: string) => `/risks/${uuid}/close`,
     DELETE: (uuid: string) => `/risks/${uuid}`,
-    MITIGATION_PLAN: (riskId: string) => `/risks/${riskId}/mitigation-plan`,
-    MITIGATION_ACTION: (riskId: string, actionId: string) =>
-      `/risks/${riskId}/mitigation-plan/actions/${actionId}`,
-    BULK_UPDATE_STATUS: '/risks/bulk-update-status',
-    BULK_ASSIGN: '/risks/bulk-assign',
-    BULK_DELETE: '/risks/bulk-delete',
-    EXPORT: (organisationId: string) => `/risks/export/${organisationId}`,
   },
 
-  // Incidents
+  // ============================================
+  // Incidents Endpoints (incident.routes.ts)
+  // ============================================
   INCIDENTS: {
     BASE: '/incidents',
     ACTIVE: '/incidents/active',
@@ -346,19 +339,28 @@ export const API_ENDPOINTS = {
     ASSIGN: (uuid: string) => `/incidents/${uuid}/assign`,
     ADD_UPDATE: (uuid: string) => `/incidents/${uuid}/updates`,
     DELETE: (uuid: string) => `/incidents/${uuid}`,
-    STATS: '/incidents/stats',
-    RESPONSE_PLAN: (incidentId: string) => `/incidents/${incidentId}/response-plan`,
-    ACTIVATE_PLAN: (incidentId: string) => `/incidents/${incidentId}/activate-plan`,
-    RESPONSE_ACTION: (incidentId: string, actionId: string) =>
-      `/incidents/${incidentId}/response-plan/actions/${actionId}`,
-    RECOVERY_METRICS: (incidentId: string) => `/incidents/${incidentId}/recovery-metrics`,
-    REPORT: (incidentId: string, reportType: string) =>
-      `/incidents/${incidentId}/report/${reportType}`,
-    TIMELINE: (incidentId: string) => `/incidents/${incidentId}/timeline`,
-    EXPORT: (organisationId: string) => `/incidents/export/${organisationId}`,
   },
 
-  // Compliance
+  // ============================================
+  // Exercise Tests Endpoints (exercise-test.routes.ts)
+  // ============================================
+  EXERCISE_TESTS: {
+    BASE: '/exercise-tests',
+    PASSED: '/exercise-tests/passed',
+    FAILED: '/exercise-tests/failed',
+    UPCOMING: '/exercise-tests/upcoming',
+    PAST: '/exercise-tests/past',
+    DATE_RANGE: '/exercise-tests/date-range',
+    BY_BCP: (bcpId: string) => `/exercise-tests/bcp/${bcpId}`,
+    BY_ID: (uuid: string) => `/exercise-tests/${uuid}`,
+    UPDATE: (uuid: string) => `/exercise-tests/${uuid}`,
+    RECORD_RESULT: (uuid: string) => `/exercise-tests/${uuid}/record-result`,
+    DELETE: (uuid: string) => `/exercise-tests/${uuid}`,
+  },
+
+  // ============================================
+  // Compliance Records Endpoints (compliance-record.routes.ts)
+  // ============================================
   COMPLIANCE: {
     BASE: '/compliance',
     SUMMARY: '/compliance/summary',
@@ -371,22 +373,14 @@ export const API_ENDPOINTS = {
     UPDATE: (uuid: string) => `/compliance/${uuid}`,
     UPDATE_STATUS: (uuid: string) => `/compliance/${uuid}/status`,
     DELETE: (uuid: string) => `/compliance/${uuid}`,
-    EVIDENCE: (id: string) => `/compliance/${id}/evidence`,
-    REMOVE_EVIDENCE: (id: string, index: number) => `/compliance/${id}/evidence/${index}`,
-    GAPS: '/compliance/gaps',
-    EXPORT: '/compliance/export',
-    AUDIT_HISTORY: (id: string) => `/compliance/${id}/audit-history`,
-    SCHEDULE_AUDIT: (id: string) => `/compliance/${id}/schedule-audit`,
-    BULK_UPDATE_STATUS: '/compliance/bulk-update-status',
-    VERIFY: '/compliance/verify',
-    GENERATE_REPORT: '/compliance/generate-report',
   },
 
-  // Workflows
+  // ============================================
+  // Workflow Endpoints (workflow.routes.ts)
+  // ============================================
   WORKFLOWS: {
     BASE: '/workflows',
     STATS: '/workflows/stats',
-    METRICS: '/workflows/metrics',
     PENDING_APPROVALS: '/workflows/pending/approvals',
     OVERDUE: '/workflows/status/overdue',
     ACTIVE: '/workflows/status/active',
@@ -398,10 +392,7 @@ export const API_ENDPOINTS = {
     BY_ID: (uuid: string) => `/workflows/${uuid}`,
     UPDATE: (uuid: string) => `/workflows/${uuid}`,
     DELETE: (uuid: string) => `/workflows/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/workflows/${uuid}/permanent`,
-    RESTORE: (uuid: string) => `/workflows/${uuid}/restore`,
     SUBMIT: (uuid: string) => `/workflows/${uuid}/submit`,
-    START_REVIEW: (uuid: string) => `/workflows/${uuid}/start-review`,
     APPROVE: (uuid: string) => `/workflows/${uuid}/approve`,
     REJECT: (uuid: string) => `/workflows/${uuid}/reject`,
     COMPLETE: (uuid: string) => `/workflows/${uuid}/complete`,
@@ -410,18 +401,31 @@ export const API_ENDPOINTS = {
     REASSIGN: (uuid: string) => `/workflows/${uuid}/reassign`,
     ARCHIVE: (uuid: string) => `/workflows/${uuid}/archive`,
     CANCEL: (uuid: string) => `/workflows/${uuid}/cancel`,
-    APPROVAL_CHAIN: (workflowId: string) => `/workflows/${workflowId}/approval-chain`,
-    COMMENTS: (workflowId: string) => `/workflows/${workflowId}/comments`,
-    TEMPLATES: '/workflows/templates',
-    TEMPLATE_BY_ID: (id: string) => `/workflows/templates/${id}`,
-    CREATE_FROM_TEMPLATE: (templateId: string) => `/workflows/templates/${templateId}/create`,
-    EXPORT: '/workflows/export',
-    BULK_APPROVE: '/workflows/bulk-approve',
-    BULK_REJECT: '/workflows/bulk-reject',
-    BULK_REASSIGN: '/workflows/bulk-reassign',
   },
 
-  // Documents
+  // ============================================
+  // Rules Endpoints (rule.routes.ts)
+  // ============================================
+  RULES: {
+    BASE: '/rules',
+    STATISTICS: '/rules/statistics',
+    ACTIVE: '/rules/active',
+    BY_ID: (uuid: string) => `/rules/${uuid}`,
+    UPDATE: (uuid: string) => `/rules/${uuid}`,
+    ACTIVATE: (uuid: string) => `/rules/${uuid}/activate`,
+    DEACTIVATE: (uuid: string) => `/rules/${uuid}/deactivate`,
+    ARCHIVE: (uuid: string) => `/rules/${uuid}/archive`,
+    EXECUTE: (uuid: string) => `/rules/${uuid}/execute`,
+    TEST: (uuid: string) => `/rules/${uuid}/test`,
+    DELETE: (uuid: string) => `/rules/${uuid}`,
+    EXECUTION_LOGS: (ruleId: string) => `/rules/${ruleId}/execution-logs`,
+    EXECUTION_STATS: (ruleId: string) => `/rules/${ruleId}/execution-logs/stats`,
+    EXECUTION_LOGS_CLEANUP: '/rules/execution-logs/cleanup',
+  },
+
+  // ============================================
+  // Documents Endpoints (document.routes.ts)
+  // ============================================
   DOCUMENTS: {
     BASE: '/documents',
     UPLOAD: '/documents/upload',
@@ -434,9 +438,6 @@ export const API_ENDPOINTS = {
     BY_STATUS: (status: string) => `/documents/status/${status}`,
     BY_ORGANISATION: (organisationId: string) => `/documents/organisation/${organisationId}`,
     DOWNLOAD: (uuid: string) => `/documents/${uuid}/download`,
-    PREVIEW: (uuid: string) => `/documents/${uuid}/preview`,
-    VERSIONS: (uuid: string) => `/documents/${uuid}/versions`,
-    RESTORE_VERSION: (uuid: string) => `/documents/${uuid}/restore-version`,
     BY_ID: (uuid: string) => `/documents/${uuid}`,
     UPDATE: (uuid: string) => `/documents/${uuid}`,
     NEW_VERSION: (uuid: string) => `/documents/${uuid}/new-version`,
@@ -446,15 +447,11 @@ export const API_ENDPOINTS = {
     ARCHIVE: (uuid: string) => `/documents/${uuid}/archive`,
     PUBLISH: (uuid: string) => `/documents/${uuid}/publish`,
     DELETE: (uuid: string) => `/documents/${uuid}`,
-    VERIFY: (uuid: string) => `/documents/${uuid}/verify`,
-    TAGS: (uuid: string) => `/documents/${uuid}/tags`,
-    BULK_DOWNLOAD: '/documents/bulk-download',
-    BULK_OPERATION: '/documents/bulk-operation',
-    TEMPLATES: '/documents/templates',
-    GENERATE_FROM_TEMPLATE: '/documents/generate-from-template',
   },
 
-  // Notifications
+  // ============================================
+  // Notifications Endpoints (notification.routes.ts)
+  // ============================================
   NOTIFICATIONS: {
     BASE: '/notifications',
     UNREAD_COUNT: '/notifications/unread/count',
@@ -462,44 +459,17 @@ export const API_ENDPOINTS = {
     MARK_ALL_READ: '/notifications/mark-all-read',
     PREFERENCES: '/notifications/preferences',
     TEMPLATES: '/notifications/templates',
+    CREATE_TEMPLATE: '/notifications/templates',
     BULK: '/notifications/bulk',
-    UNREAD: '/notifications/unread',
-    BY_STATUS: (status: string) => `/notifications/status/${status}`,
-    BY_TYPE: (type: string) => `/notifications/type/${type}`,
     BY_ID: (uuid: string) => `/notifications/${uuid}`,
     MARK_READ: (uuid: string) => `/notifications/${uuid}/read`,
-    MARK_UNREAD: (uuid: string) => `/notifications/${uuid}/unread`,
     ARCHIVE: (uuid: string) => `/notifications/${uuid}/archive`,
-    DISMISS: (uuid: string) => `/notifications/${uuid}/dismiss`,
     DELETE: (uuid: string) => `/notifications/${uuid}`,
-    PERMANENT_DELETE: (uuid: string) => `/notifications/${uuid}/permanent`,
-    BULK_DELETE: '/notifications/bulk-delete',
-    SETTINGS: (userId: string) => `/notifications/settings/${userId}`,
-    TRACK_CLICK: (notificationId: string) => `/notifications/${notificationId}/track-click`,
-    SUMMARY: '/notifications/summary',
   },
 
-  // Audit
-  AUDIT: {
-    BASE: '/audit/logs',
-    BY_ID: (uuid: string) => `/audit/logs/${uuid}`,
-    ENTITY_HISTORY: (entityType: string, entityId: string) =>
-      `/audit/entity-history/${entityType}/${entityId}`,
-    USER_ACTIVITY: (userId: string) => `/audit/user-activity/${userId}`,
-    MY_ACTIVITY: '/audit/my-activity',
-    STATS: '/audit/stats',
-    SUMMARY: '/audit/summary',
-    EXPORT: '/audit/export',
-    CLEANUP: '/audit/cleanup',
-    REPLAY: '/audit/replay',
-    ANOMALIES: '/audit/anomalies',
-    ANOMALY_BY_ID: (anomalyId: string) => `/audit/anomalies/${anomalyId}`,
-    RETENTION_POLICIES: '/audit/retention-policies',
-    RETENTION_POLICY_BY_ID: (uuid: string) => `/audit/retention-policies/${uuid}`,
-    APPLY_RETENTION: '/audit/apply-retention',
-  },
-
-  // Feature Toggles
+  // ============================================
+  // Feature Toggle Endpoints (feature-toggle.routes.ts)
+  // ============================================
   FEATURE_TOGGLES: {
     BASE: '/features',
     STATS: '/features/stats',
@@ -509,107 +479,118 @@ export const API_ENDPOINTS = {
     ACTIVE_OVERRIDES: '/features/overrides/active',
     DELETE_EXPIRED_OVERRIDES: '/features/overrides/expired',
     OVERRIDE_BY_ID: (uuid: string) => `/features/overrides/${uuid}`,
+    UPDATE_OVERRIDE: (uuid: string) => `/features/overrides/${uuid}`,
+    DELETE_OVERRIDE: (uuid: string) => `/features/overrides/${uuid}`,
     BY_ID: (uuid: string) => `/features/${uuid}`,
     UPDATE: (uuid: string) => `/features/${uuid}`,
     DELETE: (uuid: string) => `/features/${uuid}`,
     AUDIT_LOGS: (featureToggleId: string) => `/features/${featureToggleId}/audit-logs`,
   },
 
-  // Rules
-  RULES: {
-    BASE: '/rules',
-    STATISTICS: '/rules/statistics',
-    ACTIVE: '/rules/active',
-    BY_ID: (uuid: string) => `/rules/${uuid}`,
-    UPDATE: (uuid: string) => `/rules/${uuid}`,
-    ACTIVATE: (uuid: string) => `/rules/${uuid}/activate`,
-    DEACTIVATE: (uuid: string) => `/rules/${uuid}/deactivate`,
-    ARCHIVE: (uuid: string) => `/rules/${uuid}/archive`,
-    EXECUTE: (uuid: string) => `/rules/${uuid}/execute`,
-    TEST: (uuid: string) => `/rules/${uuid}/test`,
-    DUPLICATE: (uuid: string) => `/rules/${uuid}/duplicate`,
-    DELETE: (uuid: string) => `/rules/${uuid}`,
-    EXECUTION_LOGS: (ruleId: string) => `/rules/${ruleId}/logs`,
-    EXECUTION_STATS: (ruleId: string) => `/rules/${ruleId}/execution-stats`,
-    SCHEDULE: (ruleId: string) => `/rules/${ruleId}/schedule`,
-    VALIDATE: '/rules/validate',
-    BULK_ACTIVATE: '/rules/bulk-activate',
-    BULK_DEACTIVATE: '/rules/bulk-deactivate',
-    BULK_DELETE: '/rules/bulk-delete',
-    EXECUTION_LOGS_CLEANUP: '/rules/execution-logs/cleanup',
-  },
-
-  // Sync
+  // ============================================
+  // Sync Endpoints (sync.routes.ts)
+  // ============================================
   SYNC: {
     BASE: '/sync',
     PULL: '/sync/pull',
     PUSH: '/sync/push',
     BATCH: '/sync/batch',
-    STATUS: '/sync/status',
-    TRIGGER: '/sync/trigger',
     CONFLICTS_RESOLVE: '/sync/conflicts/resolve',
+
+    // Pending Changes
     PENDING_CHANGES: '/sync/pending-changes',
+    PENDING_CHANGES_BULK: '/sync/pending-changes/bulk',
     PENDING_CHANGES_PENDING: '/sync/pending-changes/pending',
     PENDING_CHANGES_STATS: '/sync/pending-changes/stats',
     PENDING_CHANGES_BY_ENTITY: (entityId: string) => `/sync/pending-changes/entity/${entityId}`,
     PENDING_CHANGES_BY_TYPE: (entityType: string) => `/sync/pending-changes/type/${entityType}`,
     PENDING_CHANGES_BY_ID: (uuid: string) => `/sync/pending-changes/${uuid}`,
+    PENDING_CHANGES_PROCESS: (uuid: string) => `/sync/pending-changes/${uuid}/process`,
+    PENDING_CHANGES_DELETE: (uuid: string) => `/sync/pending-changes/${uuid}`,
     PENDING_CHANGES_RETRY_FAILED: '/sync/pending-changes/retry-failed',
     PENDING_CHANGES_CLEANUP: '/sync/pending-changes/cleanup',
+
+    // Sync Conflicts
     CONFLICTS: '/sync/conflicts',
     CONFLICTS_UNRESOLVED: '/sync/conflicts/unresolved',
     CONFLICTS_STATS: '/sync/conflicts/stats',
     CONFLICTS_BY_ENTITY: (entityId: string) => `/sync/conflicts/entity/${entityId}`,
     CONFLICT_BY_ID: (uuid: string) => `/sync/conflicts/${uuid}`,
     CONFLICT_RESOLVE: (uuid: string) => `/sync/conflicts/${uuid}/resolve`,
-    CONFLICT_PREVIEW: (uuid: string) => `/sync/conflicts/${uuid}/preview`,
     CONFLICT_DELETE: (uuid: string) => `/sync/conflicts/${uuid}`,
     CONFLICTS_CLEANUP: '/sync/conflicts/cleanup',
+
+    // Sync Metadata
     METADATA: '/sync/metadata',
+    METADATA_BULK: '/sync/metadata/bulk',
     LAST_SYNC_TOKEN: '/sync/metadata/last-sync-token',
     SYNC_PROGRESS: '/sync/metadata/sync-progress',
+    METADATA_MAP: '/sync/metadata/map',
     METADATA_STATS: '/sync/metadata/stats',
     METADATA_BY_PREFIX: (prefix: string) => `/sync/metadata/prefix/${prefix}`,
+    METADATA_BY_PATTERN: (pattern: string) => `/sync/metadata/pattern/${pattern}`,
     METADATA_BY_KEY: (key: string) => `/sync/metadata/${key}`,
     METADATA_UPDATE: (key: string) => `/sync/metadata/${key}`,
+    METADATA_UPSERT: (key: string) => `/sync/metadata/${key}/upsert`,
     METADATA_UPDATE_TOKEN: '/sync/metadata/last-sync-token',
     METADATA_INCREMENT: (key: string) => `/sync/metadata/${key}/increment`,
     METADATA_BACKUP: '/sync/metadata/backup',
+    METADATA_RESTORE: (backupKey: string) => `/sync/metadata/restore/${backupKey}`,
     METADATA_CLEAR_PREFIX: (prefix: string) => `/sync/metadata/prefix/${prefix}`,
-    CONFIG: '/sync/config',
-    TOMBSTONES: '/sync/tombstones',
-    TOMBSTONES_CLEANUP: '/sync/tombstones/cleanup',
-    STATS: '/sync/stats',
+    METADATA_DELETE: (key: string) => `/sync/metadata/${key}`,
   },
 
-  // Cache
+  // ============================================
+  // Audit Endpoints (audit.routes.ts)
+  // ============================================
+  AUDIT: {
+    BASE: '/audit/logs',
+    BY_ID: (uuid: string) => `/audit/logs/${uuid}`,
+    ENTITY_HISTORY: (entityType: string, entityId: string) =>
+      `/audit/entity-history/${entityType}/${entityId}`,
+    USER_ACTIVITY: (userId: string) => `/audit/user-activity/${userId}`,
+    LOG_ACTIVITY: '/audit/log-activity',
+    LOG_BATCH: '/audit/log-batch',
+    STATS: '/audit/stats',
+    SUMMARY: '/audit/summary',
+    EXPORT: '/audit/export',
+    CLEANUP: '/audit/cleanup',
+    RETENTION_POLICIES: '/audit/retention-policies',
+    RETENTION_POLICY_BY_ID: (uuid: string) => `/audit/retention-policies/${uuid}`,
+    CREATE_RETENTION_POLICY: '/audit/retention-policies',
+    UPDATE_RETENTION_POLICY: (uuid: string) => `/audit/retention-policies/${uuid}`,
+    DELETE_RETENTION_POLICY: (uuid: string) => `/audit/retention-policies/${uuid}`,
+    APPLY_RETENTION: '/audit/apply-retention',
+  },
+
+  // ============================================
+  // Cache Endpoints (cache.routes.ts)
+  // ============================================
   CACHE: {
     BASE: '/cache',
     STATS: '/cache/stats',
     CLEAN_EXPIRED: '/cache/clean-expired',
     CLEAR_ALL: '/cache/clear-all',
-    KEYS: '/cache/keys',
     BY_PATTERN: '/cache/pattern',
     BY_TAGS: (tags: string) => `/cache/tags/${tags}`,
     DELETE_BY_TAGS: (tags: string) => `/cache/tags/${tags}`,
     BULK: '/cache/bulk',
     EXISTS: (key: string) => `/cache/${encodeURIComponent(key)}/exists`,
-    TTL: (key: string) => `/cache/${encodeURIComponent(key)}/ttl`,
-    INCREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/increment`,
-    DECREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/decrement`,
     GET_OR_SET: (key: string) => `/cache/${encodeURIComponent(key)}/get-or-set`,
     BY_KEY: (key: string) => `/cache/${encodeURIComponent(key)}`,
     UPDATE: (key: string) => `/cache/${encodeURIComponent(key)}`,
     DELETE: (key: string) => `/cache/${encodeURIComponent(key)}`,
-    WARM_UP: '/cache/warm-up',
   },
 
-  // Dashboard
+  // ============================================
+  // Dashboard Endpoints (dashboard.routes.ts)
+  // ============================================
   DASHBOARD: {
-    COMPLETE: '/dashboard/complete',
     USER_CONFIG: '/dashboard/user-config',
     CONFIGS: '/dashboard/configs',
     CONFIG_BY_ID: (uuid: string) => `/dashboard/configs/${uuid}`,
+    UPDATE_CONFIG: (uuid: string) => `/dashboard/configs/${uuid}`,
+    DELETE_CONFIG: (uuid: string) => `/dashboard/configs/${uuid}`,
     ORGANISATION_CONFIGS: (organisationId: string) =>
       `/dashboard/organisations/${organisationId}/configs`,
     ROLE_CONFIGS: (organisationId: string, role: string) =>
@@ -635,7 +616,9 @@ export const API_ENDPOINTS = {
       `/dashboard/organisations/${organisationId}/compliance-overview`,
   },
 
-  // Reports
+  // ============================================
+  // Reports Endpoints (report.routes.ts)
+  // ============================================
   REPORTS: {
     BASE: '/reports',
     PUBLIC: '/reports/public',
@@ -650,61 +633,5 @@ export const API_ENDPOINTS = {
     SCHEDULE: (uuid: string) => `/reports/${uuid}/schedule`,
     GET_DATA: (uuid: string) => `/reports/${uuid}/data`,
     DELETE_EXPIRED: '/reports/maintenance/delete-expired',
-  },
-
-  // Settings
-  SETTINGS: {
-    BASE: '/settings',
-    BY_ID: (id: string) => `/settings/${id}`,
-    USER: (userId: string) => `/settings/user/${userId}`,
-    ORGANISATION: (organisationId: string) => `/settings/organisation/${organisationId}`,
-    SYSTEM_DEFAULTS: '/settings/system-defaults',
-    RESET_USER: (userId: string) => `/settings/user/${userId}/reset`,
-    RESET_ORGANISATION: (organisationId: string) =>
-      `/settings/organisation/${organisationId}/reset`,
-    PREFERENCE: (userId: string, key: string) => `/settings/user/${userId}/preference/${key}`,
-    PREFERENCES_BULK: (userId: string) => `/settings/user/${userId}/preferences/bulk`,
-    NOTIFICATION_SETTINGS: (userId: string, type: string) =>
-      `/settings/user/${userId}/notifications/${type}`,
-    NOTIFICATION_SETTINGS_BULK: (userId: string) => `/settings/user/${userId}/notifications/bulk`,
-    THEME_SETTINGS: (userId: string) => `/settings/user/${userId}/theme`,
-    LANGUAGE_SETTINGS: (userId: string) => `/settings/user/${userId}/language`,
-    SECURITY_SETTINGS: (userId: string) => `/settings/user/${userId}/security`,
-    SYNC_SETTINGS: (userId: string) => `/settings/user/${userId}/sync`,
-    TRIGGER_SYNC: (userId: string) => `/settings/user/${userId}/sync/trigger`,
-    TEMPLATES: '/settings/templates',
-    APPLY_TEMPLATE: (templateId: string) => `/settings/templates/${templateId}/apply`,
-    TWO_FACTOR: (userId: string) => `/settings/user/${userId}/two-factor`,
-    TWO_FACTOR_VERIFY: (userId: string) => `/settings/user/${userId}/two-factor/verify`,
-    AVAILABLE_THEMES: '/settings/available-themes',
-    AVAILABLE_LOCALES: '/settings/available-locales',
-    VALIDATE: '/settings/validate',
-    EXPORT: '/settings/export',
-    IMPORT: '/settings/import',
-    BULK_UPDATE: '/settings/bulk-update',
-  },
-
-  // BCM Lifecycle
-  BCM_LIFECYCLE: {
-    BASE: (organisationId: string) => `/bcm/lifecycle/${organisationId}`,
-    PROGRESS: (organisationId: string) => `/bcm/lifecycle/${organisationId}/progress`,
-    TASK: (organisationId: string, taskId: string) =>
-      `/bcm/lifecycle/${organisationId}/tasks/${taskId}`,
-  },
-
-  // BCM Metrics
-  BCM_METRICS: {
-    BASE: '/bcm/metrics',
-    DASHBOARD: '/bcm/dashboard',
-    MATURITY_ASSESSMENT: '/bcm/maturity-assessment',
-  },
-
-  // Cache Extras
-  CACHE_EXTRA: {
-    KEYS: '/cache/keys',
-    TTL: (key: string) => `/cache/${encodeURIComponent(key)}/ttl`,
-    INCREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/increment`,
-    DECREMENT: (key: string) => `/cache/${encodeURIComponent(key)}/decrement`,
-    WARM_UP: '/cache/warm-up',
   },
 } as const

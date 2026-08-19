@@ -6,8 +6,9 @@ import {
     UserStats,
     CreateUserRequest,
     UpdateUserRequest,
-} from './../../services/api/user/UserService'
-import { UserQueryParams } from './../../types'
+    UserQueryParams,
+    UserRole,
+} from './../../models/entities/user/user.entity'
 
 export const useUserStore = defineStore('user', () => {
     // ============================================
@@ -273,7 +274,7 @@ export const useUserStore = defineStore('user', () => {
         error.value = null
 
         try {
-            const response = await userService.getUsersByRole(role, {
+            const response = await userService.getUsersByRole(role as any, {
                 page: currentPage.value,
             })
             users.value = response.data || []
@@ -309,12 +310,16 @@ export const useUserStore = defineStore('user', () => {
      * Export users
      */
     async function exportUsers(params?: {
-        organisation_id?: string
-        role?: string
+        organisationId?: string
+        role?: UserRole
         format?: 'csv' | 'json'
     }): Promise<void> {
         try {
-            await userService.exportUsers(params)
+            const exportParams: any = {}
+            if (params?.organisationId !== undefined) exportParams.organisationId = params.organisationId
+            if (params?.role !== undefined) exportParams.role = params.role
+            if (params?.format !== undefined) exportParams.format = params.format
+            await userService.exportUsers(exportParams)
         } catch (err: any) {
             console.error('Failed to export users:', err)
             error.value = err.message || 'Failed to export users'

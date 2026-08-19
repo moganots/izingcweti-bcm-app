@@ -99,7 +99,7 @@ export function useAuth() {
     // Actions
     // ============================================
     async function login(email: string, password: string, rememberMe?: boolean): Promise<void> {
-        await authStore.login({ email, password, remember_me: rememberMe } as LoginCredentials);
+        await authStore.login({ email, password, rememberMe } as LoginCredentials);
     }
 
     async function logout(): Promise<void> {

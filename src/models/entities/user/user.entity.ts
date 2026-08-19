@@ -33,8 +33,7 @@ export enum AuthTokenStatus {
 }
 
 /**
- * User Entity - Aligned with Backend
- * All fields match the backend User entity
+ * User Entity - Matches Backend (snake_case for entity fields)
  */
 export interface User {
   uuid: string;
@@ -81,114 +80,114 @@ export interface User {
 }
 
 /**
- * Login Credentials
+ * Login Credentials (camelCase for DTO)
  */
 export interface LoginCredentials {
   email: string;
   password: string;
-  remember_me?: boolean;
+  rememberMe?: boolean;
 }
 
 /**
- * Auth Tokens
+ * Auth Tokens (camelCase for DTO)
  */
 export interface AuthTokens {
-  access_token: string;
-  refresh_token: string;
-  expires_in: number;
-  token_type: string;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  tokenType: string;
 }
 
 /**
- * Login Response
+ * Login Response (camelCase for DTO)
  */
 export interface LoginResponse {
   tokens: AuthTokens;
   user: User;
-  requires_mfa?: boolean;
-  mfa_token?: string;
+  requiresMfa?: boolean;
+  mfaToken?: string;
 }
 
 /**
- * Registration Data
+ * Registration Data (camelCase for DTO)
  */
 export interface RegistrationData {
   email: string;
   password: string;
-  first_name?: string;
-  last_name?: string;
-  organisation_id?: string;
-  department_id?: string;
-  phone_number?: string;
+  firstName?: string;
+  lastName?: string;
+  organisationId?: string;
+  departmentId?: string;
+  phoneNumber?: string;
   role?: UserRole;
 }
 
 /**
- * Change Password Request
+ * Change Password Request (camelCase for DTO)
  */
 export interface ChangePasswordRequest {
-  current_password: string;
-  new_password: string;
-  confirm_password?: string;
+  currentPassword: string;
+  newPassword: string;
+  confirmPassword?: string;
 }
 
 /**
- * Forgot Password Request
+ * Forgot Password Request (camelCase for DTO)
  */
 export interface ForgotPasswordRequest {
   email: string;
 }
 
 /**
- * Reset Password Request
+ * Reset Password Request (camelCase for DTO)
  */
 export interface ResetPasswordRequest {
   token: string;
-  new_password: string;
-  confirm_password: string;
+  newPassword: string;
+  confirmPassword: string;
 }
 
 /**
- * Auth Token DTO
+ * Auth Token DTO (camelCase for DTO)
  */
 export interface AuthToken {
   uuid: string;
-  user_id: string;
-  organisation_id: string;
+  userId: string;
+  organisationId: string;
   token: string;
-  token_type: AuthTokenType;
+  tokenType: AuthTokenType;
   status: AuthTokenStatus;
-  expires_at: string | Date;
-  revoked_at?: string | Date | null;
-  last_used_at?: string | Date | null;
-  ip_address?: string;
-  user_agent?: string;
-  device_id?: string;
-  device_name?: string;
-  is_active_session: boolean;
-  session_metadata?: Record<string, any>;
-  created_by: string;
-  created_at: string | Date;
-  updated_by: string;
-  updated_at: string | Date;
+  expiresAt: string | Date;
+  revokedAt?: string | Date | null;
+  lastUsedAt?: string | Date | null;
+  ipAddress?: string;
+  userAgent?: string;
+  deviceId?: string;
+  deviceName?: string;
+  isActiveSession: boolean;
+  sessionMetadata?: Record<string, any>;
+  createdBy: string;
+  createdAt: string | Date;
+  updatedBy: string;
+  updatedAt: string | Date;
 }
 
 /**
- * Session Info
+ * Session Info (camelCase for DTO)
  */
 export interface SessionInfo {
-  token_id: string;
-  device_name?: string;
-  ip_address?: string;
-  user_agent?: string;
-  created_at: string | Date;
-  last_used_at?: string | Date | null;
-  expires_at: string | Date;
-  is_current?: boolean;
+  tokenId: string;
+  deviceName?: string;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: string | Date;
+  lastUsedAt?: string | Date | null;
+  expiresAt: string | Date;
+  isCurrent?: boolean;
 }
 
 /**
- * Auth State
+ * Auth State (camelCase for DTO)
  */
 export interface AuthState {
   user: User | null;
@@ -196,4 +195,101 @@ export interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
+}
+
+// ============================================
+// DTOs for API Requests/Responses (camelCase)
+// ============================================
+
+/**
+ * Create User Request (camelCase)
+ */
+export interface CreateUserRequest {
+  email: string;
+  password: string;
+  organisationId: string;
+  departmentId?: string;
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  role?: UserRole;
+}
+
+/**
+ * Update User Request (camelCase)
+ */
+export interface UpdateUserRequest {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  preferences?: Record<string, any>;
+  departmentId?: string;
+}
+
+/**
+ * User Query Parameters (camelCase)
+ */
+export interface UserQueryParams {
+  organisationId?: string;
+  departmentId?: string;
+  role?: UserRole;
+  isActive?: boolean;
+  search?: string;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+  startDate?: string | Date;
+  endDate?: string | Date;
+}
+
+/**
+ * Paginated Response (camelCase)
+ */
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+/**
+ * User Statistics (camelCase)
+ */
+export interface UserStats {
+  total: number;
+  active: number;
+  inactive: number;
+  trainingCompleted: number;
+  trainingPending: number;
+  byRole: Record<string, number>;
+  byOrganisation: Record<string, number>;
+}
+
+/**
+ * Create Auth Token Request (camelCase)
+ */
+export interface CreateAuthTokenRequest {
+  userId: string;
+  token: string;
+  tokenType: AuthTokenType;
+  expiresAt: string | Date;
+  ipAddress?: string;
+  userAgent?: string;
+  deviceId?: string;
+  deviceName?: string;
+  sessionMetadata?: Record<string, any>;
+}
+
+/**
+ * Update Auth Token Request (camelCase)
+ */
+export interface UpdateAuthTokenRequest {
+  status?: AuthTokenStatus;
+  revokedAt?: string | Date;
+  lastUsedAt?: string | Date;
+  isActiveSession?: boolean;
 }

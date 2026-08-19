@@ -26,7 +26,7 @@ export const useAuthStore = defineStore('auth', () => {
   const error = ref<string | null>(null)
 
   // Getters
-  const isAuthenticated = computed(() => !!tokens.value?.access_token && !!user.value)
+  const isAuthenticated = computed(() => !!tokens.value?.accessToken && !!user.value)
   const userId = computed(() => user.value?.uuid || '')
   const userEmail = computed(() => user.value?.email || '')
   const userRole = computed(() => user.value?.role || '')
@@ -106,13 +106,13 @@ export const useAuthStore = defineStore('auth', () => {
       const storedTokens = StorageUtils.getTokens()
       const storedUser = StorageUtils.getUserData()
 
-      if (storedTokens?.access_token && storedUser) {
+      if (storedTokens?.accessToken && storedUser) {
         tokens.value = storedTokens
         user.value = storedUser as User
 
         // Validate token and refresh if needed
         await refreshTokenIfNeeded()
-      } else if (storedTokens?.access_token) {
+      } else if (storedTokens?.accessToken) {
         // Have token but no user data - fetch profile
         tokens.value = storedTokens
         await fetchProfile()
@@ -147,10 +147,10 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.login(credentials)
 
       const newTokens: AuthTokens = {
-        access_token: response.tokens.access_token,
-        refresh_token: response.tokens.refresh_token,
-        expires_in: response.tokens.expires_in,
-        token_type: response.tokens.token_type || 'Bearer',
+        accessToken: response.tokens.accessToken,
+        refreshToken: response.tokens.refreshToken,
+        expiresIn: response.tokens.expiresIn,
+        tokenType: response.tokens.tokenType || 'Bearer',
       }
 
       tokens.value = newTokens
@@ -161,10 +161,10 @@ export const useAuthStore = defineStore('auth', () => {
       StorageUtils.saveUserData(response.user)
 
       // Save remembered email
-      if (credentials.remember_me) {
-        localStorage.setItem('bcm_remembered_email', credentials.email)
+      if (credentials.rememberMe) {
+        StorageUtils.saveRememberedEmail(credentials.email)
       } else {
-        localStorage.removeItem('bcm_remembered_email')
+        StorageUtils.clearRememberedEmail()
       }
 
       console.log('Login successful:', {
@@ -213,7 +213,7 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshToken(): Promise<void> {
-    if (!tokens.value?.refresh_token) {
+    if (!tokens.value?.refreshToken) {
       throw new Error('No refresh token available')
     }
 
@@ -223,9 +223,9 @@ export const useAuthStore = defineStore('auth', () => {
       if (response) {
         const updatedTokens: AuthTokens = {
           ...tokens.value,
-          access_token: response.access_token,
-          refresh_token: response.refresh_token || tokens.value.refresh_token,
-          expires_in: response.expires_in,
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken || tokens.value.refreshToken,
+          expiresIn: response.expiresIn,
         }
 
         tokens.value = updatedTokens
@@ -239,10 +239,10 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function refreshTokenIfNeeded(): Promise<boolean> {
-    if (!tokens.value?.access_token) return false
+    if (!tokens.value?.accessToken) return false
 
     try {
-      const tokenData = parseJWT(tokens.value.access_token)
+      const tokenData = parseJWT(tokens.value.accessToken)
       if (tokenData?.exp) {
         const expiresIn = tokenData.exp * 1000 - Date.now()
         // Refresh if less than 5 minutes remaining
@@ -264,9 +264,9 @@ export const useAuthStore = defineStore('auth', () => {
 
     try {
       const request: ChangePasswordRequest = {
-        current_password: currentPassword,
-        new_password: newPassword,
-        confirm_password: newPassword,
+        currentPassword: currentPassword,
+        newPassword: newPassword,
+        confirmPassword: newPassword,
       }
       await authService.changePassword(request)
     } catch (err: any) {
@@ -301,8 +301,8 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const request: ResetPasswordRequest = {
         token,
-        new_password: newPassword,
-        confirm_password: newPassword,
+        newPassword: newPassword,
+        confirmPassword: newPassword,
       }
       await authService.resetPassword(request)
     } catch (err: any) {
@@ -396,16 +396,13 @@ export const useAuthStore = defineStore('auth', () => {
   function hasRole(role: string | string[]): boolean {
     if (!user.value) return false
     const roles = Array.isArray(role) ? role : [role]
-    // Normalize role strings for comparison
     const normalizedUserRole = userRole.value.toUpperCase()
     return roles.some((r) => r.toUpperCase() === normalizedUserRole)
   }
 
   function hasPermission(permission: string): boolean {
-    // Implement permission checking based on user role
     if (!user.value) return false
 
-    // Define role-based permissions
     const permissions: Record<string, string[]> = {
       'admin': [
         UserRole.SYSTEM_ADMINISTRATOR,
