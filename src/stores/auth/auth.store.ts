@@ -92,9 +92,6 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Actions
 
-  /**
-   * Initialize authentication - called by boot/auth.ts
-   */
   async function initialize(): Promise<void> {
     if (isInitialized.value) return
 
@@ -102,24 +99,19 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null
 
     try {
-      // Try to get stored tokens synchronously first
       const storedTokens = StorageUtils.getTokens()
       const storedUser = StorageUtils.getUserData()
 
       if (storedTokens?.accessToken && storedUser) {
         tokens.value = storedTokens
         user.value = storedUser as User
-
-        // Validate token and refresh if needed
         await refreshTokenIfNeeded()
       } else if (storedTokens?.accessToken) {
-        // Have token but no user data - fetch profile
         tokens.value = storedTokens
         await fetchProfile()
       }
     } catch (err: any) {
       console.error('Auth initialization failed:', err)
-      // Clear invalid data
       user.value = null
       tokens.value = null
       StorageUtils.clearTokens()
@@ -129,9 +121,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Check authentication status - called by App.vue
-   */
   async function checkAuth(): Promise<boolean> {
     if (!isInitialized.value) {
       await initialize()
@@ -156,11 +145,9 @@ export const useAuthStore = defineStore('auth', () => {
       tokens.value = newTokens
       user.value = response.user
 
-      // Save to storage
       StorageUtils.saveTokens(newTokens)
       StorageUtils.saveUserData(response.user)
 
-      // Save remembered email
       if (credentials.rememberMe) {
         StorageUtils.saveRememberedEmail(credentials.email)
       } else {
@@ -245,7 +232,6 @@ export const useAuthStore = defineStore('auth', () => {
       const tokenData = parseJWT(tokens.value.accessToken)
       if (tokenData?.exp) {
         const expiresIn = tokenData.exp * 1000 - Date.now()
-        // Refresh if less than 5 minutes remaining
         if (expiresIn < 300000) {
           await refreshToken()
           return true
@@ -316,10 +302,8 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout(): Promise<void> {
     try {
-      // Attempt to notify server, but don't wait for response
-      await authService.logout().catch(() => { })
+      await authService.logout().catch(() => {})
     } finally {
-      // Clear state regardless of server response
       user.value = null
       tokens.value = null
       error.value = null
@@ -451,7 +435,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  // Reset function for testing
   function reset(): void {
     user.value = null
     tokens.value = null
@@ -462,14 +445,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
-    // State
     user,
     tokens,
     isInitialized,
     isLoading,
     error,
 
-    // Getters
     isAuthenticated,
     userId,
     userEmail,
@@ -487,7 +468,6 @@ export const useAuthStore = defineStore('auth', () => {
     isAccountLocked,
     lockRemainingTime,
 
-    // Actions
     initialize,
     checkAuth,
     login,

@@ -25,7 +25,6 @@ export class UserService extends BaseService {
   async getUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
     const queryParams = this.mapQueryParamsToSnakeCase(params || {});
     const response = await this.getPaginated<User>(API_ENDPOINTS.USERS.LIST, queryParams);
-    // Ensure the response matches PaginatedResponse<T> shape
     return {
       data: response.data || [],
       total: response.total || 0,
@@ -46,7 +45,6 @@ export class UserService extends BaseService {
   }
 
   async createUser(data: CreateUserRequest): Promise<User> {
-    // Map camelCase DTO to snake_case for backend
     const payload = {
       email: data.email,
       password: data.password,
@@ -176,118 +174,6 @@ export class UserService extends BaseService {
       training_completed_at: completed ? new Date().toISOString() : null,
     });
     return this.extractData(response);
-  }
-
-  async permanentlyDeleteUser(id: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.USERS.DELETE(id));
-  }
-
-  async restoreUser(id: string): Promise<User> {
-    const response = await this.post<User>(`${API_ENDPOINTS.USERS.BASE}/${id}/restore`);
-    return this.extractData(response);
-  }
-
-  async changeMyPassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
-    await this.post(API_ENDPOINTS.USERS.CHANGE_PASSWORD, {
-      current_password: data.currentPassword,
-      new_password: data.newPassword,
-    });
-  }
-
-  // ============================================
-  // Bulk Operations
-  // ============================================
-
-  async bulkImportUsers(users: CreateUserRequest[]): Promise<BulkImportResult> {
-    const payload = users.map((user) => ({
-      email: user.email,
-      password: user.password,
-      organisation_id: user.organisationId,
-      department_id: user.departmentId,
-      first_name: user.firstName,
-      last_name: user.lastName,
-      phone_number: user.phoneNumber,
-      role: user.role,
-    }));
-    const response = await this.post<BulkImportResult>(API_ENDPOINTS.USERS.BULK_IMPORT, { users: payload });
-    return this.extractData(response);
-  }
-
-  async exportUsers(params?: {
-    organisationId?: string;
-    role?: UserRole;
-    format?: 'csv' | 'json';
-  }): Promise<void> {
-    const format = params?.format || 'csv';
-    const queryParams: Record<string, any> = {};
-    if (params?.organisationId) queryParams.organisation_id = params.organisationId;
-    if (params?.role) queryParams.role = params.role;
-
-    await this.download(
-      API_ENDPOINTS.USERS.EXPORT,
-      `users_export_${new Date().toISOString().split('T')[0]}.${format}`,
-      { params: queryParams }
-    );
-  }
-
-  async resendInvitation(id: string): Promise<void> {
-    await this.post(API_ENDPOINTS.USERS.RESEND_INVITATION(id));
-  }
-
-  // ============================================
-  // User Preferences
-  // ============================================
-
-  async getUserPreferences(userId: string): Promise<Record<string, any>> {
-    const response = await this.get<Record<string, any>>(
-      API_ENDPOINTS.USERS.PREFERENCES(userId)
-    );
-    return this.extractData(response);
-  }
-
-  async updateUserPreferences(
-    userId: string,
-    preferences: Record<string, any>
-  ): Promise<Record<string, any>> {
-    const response = await this.put<Record<string, any>>(
-      API_ENDPOINTS.USERS.PREFERENCES(userId),
-      preferences
-    );
-    return this.extractData(response);
-  }
-
-  // ============================================
-  // Session Management for Users
-  // ============================================
-
-  async getMySessions(): Promise<any[]> {
-    const response = await this.get<any[]>(API_ENDPOINTS.USERS.MY_SESSIONS);
-    return this.extractData(response);
-  }
-
-  async revokeSession(sessionId: string): Promise<void> {
-    await this.delete(API_ENDPOINTS.USERS.REVOKE_SESSION(sessionId));
-  }
-
-  async revokeOtherSessions(): Promise<void> {
-    await this.post(API_ENDPOINTS.USERS.REVOKE_OTHER_MY_SESSIONS);
-  }
-
-  // ============================================
-  // Role & Verification
-  // ============================================
-
-  async getUserRoles(): Promise<UserRole[]> {
-    const response = await this.get<UserRole[]>(API_ENDPOINTS.USERS.ROLES);
-    return this.extractData(response);
-  }
-
-  async verifyEmail(token: string): Promise<void> {
-    await this.post(API_ENDPOINTS.USERS.VERIFY_EMAIL, { token });
-  }
-
-  async resendVerificationEmail(): Promise<void> {
-    await this.post(API_ENDPOINTS.USERS.RESEND_VERIFICATION);
   }
 
   // ============================================

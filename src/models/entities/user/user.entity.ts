@@ -14,7 +14,7 @@ export enum UserRole {
 }
 
 /**
- * Auth Token Type Enum
+ * Auth Token Type Enum - Aligned with Backend
  */
 export enum AuthTokenType {
   ACCESS = 'ACCESS',
@@ -24,13 +24,17 @@ export enum AuthTokenType {
 }
 
 /**
- * Auth Token Status Enum
+ * Auth Token Status Enum - Aligned with Backend
  */
 export enum AuthTokenStatus {
   ACTIVE = 'ACTIVE',
   REVOKED = 'REVOKED',
   EXPIRED = 'EXPIRED',
 }
+
+// ============================================
+// ENTITY (snake_case - Matches Backend Database)
+// ============================================
 
 /**
  * User Entity - Matches Backend (snake_case for entity fields)
@@ -78,6 +82,49 @@ export interface User {
     name: string;
   };
 }
+
+/**
+ * Auth Token Entity - Matches Backend (snake_case)
+ */
+export interface AuthTokenEntity {
+  uuid: string;
+  user_id: string;
+  organisation_id: string;
+  token: string;
+  token_type: AuthTokenType;
+  status: AuthTokenStatus;
+  expires_at: string | Date;
+  revoked_at?: string | Date | null;
+  last_used_at?: string | Date | null;
+  ip_address?: string;
+  user_agent?: string;
+  device_id?: string;
+  device_name?: string;
+  is_active_session: boolean;
+  session_metadata?: Record<string, any>;
+  created_by: string;
+  created_at: string | Date;
+  updated_by: string;
+  updated_at: string | Date;
+}
+
+/**
+ * Session Info - Matches Backend (snake_case)
+ */
+export interface SessionInfoEntity {
+  token_id: string;
+  device_name?: string;
+  ip_address?: string;
+  user_agent?: string;
+  created_at: string | Date;
+  last_used_at?: string | Date | null;
+  expires_at: string | Date;
+  is_current?: boolean;
+}
+
+// ============================================
+// DTOs (camelCase - For Frontend API Calls)
+// ============================================
 
 /**
  * Login Credentials (camelCase for DTO)
@@ -198,7 +245,7 @@ export interface AuthState {
 }
 
 // ============================================
-// DTOs for API Requests/Responses (camelCase)
+// API Request/Response DTOs (camelCase)
 // ============================================
 
 /**

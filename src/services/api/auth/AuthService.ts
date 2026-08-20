@@ -76,7 +76,7 @@ export class AuthService extends BaseService {
   }
 
   async getProfile(): Promise<User> {
-    const response = await this.get<User>(API_ENDPOINTS.AUTH.PROFILE);
+    const response = await this.get<User>(API_ENDPOINTS.USERS.PROFILE);
     return this.extractData(response);
   }
 
@@ -106,7 +106,7 @@ export class AuthService extends BaseService {
         refreshToken?: string;
         expiresIn: number;
       }>(API_ENDPOINTS.AUTH.REFRESH, {
-        refreshToken: refreshToken, // camelCase as per backend DTO
+        refreshToken: refreshToken,
       });
 
       const data = this.extractData(response);
@@ -147,7 +147,6 @@ export class AuthService extends BaseService {
   // ============================================
 
   async changePassword(data: ChangePasswordRequest): Promise<void> {
-    // Map camelCase to snake_case for backend
     const payload = {
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
@@ -210,7 +209,6 @@ export class AuthService extends BaseService {
       total_cleaned: number;
     }>(API_ENDPOINTS.AUTH.CLEANUP);
     const data = this.extractData(response);
-    // Map snake_case to camelCase for response
     return {
       revoked: data.revoked,
       expired: data.expired,
@@ -223,9 +221,8 @@ export class AuthService extends BaseService {
   // ============================================
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    // Map camelCase to snake_case for backend
     const payload = this.mapUserToSnakeCase(data);
-    const response = await this.patch<User>(API_ENDPOINTS.AUTH.PROFILE, payload);
+    const response = await this.patch<User>(API_ENDPOINTS.USERS.PROFILE, payload);
     return this.extractData(response);
   }
 
@@ -244,7 +241,7 @@ export class AuthService extends BaseService {
   }
 
   // ============================================
-  // Helper Methods
+  // Helper Methods - DTO to Entity Mappers
   // ============================================
 
   /**
@@ -262,6 +259,7 @@ export class AuthService extends BaseService {
     if (data.department_id !== undefined) mapped.department_id = data.department_id;
     if (data.avatar_url !== undefined) mapped.avatar_url = data.avatar_url;
     if (data.email !== undefined) mapped.email = data.email;
+    if (data.organisation_id !== undefined) mapped.organisation_id = data.organisation_id;
 
     return mapped;
   }

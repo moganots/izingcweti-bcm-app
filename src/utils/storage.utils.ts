@@ -328,12 +328,19 @@ export const StorageUtils = {
 
   /** Save remembered email synchronously */
   saveRememberedEmail: (email: string): void => {
-    localStorage.setItem('bcm_remembered_email', email)
+    StorageUtils.setJSON(STORAGE_KEYS.REMEMBERED_EMAIL, email)
   },
 
   /** Get remembered email synchronously */
   getRememberedEmail: (): string | null => {
-    return localStorage.getItem('bcm_remembered_email')
+    return StorageUtils.getJSON(STORAGE_KEYS.REMEMBERED_EMAIL)
+  },
+
+  /**
+   * Clear remembered email
+   */
+  clearRememberedEmail(): void {
+    StorageUtils.removeStorageItem(STORAGE_KEYS.REMEMBERED_EMAIL)
   },
 
   /** Clear remembered email synchronously */

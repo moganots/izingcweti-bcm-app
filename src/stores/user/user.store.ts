@@ -147,12 +147,10 @@ export const useUserStore = defineStore('user', () => {
 
         try {
             const updated = await userService.updateUser(id, data)
-            // Update in local list
             const index = users.value.findIndex((u) => u.uuid === id)
             if (index !== -1) {
                 users.value[index] = updated
             }
-            // Update selected if viewing
             if (selectedUser.value?.uuid === id) {
                 selectedUser.value = updated
             }
