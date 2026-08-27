@@ -27,14 +27,14 @@ export const useUserStore = defineStore('user', () => {
     // ============================================
     // Getters
     // ============================================
-    const activeUsers = computed(() => users.value.filter((u) => u.is_active))
+    const activeUsers = computed(() => users.value.filter((u) => u.isActive))
 
-    const inactiveUsers = computed(() => users.value.filter((u) => !u.is_active))
+    const inactiveUsers = computed(() => users.value.filter((u) => !u.isActive))
 
-    const trainingCompleted = computed(() => users.value.filter((u) => u.training_completed_at))
+    const trainingCompleted = computed(() => users.value.filter((u) => u.trainingCompletedAt))
 
     const trainingPending = computed(() =>
-        users.value.filter((u) => u.is_active && !u.training_completed_at)
+        users.value.filter((u) => u.isActive && !u.trainingCompletedAt)
     )
 
     const usersByRole = computed(() => {
@@ -50,7 +50,7 @@ export const useUserStore = defineStore('user', () => {
     const usersByOrganisation = computed(() => {
         const grouped: Record<string, User[]> = {}
         users.value.forEach((u) => {
-            const orgId = u.organisation_id || 'Unknown'
+            const orgId = u.organisationId || 'Unknown'
             if (!grouped[orgId]) grouped[orgId] = []
             grouped[orgId].push(u)
         })
@@ -313,11 +313,7 @@ export const useUserStore = defineStore('user', () => {
         format?: 'csv' | 'json'
     }): Promise<void> {
         try {
-            const exportParams: any = {}
-            if (params?.organisationId !== undefined) exportParams.organisationId = params.organisationId
-            if (params?.role !== undefined) exportParams.role = params.role
-            if (params?.format !== undefined) exportParams.format = params.format
-            await userService.exportUsers(exportParams)
+            await userService.exportUsers(params)
         } catch (err: any) {
             console.error('Failed to export users:', err)
             error.value = err.message || 'Failed to export users'

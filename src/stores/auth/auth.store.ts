@@ -30,15 +30,15 @@ export const useAuthStore = defineStore('auth', () => {
   const userId = computed(() => user.value?.uuid || '')
   const userEmail = computed(() => user.value?.email || '')
   const userRole = computed(() => user.value?.role || '')
-  const userOrganisationId = computed(() => user.value?.organisation_id || '')
-  const userDepartmentId = computed(() => user.value?.department_id || '')
-  const isActive = computed(() => user.value?.is_active ?? false)
-  const isEmailVerified = computed(() => user.value?.is_email_verified ?? false)
+  const userOrganisationId = computed(() => user.value?.organisationId || '')
+  const userDepartmentId = computed(() => user.value?.departmentId || '')
+  const isActive = computed(() => user.value?.isActive ?? false)
+  const isEmailVerified = computed(() => user.value?.isEmailVerified ?? false)
   const fullName = computed(() => {
-    if (user.value?.first_name && user.value?.last_name) {
-      return `${user.value.first_name} ${user.value.last_name}`
+    if (user.value?.firstName && user.value?.lastName) {
+      return `${user.value.firstName} ${user.value.lastName}`
     }
-    if (user.value?.first_name) return user.value.first_name
+    if (user.value?.firstName) return user.value.firstName
     if (user.value?.email) {
       const namePart = user.value.email.split('@')[0]
       return namePart ? namePart.replace(/[._]/g, ' ') : 'User'
@@ -51,8 +51,6 @@ export const useAuthStore = defineStore('auth', () => {
     const adminRoles = [
       UserRole.SYSTEM_ADMINISTRATOR,
       UserRole.SUPER_ADMIN,
-      'System Administrator',
-      'Super Admin',
     ]
     return adminRoles.includes(userRole.value as UserRole)
   })
@@ -60,32 +58,31 @@ export const useAuthStore = defineStore('auth', () => {
   const isBCMManager = computed(() => {
     const managerRoles = [
       UserRole.BCM_MANAGER,
-      'BCM Manager',
     ]
     return managerRoles.includes(userRole.value as UserRole)
   })
 
   const isRiskOwner = computed(() => {
-    return userRole.value === UserRole.RISK_OWNER || userRole.value === 'Risk Owner'
+    return userRole.value === UserRole.RISK_OWNER
   })
 
   const isProcessOwner = computed(() => {
-    return userRole.value === UserRole.PROCESS_OWNER || userRole.value === 'Process Owner'
+    return userRole.value === UserRole.PROCESS_OWNER
   })
 
   const isBCMCoordinator = computed(() => {
-    return userRole.value === UserRole.BCM_COORDINATOR || userRole.value === 'BCM Coordinator'
+    return userRole.value === UserRole.BCM_COORDINATOR
   })
 
   const isAccountLocked = computed(() => {
-    if (!user.value?.locked_until) return false
-    return new Date(user.value.locked_until) > new Date()
+    if (!user.value?.lockedUntil) return false
+    return new Date(user.value.lockedUntil) > new Date()
   })
 
   const lockRemainingTime = computed(() => {
-    if (!user.value?.locked_until) return null
+    if (!user.value?.lockedUntil) return null
     const now = new Date()
-    const lockUntil = new Date(user.value.locked_until)
+    const lockUntil = new Date(user.value.lockedUntil)
     if (now >= lockUntil) return 0
     return lockUntil.getTime() - now.getTime()
   })
@@ -302,7 +299,7 @@ export const useAuthStore = defineStore('auth', () => {
 
   async function logout(): Promise<void> {
     try {
-      await authService.logout().catch(() => {})
+      await authService.logout().catch(() => { })
     } finally {
       user.value = null
       tokens.value = null
@@ -391,24 +388,18 @@ export const useAuthStore = defineStore('auth', () => {
       'admin': [
         UserRole.SYSTEM_ADMINISTRATOR,
         UserRole.SUPER_ADMIN,
-        'System Administrator',
-        'Super Admin'
       ],
       'bcm_manager': [
         UserRole.BCM_MANAGER,
-        'BCM Manager'
       ],
       'risk_owner': [
         UserRole.RISK_OWNER,
-        'Risk Owner'
       ],
       'process_owner': [
         UserRole.PROCESS_OWNER,
-        'Process Owner'
       ],
       'bcm_coordinator': [
         UserRole.BCM_COORDINATOR,
-        'BCM Coordinator'
       ]
     }
 

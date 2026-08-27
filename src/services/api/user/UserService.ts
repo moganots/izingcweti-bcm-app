@@ -23,14 +23,14 @@ export class UserService extends BaseService {
   // ============================================
 
   async getUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
-    const queryParams = this.mapQueryParamsToSnakeCase(params || {});
-    const response = await this.getPaginated<User>(API_ENDPOINTS.USERS.LIST, queryParams);
+    const response = await this.getPaginated<User>(API_ENDPOINTS.USERS.LIST, params as Record<string, any>);
     return {
       data: response.data || [],
       total: response.total || 0,
       page: response.page || 1,
       limit: response.limit || 10,
       totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
     };
   }
 
@@ -45,14 +45,15 @@ export class UserService extends BaseService {
   }
 
   async createUser(data: CreateUserRequest): Promise<User> {
+    // Backend expects camelCase in DTO
     const payload = {
       email: data.email,
       password: data.password,
-      organisation_id: data.organisationId,
-      department_id: data.departmentId,
-      first_name: data.firstName,
-      last_name: data.lastName,
-      phone_number: data.phoneNumber,
+      organisationId: data.organisationId,
+      departmentId: data.departmentId,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
       role: data.role,
     };
     const response = await this.post<User>(API_ENDPOINTS.USERS.BASE, payload);
@@ -60,13 +61,42 @@ export class UserService extends BaseService {
   }
 
   async updateUser(id: string, data: UpdateUserRequest): Promise<User> {
-    const payload = this.mapUpdateRequestToSnakeCase(data);
+    // Backend expects camelCase in DTO
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
+      role: data.role,
+      isActive: data.isActive,
+      preferences: data.preferences,
+      departmentId: data.departmentId,
+      avatarUrl: data.avatarUrl,
+      metadata: data.metadata,
+    };
+    // Remove undefined values
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof typeof payload] === undefined) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
     const response = await this.patch<User>(API_ENDPOINTS.USERS.UPDATE(id), payload);
     return this.extractData(response);
   }
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    const payload = this.mapUserToSnakeCase(data);
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
+      preferences: data.preferences,
+      avatarUrl: data.avatarUrl,
+      metadata: data.metadata,
+    };
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof typeof payload] === undefined) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
     const response = await this.patch<User>(API_ENDPOINTS.USERS.PROFILE, payload);
     return this.extractData(response);
   }
@@ -91,7 +121,7 @@ export class UserService extends BaseService {
 
   async changeUserPassword(id: string, newPassword: string): Promise<void> {
     await this.post(API_ENDPOINTS.USERS.CHANGE_USER_PASSWORD(id), {
-      new_password: newPassword,
+      newPassword: newPassword,
     });
   }
 
@@ -103,10 +133,9 @@ export class UserService extends BaseService {
     organisationId: string,
     params?: UserQueryParams
   ): Promise<PaginatedResponse<User>> {
-    const queryParams = this.mapQueryParamsToSnakeCase(params || {});
     const response = await this.getPaginated<User>(
       API_ENDPOINTS.USERS.BY_ORGANISATION(organisationId),
-      queryParams
+      params as Record<string, any>
     );
     return {
       data: response.data || [],
@@ -114,14 +143,14 @@ export class UserService extends BaseService {
       page: response.page || 1,
       limit: response.limit || 10,
       totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
     };
   }
 
   async getUsersByRole(role: UserRole, params?: UserQueryParams): Promise<PaginatedResponse<User>> {
-    const queryParams = this.mapQueryParamsToSnakeCase(params || {});
     const response = await this.getPaginated<User>(
       API_ENDPOINTS.USERS.BY_ROLE(role),
-      queryParams
+      params as Record<string, any>
     );
     return {
       data: response.data || [],
@@ -129,14 +158,14 @@ export class UserService extends BaseService {
       page: response.page || 1,
       limit: response.limit || 10,
       totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
     };
   }
 
   async getActiveUsers(params?: UserQueryParams): Promise<PaginatedResponse<User>> {
-    const queryParams = this.mapQueryParamsToSnakeCase(params || {});
     const response = await this.getPaginated<User>(
       API_ENDPOINTS.USERS.ACTIVE,
-      queryParams
+      params as Record<string, any>
     );
     return {
       data: response.data || [],
@@ -144,6 +173,7 @@ export class UserService extends BaseService {
       page: response.page || 1,
       limit: response.limit || 10,
       totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
     };
   }
 
@@ -156,7 +186,7 @@ export class UserService extends BaseService {
   // ============================================
 
   async getStats(organisationId?: string): Promise<UserStats> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined;
+    const params = organisationId ? { organisationId } : undefined;
     const response = await this.get<UserStats>(API_ENDPOINTS.USERS.STATISTICS, params);
     return this.extractData(response);
   }
@@ -171,71 +201,43 @@ export class UserService extends BaseService {
 
   async updateTrainingStatus(id: string, completed: boolean): Promise<User> {
     const response = await this.patch<User>(API_ENDPOINTS.USERS.UPDATE_TRAINING(id), {
-      training_completed_at: completed ? new Date().toISOString() : null,
+      trainingCompletedAt: completed ? new Date().toISOString() : null,
     });
     return this.extractData(response);
   }
 
   // ============================================
-  // Helper Methods - DTO to Entity Mappers
+  // Export & Import
   // ============================================
 
-  /**
-   * Map camelCase query params to snake_case for backend
-   */
-  private mapQueryParamsToSnakeCase(params: UserQueryParams): Record<string, any> {
-    const mapped: Record<string, any> = {};
-
-    if (params.organisationId) mapped.organisation_id = params.organisationId;
-    if (params.departmentId) mapped.department_id = params.departmentId;
-    if (params.role) mapped.role = params.role;
-    if (params.isActive !== undefined) mapped.is_active = params.isActive;
-    if (params.search) mapped.search = params.search;
-    if (params.page) mapped.page = params.page;
-    if (params.limit) mapped.limit = params.limit;
-    if (params.sortBy) mapped.sort_by = params.sortBy;
-    if (params.sortOrder) mapped.sort_order = params.sortOrder;
-    if (params.startDate) mapped.start_date = params.startDate;
-    if (params.endDate) mapped.end_date = params.endDate;
-
-    return mapped;
+  async exportUsers(params?: {
+    organisationId?: string;
+    role?: UserRole;
+    format?: 'csv' | 'json';
+  }): Promise<void> {
+    await this.download(API_ENDPOINTS.USERS.EXPORT, `users_export.${params?.format || 'json'}`, {
+      params: params as Record<string, any>,
+    });
   }
 
-  /**
-   * Map camelCase User to snake_case for backend
-   */
-  private mapUserToSnakeCase(data: Partial<User>): Record<string, any> {
-    const mapped: Record<string, any> = {};
-
-    if (data.first_name !== undefined) mapped.first_name = data.first_name;
-    if (data.last_name !== undefined) mapped.last_name = data.last_name;
-    if (data.phone_number !== undefined) mapped.phone_number = data.phone_number;
-    if (data.role !== undefined) mapped.role = data.role;
-    if (data.is_active !== undefined) mapped.is_active = data.is_active;
-    if (data.preferences !== undefined) mapped.preferences = data.preferences;
-    if (data.department_id !== undefined) mapped.department_id = data.department_id;
-    if (data.avatar_url !== undefined) mapped.avatar_url = data.avatar_url;
-    if (data.email !== undefined) mapped.email = data.email;
-    if (data.organisation_id !== undefined) mapped.organisation_id = data.organisation_id;
-
-    return mapped;
+  async bulkImportUsers(usersData: CreateUserRequest[]): Promise<BulkImportResult> {
+    const response = await this.post<BulkImportResult>(API_ENDPOINTS.USERS.BULK_IMPORT, {
+      users: usersData.map((u) => ({
+        email: u.email,
+        password: u.password,
+        organisationId: u.organisationId,
+        departmentId: u.departmentId,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        phoneNumber: u.phoneNumber,
+        role: u.role,
+      })),
+    });
+    return this.extractData(response);
   }
 
-  /**
-   * Map camelCase UpdateUserRequest to snake_case for backend
-   */
-  private mapUpdateRequestToSnakeCase(data: UpdateUserRequest): Record<string, any> {
-    const mapped: Record<string, any> = {};
-
-    if (data.firstName !== undefined) mapped.first_name = data.firstName;
-    if (data.lastName !== undefined) mapped.last_name = data.lastName;
-    if (data.phoneNumber !== undefined) mapped.phone_number = data.phoneNumber;
-    if (data.role !== undefined) mapped.role = data.role;
-    if (data.isActive !== undefined) mapped.is_active = data.isActive;
-    if (data.preferences !== undefined) mapped.preferences = data.preferences;
-    if (data.departmentId !== undefined) mapped.department_id = data.departmentId;
-
-    return mapped;
+  async resendInvitation(id: string): Promise<void> {
+    await this.post(API_ENDPOINTS.USERS.RESEND_INVITATION(id));
   }
 }
 

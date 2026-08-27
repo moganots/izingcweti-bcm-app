@@ -23,11 +23,10 @@ export class AuthService extends BaseService {
       throw new Error('Email and password are required');
     }
 
-    // Map camelCase DTO to snake_case for backend
+    // Backend expects camelCase in DTO
     const payload = {
       email: credentials.email,
       password: credentials.password,
-      remember_me: credentials.rememberMe || false,
     };
 
     const response = await this.post<{
@@ -59,17 +58,23 @@ export class AuthService extends BaseService {
   }
 
   async register(data: RegistrationData): Promise<User> {
-    // Map camelCase DTO to snake_case for backend
+    // Backend expects camelCase in DTO
     const payload = {
       email: data.email,
       password: data.password,
-      first_name: data.firstName,
-      last_name: data.lastName,
-      organisation_id: data.organisationId,
-      department_id: data.departmentId,
-      phone_number: data.phoneNumber,
+      firstName: data.firstName,
+      lastName: data.lastName,
+      organisationId: data.organisationId,
+      departmentId: data.departmentId,
+      phoneNumber: data.phoneNumber,
       role: data.role,
     };
+    // Remove undefined values
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof typeof payload] === undefined) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
 
     const response = await this.post<User>(API_ENDPOINTS.AUTH.REGISTER, payload);
     return this.extractData(response);
@@ -161,7 +166,7 @@ export class AuthService extends BaseService {
   async resetPassword(data: ResetPasswordRequest): Promise<void> {
     const payload = {
       token: data.token,
-      new_password: data.newPassword,
+      newPassword: data.newPassword,
     };
     await this.post(API_ENDPOINTS.AUTH.RESET_PASSWORD, payload);
   }
@@ -206,13 +211,13 @@ export class AuthService extends BaseService {
     const response = await this.post<{
       revoked: number;
       expired: number;
-      total_cleaned: number;
+      totalCleaned: number;
     }>(API_ENDPOINTS.AUTH.CLEANUP);
     const data = this.extractData(response);
     return {
       revoked: data.revoked,
       expired: data.expired,
-      totalCleaned: data.total_cleaned,
+      totalCleaned: data.totalCleaned,
     };
   }
 
@@ -221,13 +226,40 @@ export class AuthService extends BaseService {
   // ============================================
 
   async updateProfile(data: Partial<User>): Promise<User> {
-    const payload = this.mapUserToSnakeCase(data);
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
+      preferences: data.preferences,
+      avatarUrl: data.avatarUrl,
+      metadata: data.metadata,
+    };
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof typeof payload] === undefined) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
     const response = await this.patch<User>(API_ENDPOINTS.USERS.PROFILE, payload);
     return this.extractData(response);
   }
 
   async updateUser(userId: string, data: Partial<User>): Promise<User> {
-    const payload = this.mapUserToSnakeCase(data);
+    const payload = {
+      firstName: data.firstName,
+      lastName: data.lastName,
+      phoneNumber: data.phoneNumber,
+      role: data.role,
+      isActive: data.isActive,
+      preferences: data.preferences,
+      departmentId: data.departmentId,
+      avatarUrl: data.avatarUrl,
+      metadata: data.metadata,
+    };
+    Object.keys(payload).forEach((key) => {
+      if (payload[key as keyof typeof payload] === undefined) {
+        delete payload[key as keyof typeof payload];
+      }
+    });
     const response = await this.patch<User>(
       API_ENDPOINTS.USERS.UPDATE(userId),
       payload
@@ -238,30 +270,6 @@ export class AuthService extends BaseService {
   async getUserById(userId: string): Promise<User> {
     const response = await this.get<User>(API_ENDPOINTS.USERS.BY_ID(userId));
     return this.extractData(response);
-  }
-
-  // ============================================
-  // Helper Methods - DTO to Entity Mappers
-  // ============================================
-
-  /**
-   * Map camelCase User DTO to snake_case for backend
-   */
-  private mapUserToSnakeCase(data: Partial<User>): Record<string, any> {
-    const mapped: Record<string, any> = {};
-
-    if (data.first_name !== undefined) mapped.first_name = data.first_name;
-    if (data.last_name !== undefined) mapped.last_name = data.last_name;
-    if (data.phone_number !== undefined) mapped.phone_number = data.phone_number;
-    if (data.role !== undefined) mapped.role = data.role;
-    if (data.is_active !== undefined) mapped.is_active = data.is_active;
-    if (data.preferences !== undefined) mapped.preferences = data.preferences;
-    if (data.department_id !== undefined) mapped.department_id = data.department_id;
-    if (data.avatar_url !== undefined) mapped.avatar_url = data.avatar_url;
-    if (data.email !== undefined) mapped.email = data.email;
-    if (data.organisation_id !== undefined) mapped.organisation_id = data.organisation_id;
-
-    return mapped;
   }
 }
 
