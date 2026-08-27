@@ -208,7 +208,7 @@ export class DashboardService extends BaseService {
 
   async getCompleteDashboard(organisationId?: string): Promise<DashboardData> {
     const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<DashboardData>('/dashboard/complete', params)
+    const response = await this.get<DashboardData>(API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId || ''), params)
     return this.extractData(response)
   }
 

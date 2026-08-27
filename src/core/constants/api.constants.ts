@@ -595,6 +595,8 @@ export const API_ENDPOINTS = {
       `/dashboards/organisations/${organisationId}/configs`,
     ROLE_CONFIGS: (organisationId: string, role: string) =>
       `/dashboards/organisations/${organisationId}/roles/${role}/configs`,
+    COMPLETE: (organisationId: string) =>
+      `/dashboards/organisations/${organisationId}/complete`,
     KPIS: (organisationId: string) => `/dashboards/organisations/${organisationId}/kpis`,
     RISK_SUMMARY: (organisationId: string) =>
       `/dashboards/organisations/${organisationId}/risk-summary`,
