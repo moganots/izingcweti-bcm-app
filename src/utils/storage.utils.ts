@@ -343,11 +343,6 @@ export const StorageUtils = {
     StorageUtils.removeStorageItem(STORAGE_KEYS.REMEMBERED_EMAIL)
   },
 
-  /** Clear remembered email synchronously */
-  clearRememberedEmail: (): void => {
-    localStorage.removeItem('bcm_remembered_email')
-  },
-
   // ==========================================
   // Synchronous Cache Helpers
   // ==========================================

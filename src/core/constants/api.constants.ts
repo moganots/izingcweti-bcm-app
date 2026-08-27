@@ -586,34 +586,34 @@ export const API_ENDPOINTS = {
   // Dashboard Endpoints (dashboard.routes.ts)
   // ============================================
   DASHBOARD: {
-    USER_CONFIG: '/dashboard/user-config',
-    CONFIGS: '/dashboard/configs',
-    CONFIG_BY_ID: (uuid: string) => `/dashboard/configs/${uuid}`,
-    UPDATE_CONFIG: (uuid: string) => `/dashboard/configs/${uuid}`,
-    DELETE_CONFIG: (uuid: string) => `/dashboard/configs/${uuid}`,
+    USER_CONFIG: '/dashboards/user-config',
+    CONFIGS: '/dashboards/configs',
+    CONFIG_BY_ID: (uuid: string) => `/dashboards/configs/${uuid}`,
+    UPDATE_CONFIG: (uuid: string) => `/dashboards/configs/${uuid}`,
+    DELETE_CONFIG: (uuid: string) => `/dashboards/configs/${uuid}`,
     ORGANISATION_CONFIGS: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/configs`,
+      `/dashboards/organisations/${organisationId}/configs`,
     ROLE_CONFIGS: (organisationId: string, role: string) =>
-      `/dashboard/organisations/${organisationId}/roles/${role}/configs`,
-    KPIS: (organisationId: string) => `/dashboard/organisations/${organisationId}/kpis`,
+      `/dashboards/organisations/${organisationId}/roles/${role}/configs`,
+    KPIS: (organisationId: string) => `/dashboards/organisations/${organisationId}/kpis`,
     RISK_SUMMARY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/risk-summary`,
+      `/dashboards/organisations/${organisationId}/risk-summary`,
     BCM_SUMMARY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/bcm-summary`,
+      `/dashboards/organisations/${organisationId}/bcm-summary`,
     INCIDENT_SUMMARY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/incident-summary`,
+      `/dashboards/organisations/${organisationId}/incident-summary`,
     COMPLIANCE_SUMMARY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/compliance-summary`,
+      `/dashboards/organisations/${organisationId}/compliance-summary`,
     WORKFLOW_SUMMARY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/workflow-summary`,
+      `/dashboards/organisations/${organisationId}/workflow-summary`,
     RECENT_ACTIVITY: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/recent-activity`,
+      `/dashboards/organisations/${organisationId}/recent-activity`,
     UPCOMING_TASKS: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/upcoming-tasks`,
+      `/dashboards/organisations/${organisationId}/upcoming-tasks`,
     RISK_TRENDS: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/risk-trends`,
+      `/dashboards/organisations/${organisationId}/risk-trends`,
     COMPLIANCE_OVERVIEW: (organisationId: string) =>
-      `/dashboard/organisations/${organisationId}/compliance-overview`,
+      `/dashboards/organisations/${organisationId}/compliance-overview`,
   },
 
   // ============================================
