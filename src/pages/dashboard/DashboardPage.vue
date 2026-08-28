@@ -81,7 +81,6 @@ import RecentActivityList from 'src/components/dashboard/RecentActivityList.vue'
 import PendingWorkflowsWidget from 'src/components/dashboard/PendingWorkflowsWidget.vue'
 import type { KPI } from 'src/components/dashboard/KpiOverview.vue'
 import type { RiskData } from 'src/components/dashboard/RiskHeatMap.vue'
-import type { IncidentTrendData } from 'src/components/dashboard/IncidentTrendChart.vue'
 import type { SimpleWorkflow } from 'src/components/dashboard/PendingWorkflowsWidget.vue'
 import type { ActivityItem } from 'src/components/dashboard/RecentActivityList.vue'
 import QuickActions from 'src/components/dashboard/QuickActions.vue'
@@ -146,7 +145,7 @@ const sampleRisks = ref<RiskData[]>([
 ])
 
 // Transform risk trends to incident trend format
-const incidentTrendData = computed<IncidentTrendData[]>(() => {
+const incidentTrendData = computed(() => {
   const trends = dashboardStore.riskTrends || []
   return trends.map((trend, index) => ({
     period: `period_${index}`,
@@ -156,6 +155,10 @@ const incidentTrendData = computed<IncidentTrendData[]>(() => {
     medium: trend.medium || 0,
     low: trend.low || 0,
     total: (trend.critical || 0) + (trend.high || 0) + (trend.medium || 0) + (trend.low || 0),
+    avgResolutionTime:
+      'avgResolutionTime' in trend && typeof trend.avgResolutionTime === 'number'
+        ? trend.avgResolutionTime
+        : 0,
   }))
 })
 
@@ -167,7 +170,7 @@ const recentIncidentItems = computed<ActivityItem[]>(() => {
     rootCause: incident.rootCause,
     incidentSeverity: incident.incidentSeverity,
     declaredAt: incident.declaredAt,
-    closedAt: incident.closedAt,
+    closedAt: incident.closedAt ?? null,
   }))
 })
 

@@ -54,9 +54,16 @@
           }}</q-tooltip>
         </q-btn>
 
-        <!-- QR Code Scanner Button -->
-        <q-btn round icon="qr_code_scanner" @click="openQRScanner" size="0.7em">
-          <q-tooltip>Scan QR Code</q-tooltip>
+        <!-- Notifications Button -->
+        <q-btn
+          round
+          :icon="'notifications'"
+          size="0.7em"
+          @click="openNotifications"
+        >
+          <q-badge v-if="unreadCount > 0" color="red" floating transparent>
+            {{ unreadCount > 99 ? '99+' : unreadCount }}
+          </q-badge>
         </q-btn>
       </div>
     </q-toolbar>
@@ -64,25 +71,31 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useUiStore } from '../../stores'
+import { useAuthStore, useNotificationStore } from '../../stores'
+import { useNetwork } from '../../composables/useNetwork'
 import AppConfig from 'src/utils/config'
+
+defineProps<{ pageIcon?: string; pageTitle?: string }>()
 
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-const uiStore = useUiStore()
-
-const props = defineProps<{ pageIcon?: string; pageTitle?: string }>()
+const authStore = useAuthStore()
+const notificationStore = useNotificationStore()
+const { isOnline, connectionType } = useNetwork()
 
 const companyName = AppConfig.app.company.name || 'Izingcweti'
 const appName = AppConfig.app.shortName || 'BCM App'
 
-const isOffline = computed(() => uiStore.isOffline)
+const isOffline = computed(() => !isOnline.value)
 const headerClass = computed(() => 'bg-primary text-white')
-const pageTitle = computed(() => props.pageTitle || (route.meta?.title as string) || 'Dashboard')
+const pageTitle = computed(() => (route.meta?.title as string) || 'Dashboard')
+
+// Notification state
+const unreadCount = computed(() => notificationStore.unreadCount || 0)
 
 // Check if there's a previous page in navigation history
 const canGoBack = computed(() => window.history.length > 1)
@@ -93,14 +106,14 @@ function goBack(): void {
 }
 
 function toggleNetworkInfo(): void {
-  const connectionType = uiStore.networkType || 'unknown'
+  const connectionTypeLabel = connectionType.value || 'unknown'
   const status = isOffline.value ? 'Offline' : 'Online'
 
   $q.dialog({
     title: 'Network Status',
     message: `
       Status: ${status}
-      Connection: ${connectionType}
+      Connection: ${connectionTypeLabel}
       Last checked: ${new Date().toLocaleTimeString()}
     `,
     ok: 'OK',
@@ -108,189 +121,26 @@ function toggleNetworkInfo(): void {
   })
 }
 
-function openQRScanner(): void {
-  // Check if running on Capacitor (mobile)
-  const isCapacitor = !!(window as any).Capacitor?.isNativePlatform?.()
-
-  if (isCapacitor) {
-    $q.dialog({
-      title: 'QR Scanner',
-      message: 'Scan a QR code to quickly access documents, incidents, or assets.',
-      persistent: true,
-      ok: {
-        label: 'Open Scanner',
-        color: 'primary',
-      },
-      cancel: {
-        label: 'Cancel',
-        color: 'negative',
-      },
-    }).onOk(async () => {
-      try {
-        // Dynamic import for Capacitor Barcode Scanner
-        const { BarcodeScanner } = await import('@capacitor-community/barcode-scanner')
-
-        // Check and request permissions
-        await BarcodeScanner.checkPermission({ force: true })
-
-        // Start scan
-        const result = await BarcodeScanner.startScan()
-
-        if (result.hasContent) {
-          const scannedData = result.content
-          $q.notify({
-            type: 'info',
-            message: `Scanned: ${scannedData.substring(0, 50)}${
-              scannedData.length > 50 ? '...' : ''
-            }`,
-            position: 'top',
-            timeout: 3000,
-          })
-
-          // Handle the scanned data
-          await handleScannedData(scannedData)
-        }
-
-        // Stop scan
-        await BarcodeScanner.stopScan()
-      } catch (error) {
-        console.error('QR Scanner error:', error)
-        $q.notify({
-          type: 'negative',
-          message: 'Failed to open scanner. Please check camera permissions.',
-          position: 'top',
-        })
-      }
-    })
-  } else {
-    // Web fallback - show input dialog
-    $q.dialog({
-      title: 'QR Code Input',
-      message: 'Enter QR code value manually (web fallback):',
-      prompt: {
-        model: '',
-        type: 'text',
-        isValid: (val: string) => val.length > 0,
-        invalidMessage: 'Please enter a value',
-      } as any,
-      cancel: true,
-      persistent: true,
-      ok: {
-        label: 'Submit',
-        color: 'primary',
-      },
-    }).onOk(async (data: string) => {
-      if (data) {
-        await handleScannedData(data)
-      }
-    })
-  }
+function openNotifications(): void {
+  router.push('/notifications')
 }
 
-async function handleScannedData(data: string): Promise<void> {
-  // Parse and handle scanned QR data
-  try {
-    // Check if it's a URL
-    if (data.startsWith('http://') || data.startsWith('https://')) {
-      $q.dialog({
-        title: 'Open URL?',
-        message: `Do you want to open: ${data}`,
-        cancel: true,
-        persistent: true,
-      }).onOk(() => {
-        window.open(data, '_blank')
-      })
-      return
-    }
-
-    // Check if it's JSON data
-    if (data.startsWith('{')) {
-      const parsed = JSON.parse(data)
-
-      // Handle different types of QR data
-      switch (parsed.type) {
-        case 'document':
-          await router.push(`/documents/${parsed.id}`)
-          $q.notify({ type: 'positive', message: 'Opening document...', position: 'top' })
-          break
-        case 'incident':
-          await router.push(`/incidents/${parsed.id}`)
-          $q.notify({ type: 'positive', message: 'Opening incident...', position: 'top' })
-          break
-        case 'asset':
-          await router.push(`/assets/${parsed.id}`)
-          $q.notify({ type: 'positive', message: 'Opening asset...', position: 'top' })
-          break
-        case 'risk':
-          await router.push(`/risks/${parsed.id}`)
-          $q.notify({ type: 'positive', message: 'Opening risk...', position: 'top' })
-          break
-        default:
-          // Show generic data
-          $q.dialog({
-            title: 'Scanned Data',
-            message: JSON.stringify(parsed, null, 2),
-            ok: 'OK',
-          })
-      }
-    } else {
-      // Plain text - try to route based on format
-      if (data.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i)) {
-        // UUID format - might be an entity ID
-        $q.dialog({
-          title: 'Scanned ID',
-          message: `Scanned ID: ${data}\n\nWhat would you like to do?`,
-          options: {
-            type: 'radio',
-            model: 'document',
-            items: [
-              { label: 'Open as Document', value: 'document' },
-              { label: 'Open as Incident', value: 'incident' },
-              { label: 'Open as Risk', value: 'risk' },
-            ],
-          },
-          cancel: true,
-          persistent: true,
-        }).onOk(async (type: string) => {
-          await router.push(`/${type}s/${data}`)
-        })
-      } else {
-        // Show as plain text
-        $q.dialog({
-          title: 'Scanned Data',
-          message: data,
-          ok: 'OK',
-        })
-      }
-    }
-  } catch (error) {
-    // Not JSON or invalid format - treat as plain text
-    console.warn('Failed to parse QR data:', error)
-    $q.dialog({
-      title: 'Scanned Data',
-      message: data,
-      ok: 'OK',
-    })
+// Load notification counts on mount
+onMounted(async () => {
+  if (authStore.isAuthenticated) {
+    await notificationStore.loadCounts()
   }
-}
+})
+
+// Cleanup on unmount
+onUnmounted(() => {
+  // No cleanup needed
+})
 </script>
 
 <style lang="scss" scoped>
 :deep(.q-toolbar) {
   min-height: 56px;
-}
-
-.rotate-animation {
-  animation: rotate 1s linear infinite;
-}
-
-@keyframes rotate {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 // Mobile responsive adjustments
@@ -316,20 +166,17 @@ async function handleScannedData(data: string): Promise<void> {
     font-size: 8px;
   }
 
-  // Adjust button sizes on mobile
   .q-btn--round {
     font-size: 20px;
     width: 32px;
     height: 32px;
   }
 
-  // Reduce gutter on mobile for more space
   .q-gutter-sm {
     gap: 0.2em;
   }
 }
 
-// Tablet adjustments
 @media (min-width: 601px) and (max-width: 1024px) {
   .q-btn--round {
     font-size: 22px;

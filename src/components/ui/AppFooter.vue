@@ -9,11 +9,7 @@
       @update:model-value="handleTabChange"
     >
       <q-tab name="home" icon="home" />
-      <q-tab name="notifications" icon="notifications">
-        <q-badge v-if="unreadCount > 0" color="red" floating>
-          {{ unreadCount > 99 ? '99+' : unreadCount }}
-        </q-badge>
-      </q-tab>
+      <!-- Removed notifications tab -->
       <q-tab name="sync" icon="sync">
         <q-badge v-if="pendingCount > 0" color="orange" floating>
           {{ pendingCount > 99 ? '99+' : pendingCount }}
@@ -335,7 +331,7 @@
 import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore, useSyncStore, useNotificationStore, useUiStore } from './../../stores'
+import { useAuthStore, useSyncStore, useUiStore } from './../../stores'
 import AppConfig from 'src/utils/config'
 
 interface MenuItem {
@@ -356,7 +352,6 @@ const route = useRoute()
 const $q = useQuasar()
 const authStore = useAuthStore()
 const syncStore = useSyncStore()
-const notificationStore = useNotificationStore()
 const uiStore = useUiStore()
 
 const appFullName = AppConfig.app.fullName || 'Izingcweti - BCM App'
@@ -369,7 +364,6 @@ const drawerOpen = ref(false)
 // Screen size detection
 const isMobile = ref(window.innerWidth < 1024)
 
-const unreadCount = computed(() => notificationStore.unreadCount || 0)
 const pendingCount = computed(() => syncStore.pendingCount || 0)
 const isDarkMode = computed(() => uiStore.isDarkMode)
 const userFullName = computed(() => authStore.fullName)
@@ -414,17 +408,14 @@ const adminItems = [
 function updateSelectedTab() {
   const routeName = route.name as string
 
-  // Only update if we're not in menu mode (menu dialog/drawer closed)
   if (!menuDialogOpen.value && !drawerOpen.value) {
     if (routeName === 'Dashboard') {
       selectedTab.value = 'home'
-    } else if (routeName === 'Notifications') {
-      selectedTab.value = 'notifications'
-    } else if (routeName === 'Profile') {
-      selectedTab.value = 'profile'
     } else if (routeName === 'SyncDashboard') {
       selectedTab.value = 'sync'
-    }else{
+    } else if (routeName === 'Profile') {
+      selectedTab.value = 'profile'
+    } else {
       selectedTab.value = ''
     }
   }
@@ -433,7 +424,6 @@ function updateSelectedTab() {
 // Handle window resize
 function handleResize() {
   isMobile.value = window.innerWidth < 1024
-  // Close menu if screen size changes while open
   if (menuDialogOpen.value && !isMobile.value) {
     menuDialogOpen.value = false
   }
@@ -442,7 +432,7 @@ function handleResize() {
   }
 }
 
-// Watch route changes to update selected tab
+// Watch route changes
 watch(
   () => route.name,
   () => {
@@ -451,14 +441,12 @@ watch(
   { immediate: true }
 )
 
-// Watch menu dialog state
 watch(menuDialogOpen, (isOpen) => {
   if (!isOpen) {
     updateSelectedTab()
   }
 })
 
-// Watch drawer state
 watch(drawerOpen, (isOpen) => {
   if (!isOpen) {
     updateSelectedTab()
@@ -472,7 +460,6 @@ function handleTabChange(tab: string): void {
     return
   }
 
-  // Close any open menus first
   if (menuDialogOpen.value) menuDialogOpen.value = false
   if (drawerOpen.value) drawerOpen.value = false
 
@@ -480,9 +467,6 @@ function handleTabChange(tab: string): void {
   switch (tab) {
     case 'home':
       routeName = 'Dashboard'
-      break
-    case 'notifications':
-      routeName = 'Notifications'
       break
     case 'sync':
       routeName = 'SyncDashboard'
@@ -499,10 +483,7 @@ function handleTabChange(tab: string): void {
 
 // Handle menu item click (mobile)
 function handleMenuItemClick(routeName: string): void {
-  // Close the dialog
   menuDialogOpen.value = false
-
-  // Navigate if not already on that route
   if (route.name !== routeName) {
     router.push({ name: routeName })
   }
@@ -510,10 +491,7 @@ function handleMenuItemClick(routeName: string): void {
 
 // Handle drawer item click (desktop)
 function handleDrawerItemClick(routeName: string): void {
-  // Close the drawer
   drawerOpen.value = false
-
-  // Navigate if not already on that route
   if (route.name !== routeName) {
     router.push({ name: routeName })
   }
@@ -521,7 +499,6 @@ function handleDrawerItemClick(routeName: string): void {
 
 // Open menu based on screen size
 function openMenu(): void {
-  // Close the other menu if open
   if (isMobile.value) {
     if (drawerOpen.value) drawerOpen.value = false
     menuDialogOpen.value = true
@@ -531,13 +508,10 @@ function openMenu(): void {
   }
 }
 
-// Handle mobile dialog hide
 function onMenuDialogHide(): void {
-  // Update selected tab after dialog closes
   updateSelectedTab()
 }
 
-// Handle drawer change
 function onDrawerChange(val: boolean): void {
   if (!val) {
     updateSelectedTab()
@@ -633,14 +607,12 @@ onUnmounted(() => {
   margin-bottom: 0;
 }
 
-// Position the dialog just above the footer
 :deep(.q-dialog__inner--bottom) {
   justify-content: center;
   align-items: flex-end;
-  padding-bottom: 56px; // Height of the footer
+  padding-bottom: 56px;
 }
 
-// Adjust for different footer heights
 @media (max-width: 600px) {
   :deep(.q-dialog__inner--bottom) {
     padding-bottom: 56px;
@@ -675,7 +647,6 @@ onUnmounted(() => {
   background: linear-gradient(135deg, var(--q-white, #ffffff) 0%, var(--q-grey-2, #f5f5f5) 100%);
   border-bottom: 1px solid var(--q-separator-color, rgba(0, 0, 0, 0.12));
 
-  /* For dark mode support */
   body.body--dark & {
     background: linear-gradient(
       135deg,

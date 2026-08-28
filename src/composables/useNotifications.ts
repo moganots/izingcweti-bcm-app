@@ -4,10 +4,6 @@ import { useQuasar } from 'quasar'
 import { useNotificationStore } from '../stores/notification/notification.store'
 import { useAuthStore } from '../stores/auth/auth.store'
 
-/**
- * Composable for notification management
- * Provides reactive notification state and actions
- */
 export function useNotifications() {
   const router = useRouter()
   const $q = useQuasar()
@@ -16,9 +12,6 @@ export function useNotifications() {
 
   const isPollingEnabled = ref(false)
 
-  // ============================================
-  // Computed
-  // ============================================
   const notifications = computed(() => notificationStore.notifications)
   const unreadNotifications = computed(() => notificationStore.unreadNotifications)
   const unreadCount = computed(() => notificationStore.unreadCount)
@@ -29,13 +22,6 @@ export function useNotifications() {
   const isLoading = computed(() => notificationStore.isLoading)
   const hasMore = computed(() => notificationStore.hasMore)
 
-  // ============================================
-  // Navigation Helpers
-  // ============================================
-
-  /**
-   * Get navigation URL for notification
-   */
   function getNotificationUrl(notification: any): string | null {
     if (notification.action_url) {
       return notification.action_url
@@ -63,93 +49,51 @@ export function useNotifications() {
         return `${baseRoute}/${notification.entity_id}`
       }
     }
-
     return null
   }
 
-  /**
-   * Handle notification click - navigate to relevant page
-   */
   async function handleNotificationClick(notification: any): Promise<void> {
-    // Mark as read if unread
     if (!notification.is_read) {
       await markAsRead(notification.uuid)
     }
-
-    // Navigate based on notification type
     const url = getNotificationUrl(notification)
     if (url) {
       await router.push(url)
     }
   }
 
-  // ============================================
-  // Data Actions
-  // ============================================
-
-  /**
-   * Load notifications
-   */
   async function loadNotifications(reset?: boolean): Promise<void> {
     await notificationStore.loadNotifications(reset)
   }
 
-  /**
-   * Load more notifications (pagination)
-   */
   async function loadMore(): Promise<void> {
     await notificationStore.loadMore()
   }
 
-  /**
-   * Load notification counts
-   */
   async function loadCounts(): Promise<void> {
     await notificationStore.loadCounts()
   }
 
-  /**
-   * Load notifications by status
-   */
   async function loadByStatus(status: string): Promise<void> {
     await notificationStore.loadNotificationsByStatus(status)
   }
 
-  /**
-   * Load notifications by type
-   */
   async function loadByType(type: string): Promise<void> {
     await notificationStore.loadNotificationsByType(type)
   }
 
-  /**
-   * Load notification preferences
-   */
   async function loadPreferences(): Promise<void> {
     await notificationStore.loadPreferences()
   }
 
-  // ============================================
-  // Action Methods
-  // ============================================
-
-  /**
-   * Mark a notification as read
-   */
   async function markAsRead(id: string): Promise<void> {
     await notificationStore.markAsRead(id)
   }
 
-  /**
-   * Mark a notification as unread
-   */
   async function markAsUnread(id: string): Promise<void> {
     await notificationStore.markAsUnread(id)
   }
 
-  /**
-   * Mark all notifications as read
-   */
   async function markAllAsRead(): Promise<void> {
     const count = await notificationStore.markAllAsRead()
     $q.notify({
@@ -160,9 +104,6 @@ export function useNotifications() {
     })
   }
 
-  /**
-   * Archive a notification
-   */
   async function archiveNotification(id: string): Promise<void> {
     await notificationStore.archiveNotification(id)
     $q.notify({
@@ -173,9 +114,6 @@ export function useNotifications() {
     })
   }
 
-  /**
-   * Dismiss a notification
-   */
   async function dismissNotification(id: string): Promise<void> {
     await notificationStore.dismissNotification(id)
     $q.notify({
@@ -186,15 +124,10 @@ export function useNotifications() {
     })
   }
 
-  /**
-   * Delete a notification
-   */
   async function deleteNotification(id: string, permanent: boolean = false): Promise<void> {
     $q.dialog({
       title: 'Delete Notification',
-      message: `Are you sure you want to ${
-        permanent ? 'permanently delete' : 'delete'
-      } this notification?`,
+      message: `Are you sure you want to ${permanent ? 'permanently delete' : 'delete'} this notification?`,
       cancel: true,
       ok: { color: 'negative', label: 'Delete' },
     }).onOk(async () => {
@@ -218,9 +151,6 @@ export function useNotifications() {
     })
   }
 
-  /**
-   * Update notification preference
-   */
   async function updatePreference(type: string, enabled: boolean): Promise<void> {
     await notificationStore.updatePreference({
       notification_type: type,
@@ -228,9 +158,6 @@ export function useNotifications() {
     })
   }
 
-  /**
-   * Bulk update preferences
-   */
   async function updatePreferences(preferences: any[]): Promise<void> {
     for (const pref of preferences) {
       await notificationStore.updatePreference(pref)
@@ -243,44 +170,24 @@ export function useNotifications() {
     })
   }
 
-  // ============================================
-  // Polling
-  // ============================================
-
-  /**
-   * Start polling for notifications
-   */
   function startPolling(intervalMs: number = 30000): void {
     if (!authStore.isAuthenticated) return
     notificationStore.startPolling(intervalMs)
     isPollingEnabled.value = true
   }
 
-  /**
-   * Stop polling for notifications
-   */
   function stopPolling(): void {
     notificationStore.stopPolling()
     isPollingEnabled.value = false
   }
 
-  /**
-   * Clear all notification data
-   */
   function clearAll(): void {
     notificationStore.clearAll()
   }
 
-  /**
-   * Reset filters and reload
-   */
   function resetFilters(): void {
     notificationStore.resetFilters()
   }
-
-  // ============================================
-  // Lifecycle
-  // ============================================
 
   onMounted(async () => {
     if (authStore.isAuthenticated) {
@@ -295,7 +202,6 @@ export function useNotifications() {
   })
 
   return {
-    // State
     notifications,
     unreadNotifications,
     unreadCount,
@@ -307,7 +213,6 @@ export function useNotifications() {
     hasMore,
     isPollingEnabled,
 
-    // Data Loading
     loadNotifications,
     loadMore,
     loadCounts,
@@ -315,7 +220,6 @@ export function useNotifications() {
     loadByType,
     loadPreferences,
 
-    // Actions
     markAsRead,
     markAsUnread,
     markAllAsRead,
@@ -327,11 +231,9 @@ export function useNotifications() {
     getNotificationUrl,
     handleNotificationClick,
 
-    // Polling
     startPolling,
     stopPolling,
 
-    // Utilities
     clearAll,
     resetFilters,
   }

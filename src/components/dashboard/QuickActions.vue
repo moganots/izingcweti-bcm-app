@@ -5,24 +5,26 @@
       <q-card flat bordered>
         <q-card-section>
           <div class="text-h6 q-mb-md">Quick Actions</div>
-          <div class="row q-col-gutter-sm">
-            <div v-for="action in quickActions" :key="action.name">
-              <q-btn
-                size="0.85em"
-                round
-                :outline="action.outline !== false"
-                dense
-                :color="action.color || 'primary'"
-                :icon="action.icon"
-                :loading="loadingStates[action.name] || false"
-                :disable="action.disabled || false"
-                :class="{ 'text-capitalize': action.capitalizeLabel !== false }"
-                @click="handleAction(action)"
-              >
-                <q-tooltip v-if="action.tooltip">
-                  {{ action.tooltip }}
-                </q-tooltip>
-              </q-btn>
+          <div class="quick-actions-container">
+            <div class="quick-actions-wrapper">
+              <div v-for="action in quickActions" :key="action.name" class="action-item">
+                <q-btn
+                  size="0.85em"
+                  round
+                  :outline="action.outline !== false"
+                  dense
+                  :color="action.color || 'primary'"
+                  :icon="action.icon"
+                  :loading="loadingStates[action.name] || false"
+                  :disable="action.disabled || false"
+                  :class="{ 'text-capitalize': action.capitalizeLabel !== false }"
+                  @click="handleAction(action)"
+                >
+                  <q-tooltip v-if="action.tooltip">
+                    {{ action.tooltip }}
+                  </q-tooltip>
+                </q-btn>
+              </div>
             </div>
           </div>
         </q-card-section>
@@ -90,13 +92,13 @@ const defaultQuickActions: QuickAction[] = [
     requiresConfirmation: false,
     action: async () => {
       $q.dialog({
-    title: 'Create New Risk',
-    message: 'Risk creation dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/risks/create')
-  })
+        title: 'Create New Risk',
+        message: 'Risk creation dialog would open here',
+        cancel: true,
+        persistent: true,
+      }).onOk(() => {
+        router.push('/risks/create')
+      })
     },
   },
   {
@@ -110,13 +112,13 @@ const defaultQuickActions: QuickAction[] = [
     requiresConfirmation: false,
     action: async () => {
       $q.dialog({
-    title: 'Create BCP Plan',
-    message: 'BCP plan creation dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/bcp/create')
-  })
+        title: 'Create BCP Plan',
+        message: 'BCP plan creation dialog would open here',
+        cancel: true,
+        persistent: true,
+      }).onOk(() => {
+        router.push('/bcp/create')
+      })
     },
   },
   {
@@ -131,13 +133,13 @@ const defaultQuickActions: QuickAction[] = [
     confirmationMessage: 'Are you sure you want to report an incident?',
     action: async () => {
       $q.dialog({
-    title: 'Report Incident',
-    message: 'Incident reporting dialog would open here',
-    cancel: true,
-    persistent: true,
-  }).onOk(() => {
-    router.push('/incidents/report')
-  })
+        title: 'Report Incident',
+        message: 'Incident reporting dialog would open here',
+        cancel: true,
+        persistent: true,
+      }).onOk(() => {
+        router.push('/incidents/report')
+      })
     },
   },
   {
@@ -150,30 +152,29 @@ const defaultQuickActions: QuickAction[] = [
     tooltip: 'Generate a compliance or risk report',
     requiresConfirmation: false,
     action: async () => {
-       $q.dialog({
-    title: 'Generate Report',
-    message: 'Select report type:',
-    options: {
-      type: 'radio',
-      model: 'risk',
-      items: [
-        { label: 'Risk Assessment Report', value: 'risk' },
-        { label: 'Compliance Report', value: 'compliance' },
-        { label: 'Incident Summary', value: 'incident' },
-        { label: 'BCM Maturity Report', value: 'maturity' },
-      ],
-    },
-    cancel: true,
-    persistent: true,
-  }).onOk(async (data: any) => {
-    $q.notify({
-      message: `Generating ${data} report...`,
-      type: 'info',
-      position: 'top',
-    })
-    // Navigate to report generation
-    router.push(`/reports/generate?type=${data}`)
-  })
+      $q.dialog({
+        title: 'Generate Report',
+        message: 'Select report type:',
+        options: {
+          type: 'radio',
+          model: 'risk',
+          items: [
+            { label: 'Risk Assessment Report', value: 'risk' },
+            { label: 'Compliance Report', value: 'compliance' },
+            { label: 'Incident Summary', value: 'incident' },
+            { label: 'BCM Maturity Report', value: 'maturity' },
+          ],
+        },
+        cancel: true,
+        persistent: true,
+      }).onOk(async (data: any) => {
+        $q.notify({
+          message: `Generating ${data} report...`,
+          type: 'info',
+          position: 'top',
+        })
+        router.push(`/reports/generate?type=${data}`)
+      })
     },
   },
 ]
@@ -342,12 +343,34 @@ function showConfirmationDialog(action: QuickAction): Promise<boolean> {
 </script>
 
 <style lang="scss" scoped>
+.quick-actions-container {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.quick-actions-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+}
+
+.action-item {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 .q-btn {
   transition: transform 0.2s, box-shadow 0.2s;
+  min-width: 42px;
+  min-height: 42px;
 
   &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
 
   &:active:not(:disabled) {
@@ -361,12 +384,30 @@ function showConfirmationDialog(action: QuickAction): Promise<boolean> {
 
 // Mobile adjustments
 @media (max-width: 600px) {
+  .quick-actions-wrapper {
+    gap: 8px;
+  }
+
   .q-btn {
     font-size: 12px;
+    min-width: 36px;
+    min-height: 36px;
 
     .q-icon {
       font-size: 18px;
     }
+  }
+}
+
+// Tablet adjustments
+@media (min-width: 601px) and (max-width: 1024px) {
+  .quick-actions-wrapper {
+    gap: 10px;
+  }
+
+  .q-btn {
+    min-width: 40px;
+    min-height: 40px;
   }
 }
 </style>

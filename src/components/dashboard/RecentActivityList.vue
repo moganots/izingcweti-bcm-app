@@ -22,8 +22,8 @@
       </div>
       <q-list v-else separator>
         <q-item
-          v-for="item in items"
-          :key="item.uuid || item.id"
+          v-for="(item, index) in items"
+          :key="item.uuid || item.id || `${props.type}-${index}`"
           clickable
           v-ripple
           @click="emit('item-click', item)"
@@ -46,7 +46,6 @@
 
 <script setup lang="ts">
 import { formatDate } from '../../utils/date.utils'
-import type { DashboardIncident } from 'src/modules/dashboard'
 
 export type ActivityType = 'incident' | 'workflow' | 'test' | 'document' | 'notification'
 
