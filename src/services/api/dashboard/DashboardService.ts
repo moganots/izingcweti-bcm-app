@@ -1,4 +1,4 @@
-import { BaseService } from './../../BaseService'
+import { BaseService } from '../../BaseService'
 import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   DashboardRole,
@@ -15,171 +15,184 @@ import {
   type DashboardQueryParams,
   type CreateDashboardConfigRequest,
   type UpdateDashboardConfigRequest,
-  PaginatedResponse,
-} from './../../../modules'
+} from './../../../modules/dashboard'
+import { PaginatedResponse } from 'src/shared/types/common.types'
 
+/**
+ * Dashboard Service - Aligned with Backend DTOs (camelCase)
+ */
 export class DashboardService extends BaseService {
-  async getKPIs(organisationId?: string): Promise<DashboardKPIs> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
-    const response = await this.get<DashboardKPIs>(
-      API_ENDPOINTS.DASHBOARD.KPIS(organisationId || ''),
-      params
+  // ============================================
+  // Dashboard Data Endpoints
+  // ============================================
+
+  /**
+   * Get complete dashboard data - GET /dashboards/organisations/:organisationId/complete
+   */
+  async getCompleteDashboard(organisationId: string): Promise<DashboardData> {
+    const response = await this.get<DashboardData>(
+      API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId)
     )
     return this.extractData(response)
   }
 
-  async getRiskSummary(organisationId?: string): Promise<{
-    total_risks: number
-    critical_risks: number
-    high_risks: number
-    medium_risks: number
-    low_risks: number
-    risk_trends: RiskTrend[]
-    top_risk_categories: Array<{ category: string; count: number; percentage: number }>
-  }> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
-    const response = await this.get<{
-      total_risks: number
-      critical_risks: number
-      high_risks: number
-      medium_risks: number
-      low_risks: number
-      risk_trends: RiskTrend[]
-      top_risk_categories: Array<{ category: string; count: number; percentage: number }>
-    }>(API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(organisationId || ''), params)
+  /**
+   * Get KPIs - GET /dashboards/organisations/:organisationId/kpis
+   */
+  async getKPIs(organisationId: string): Promise<DashboardKPIs> {
+    const response = await this.get<DashboardKPIs>(
+      API_ENDPOINTS.DASHBOARD.KPIS(organisationId)
+    )
     return this.extractData(response)
   }
 
-  async getBcmSummary(organisationId?: string): Promise<{
-    total_bcp_plans: number
-    active_plans: number
-    draft_plans: number
-    archived_plans: number
-    plans_due_for_review: number
-    maturity_score: number
-    maturity_level: string
-    maturity_progress: MaturityProgress
-    recovery_strategies_count: number
-    exercise_tests_completed: number
-    exercise_tests_pending: number
+  /**
+   * Get risk summary - GET /dashboards/organisations/:organisationId/risk-summary
+   */
+  async getRiskSummary(organisationId: string): Promise<{
+    totalRisks: number
+    criticalRisks: number
+    highRisks: number
+    mediumRisks: number
+    lowRisks: number
+    riskTrends: RiskTrend[]
+    topRiskCategories: Array<{ category: string; count: number; percentage: number }>
   }> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
-      total_bcp_plans: number
-      active_plans: number
-      draft_plans: number
-      archived_plans: number
-      plans_due_for_review: number
-      maturity_score: number
-      maturity_level: string
-      maturity_progress: MaturityProgress
-      recovery_strategies_count: number
-      exercise_tests_completed: number
-      exercise_tests_pending: number
-    }>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(organisationId || ''), params)
+      totalRisks: number
+      criticalRisks: number
+      highRisks: number
+      mediumRisks: number
+      lowRisks: number
+      riskTrends: RiskTrend[]
+      topRiskCategories: Array<{ category: string; count: number; percentage: number }>
+    }>(API_ENDPOINTS.DASHBOARD.RISK_SUMMARY(organisationId))
     return this.extractData(response)
   }
 
-  async getIncidentSummary(organisationId?: string): Promise<{
-    total_incidents: number
-    active_incidents: number
-    resolved_incidents: number
-    closed_incidents: number
-    critical_incidents: number
-    high_incidents: number
-    medium_incidents: number
-    low_incidents: number
-    incident_trends: IncidentTrend[]
-    average_resolution_time_hours: number
+  /**
+   * Get BCM summary - GET /dashboards/organisations/:organisationId/bcm-summary
+   */
+  async getBcmSummary(organisationId: string): Promise<{
+    totalBcpPlans: number
+    activePlans: number
+    draftPlans: number
+    archivedPlans: number
+    plansDueForReview: number
+    maturityScore: number
+    maturityLevel: string
+    maturityProgress: MaturityProgress
+    recoveryStrategiesCount: number
+    exerciseTestsCompleted: number
+    exerciseTestsPending: number
   }> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
-      total_incidents: number
-      active_incidents: number
-      resolved_incidents: number
-      closed_incidents: number
-      critical_incidents: number
-      high_incidents: number
-      medium_incidents: number
-      low_incidents: number
-      incident_trends: IncidentTrend[]
-      average_resolution_time_hours: number
-    }>(API_ENDPOINTS.DASHBOARD.INCIDENT_SUMMARY(organisationId || ''), params)
+      totalBcpPlans: number
+      activePlans: number
+      draftPlans: number
+      archivedPlans: number
+      plansDueForReview: number
+      maturityScore: number
+      maturityLevel: string
+      maturityProgress: MaturityProgress
+      recoveryStrategiesCount: number
+      exerciseTestsCompleted: number
+      exerciseTestsPending: number
+    }>(API_ENDPOINTS.DASHBOARD.BCM_SUMMARY(organisationId))
     return this.extractData(response)
   }
 
-  async getComplianceSummary(organisationId?: string): Promise<{
-    overall_compliance_rate: number
-    compliant_count: number
-    partially_compliant_count: number
-    non_compliant_count: number
-    overdue_audits: number
-    upcoming_audits: number
-    compliance_by_standard: ComplianceOverview[]
+  /**
+   * Get incident summary - GET /dashboards/organisations/:organisationId/incident-summary
+   */
+  async getIncidentSummary(organisationId: string): Promise<{
+    totalIncidents: number
+    activeIncidents: number
+    resolvedIncidents: number
+    closedIncidents: number
+    criticalIncidents: number
+    highIncidents: number
+    mediumIncidents: number
+    lowIncidents: number
+    incidentTrends: IncidentTrend[]
+    averageResolutionTimeHours: number
   }> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
-      overall_compliance_rate: number
-      compliant_count: number
-      partially_compliant_count: number
-      non_compliant_count: number
-      overdue_audits: number
-      upcoming_audits: number
-      compliance_by_standard: ComplianceOverview[]
-    }>(API_ENDPOINTS.DASHBOARD.COMPLIANCE_SUMMARY(organisationId || ''), params)
+      totalIncidents: number
+      activeIncidents: number
+      resolvedIncidents: number
+      closedIncidents: number
+      criticalIncidents: number
+      highIncidents: number
+      mediumIncidents: number
+      lowIncidents: number
+      incidentTrends: IncidentTrend[]
+      averageResolutionTimeHours: number
+    }>(API_ENDPOINTS.DASHBOARD.INCIDENT_SUMMARY(organisationId))
     return this.extractData(response)
   }
 
-  async getWorkflowSummary(organisationId?: string): Promise<{
-    total_workflows: number
-    pending_approvals: number
-    in_review: number
+  /**
+   * Get compliance summary - GET /dashboards/organisations/:organisationId/compliance-summary
+   */
+  async getComplianceSummary(organisationId: string): Promise<{
+    overallComplianceRate: number
+    compliantCount: number
+    partiallyCompliantCount: number
+    nonCompliantCount: number
+    overdueAudits: number
+    upcomingAudits: number
+    complianceByStandard: ComplianceOverview[]
+  }> {
+    const response = await this.get<{
+      overallComplianceRate: number
+      compliantCount: number
+      partiallyCompliantCount: number
+      nonCompliantCount: number
+      overdueAudits: number
+      upcomingAudits: number
+      complianceByStandard: ComplianceOverview[]
+    }>(API_ENDPOINTS.DASHBOARD.COMPLIANCE_SUMMARY(organisationId))
+    return this.extractData(response)
+  }
+
+  /**
+   * Get workflow summary - GET /dashboards/organisations/:organisationId/workflow-summary
+   */
+  async getWorkflowSummary(organisationId: string): Promise<{
+    totalWorkflows: number
+    pendingApprovals: number
+    inReview: number
     completed: number
     rejected: number
     overdue: number
-    average_completion_days: number
-    recent_workflows: DashboardWorkflow[]
+    averageCompletionDays: number
+    recentWorkflows: DashboardWorkflow[]
   }> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
-      total_workflows: number
-      pending_approvals: number
-      in_review: number
+      totalWorkflows: number
+      pendingApprovals: number
+      inReview: number
       completed: number
       rejected: number
       overdue: number
-      average_completion_days: number
-      recent_workflows: DashboardWorkflow[]
-    }>(API_ENDPOINTS.DASHBOARD.WORKFLOW_SUMMARY(organisationId || ''), params)
+      averageCompletionDays: number
+      recentWorkflows: DashboardWorkflow[]
+    }>(API_ENDPOINTS.DASHBOARD.WORKFLOW_SUMMARY(organisationId))
     return this.extractData(response)
   }
 
-  async getUpcomingTasks(
-    limit: number = 10,
-    organisationId?: string
-  ): Promise<{ tasks: UpcomingTask[] }> {
-    try {
-      const params = { limit, ...(organisationId ? { organisationId: organisationId } : {}) }
-      const response = await this.get<{ tasks: UpcomingTask[] }>(
-        API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(organisationId || ''),
-        params
-      )
-      return this.extractData(response)
-    } catch (error) {
-      console.error('Failed to get upcoming tasks:', error)
-      return { tasks: [] }
-    }
-  }
-
+  /**
+   * Get recent activity - GET /dashboards/organisations/:organisationId/recent-activity
+   */
   async getRecentActivity(
-    limit: number = 10,
-    organisationId?: string
+    organisationId: string,
+    limit: number = 10
   ): Promise<{ activities: RecentActivity[] }> {
     try {
-      const params = { limit, ...(organisationId ? { organisationId: organisationId } : {}) }
       const response = await this.get<{ activities: RecentActivity[] }>(
-        API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(organisationId || ''),
-        params
+        API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(organisationId),
+        { limit }
       )
       return this.extractData(response)
     } catch (error) {
@@ -188,37 +201,66 @@ export class DashboardService extends BaseService {
     }
   }
 
-  async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
-    const params = { period, ...(organisationId ? { organisationId: organisationId } : {}) }
+  /**
+   * Get upcoming tasks - GET /dashboards/organisations/:organisationId/upcoming-tasks
+   */
+  async getUpcomingTasks(
+    organisationId: string,
+    limit: number = 10
+  ): Promise<{ tasks: UpcomingTask[] }> {
+    try {
+      const response = await this.get<{ tasks: UpcomingTask[] }>(
+        API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(organisationId),
+        { limit }
+      )
+      return this.extractData(response)
+    } catch (error) {
+      console.error('Failed to get upcoming tasks:', error)
+      return { tasks: [] }
+    }
+  }
+
+  /**
+   * Get risk trends - GET /dashboards/organisations/:organisationId/risk-trends
+   */
+  async getRiskTrends(
+    organisationId: string,
+    period: string = 'month'
+  ): Promise<RiskTrend[]> {
     const response = await this.get<RiskTrend[]>(
-      API_ENDPOINTS.DASHBOARD.RISK_TRENDS(organisationId || ''),
-      params
+      API_ENDPOINTS.DASHBOARD.RISK_TRENDS(organisationId),
+      { period }
     )
     return this.extractData(response)
   }
 
-  async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
+  /**
+   * Get compliance overview - GET /dashboards/organisations/:organisationId/compliance-overview
+   */
+  async getComplianceOverview(organisationId: string): Promise<ComplianceOverview[]> {
     const response = await this.get<ComplianceOverview[]>(
-      API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(organisationId || ''),
-      params
+      API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(organisationId)
     )
     return this.extractData(response)
   }
 
-  async getCompleteDashboard(organisationId: string): Promise<DashboardData> {
-    const response = await this.get<DashboardData>(
-      API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId)
-    )
-    return this.extractData(response)
-  }
+  // ============================================
+  // Dashboard Config CRUD Operations
+  // ============================================
 
-  async getDashboardConfigs(params?: DashboardQueryParams): Promise<any> {
+  async getDashboardConfigs(params?: DashboardQueryParams): Promise<PaginatedResponse<DashboardConfig>> {
     const response = await this.getPaginated<DashboardConfig>(
       API_ENDPOINTS.DASHBOARD.CONFIGS,
-      params
+      params as Record<string, any>
     )
-    return response
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
   }
 
   async getDashboardConfig(id: string): Promise<DashboardConfig> {
@@ -226,10 +268,14 @@ export class DashboardService extends BaseService {
     return this.extractData(response)
   }
 
-  async getUserDashboardConfig(organisationId?: string): Promise<DashboardConfig> {
-    const params = organisationId ? { organisationId: organisationId } : undefined
-    const response = await this.get<DashboardConfig>(API_ENDPOINTS.DASHBOARD.USER_CONFIG, params)
-    return this.extractData(response)
+  async getUserDashboardConfig(organisationId?: string): Promise<DashboardConfig | null> {
+    const params = organisationId ? { organisationId } : undefined
+    try {
+      const response = await this.get<DashboardConfig>(API_ENDPOINTS.DASHBOARD.USER_CONFIG, params)
+      return this.extractData(response)
+    } catch {
+      return null
+    }
   }
 
   async createDashboardConfig(data: CreateDashboardConfigRequest): Promise<DashboardConfig> {
@@ -260,11 +306,10 @@ export class DashboardService extends BaseService {
   async getRoleDashboardConfigs(
     organisationId: string,
     role: DashboardRole
-  ): Promise<DashboardConfig[]> {
-    const response = await this.get<DashboardConfig[]>(
+  ): Promise<PaginatedResponse<DashboardConfig>> {
+    return this.getPaginated<DashboardConfig>(
       API_ENDPOINTS.DASHBOARD.ROLE_CONFIGS(organisationId, role)
     )
-    return this.extractData(response)
   }
 }
 
