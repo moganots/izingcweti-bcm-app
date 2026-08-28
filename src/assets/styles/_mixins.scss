@@ -35,6 +35,142 @@
 }
 
 // ==========================================
+// RESPONSIVE TYPOGRAPHY
+// ==========================================
+
+/**
+ * Fluid typography with clamp() using proper unit handling
+ * 
+ * Usage:
+ *   @include fluid-font-size(14px, 18px);
+ *   @include fluid-font-size(1rem, 1.25rem);
+ * 
+ * Note: Both parameters should use the same unit type (px or rem)
+ */
+@mixin fluid-font-size($min-size, $max-size, $min-width: 320px, $max-width: 1200px) {
+  // Convert everything to numbers for calculation
+  $min-size-num: strip-unit($min-size);
+  $max-size-num: strip-unit($max-size);
+  $min-width-num: strip-unit($min-width);
+  $max-width-num: strip-unit($max-width);
+  
+  // Calculate the slope and intercept for the linear interpolation
+  $slope: ($max-size-num - $min-size-num) / ($max-width-num - $min-width-num) * 100;
+  $intercept: $min-size-num - ($slope * $min-width-num / 100);
+  
+  // Get the unit type from the min-size
+  $unit: unit($min-size);
+  
+  // Build the clamp value
+  font-size: clamp(
+    #{$min-size},
+    #{$slope}vw + #{$intercept}#{$unit},
+    #{$max-size}
+  );
+}
+
+/**
+ * Strip unit from a value for calculations
+ */
+@function strip-unit($value) {
+  @return $value / ($value * 0 + 1);
+}
+
+/**
+ * Alternative: Responsive font size with min/max using media queries
+ * Use this if clamp() is causing issues with your Sass compiler
+ */
+@mixin responsive-font-size($mobile-size, $tablet-size: null, $desktop-size: null) {
+  font-size: $mobile-size;
+
+  @if $tablet-size {
+    @include respond-above('md') {
+      font-size: $tablet-size;
+    }
+  }
+
+  @if $desktop-size {
+    @include respond-above('lg') {
+      font-size: $desktop-size;
+    }
+  }
+}
+
+/**
+ * Simplified fluid font size - uses only rem units
+ * Recommended for most use cases
+ */
+@mixin fluid-font-size-rem($min-rem, $max-rem, $min-width: 20rem, $max-width: 75rem) {
+  $min-size-num: strip-unit($min-rem);
+  $max-size-num: strip-unit($max-rem);
+  $min-width-num: strip-unit($min-width);
+  $max-width-num: strip-unit($max-width);
+  
+  $slope: ($max-size-num - $min-size-num) / ($max-width-num - $min-width-num) * 100;
+  $intercept: $min-size-num - ($slope * $min-width-num / 100);
+  
+  font-size: clamp(
+    #{$min-rem},
+    #{$slope}vw + #{$intercept}rem,
+    #{$max-rem}
+  );
+}
+
+/**
+ * Alternative: Use viewport units with a fallback
+ * Best for simple scaling without clamp()
+ */
+@mixin fluid-font-size-vw($min-size, $max-size, $min-vw: 320, $max-vw: 1200) {
+  $min-size-num: strip-unit($min-size);
+  $max-size-num: strip-unit($max-size);
+  $unit: unit($min-size);
+  
+  // Calculate the viewport-based size
+  $slope: ($max-size-num - $min-size-num) / ($max-vw - $min-vw) * 100;
+  $intercept: $min-size-num - ($slope * $min-vw / 100);
+  
+  font-size: calc(#{$slope}vw + #{$intercept}#{$unit});
+  
+  // Fallback for older browsers
+  @media (max-width: #{$min-vw}px) {
+    font-size: $min-size;
+  }
+  
+  @media (min-width: #{$max-vw}px) {
+    font-size: $max-size;
+  }
+}
+
+// Heading sizes with responsive scaling
+@mixin heading-size($level: 1) {
+  @if $level == 1 {
+    @include fluid-font-size-rem(1.75rem, 2.5rem);
+    font-weight: $font-weight-bold;
+    line-height: $line-height-tight;
+  } @else if $level == 2 {
+    @include fluid-font-size-rem(1.5rem, 2rem);
+    font-weight: $font-weight-bold;
+    line-height: $line-height-tight;
+  } @else if $level == 3 {
+    @include fluid-font-size-rem(1.25rem, 1.75rem);
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-snug;
+  } @else if $level == 4 {
+    @include fluid-font-size-rem(1.125rem, 1.5rem);
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-snug;
+  } @else if $level == 5 {
+    @include fluid-font-size-rem(1rem, 1.25rem);
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-normal;
+  } @else if $level == 6 {
+    @include fluid-font-size-rem(0.875rem, 1rem);
+    font-weight: $font-weight-semibold;
+    line-height: $line-height-normal;
+  }
+}
+
+// ==========================================
 // TYPOGRAPHY
 // ==========================================
 
@@ -68,6 +204,34 @@
 }
 
 // ==========================================
+// RESPONSIVE SPACING
+// ==========================================
+
+@mixin responsive-spacing($property, $mobile, $tablet: null, $desktop: null) {
+  #{$property}: $mobile;
+
+  @if $tablet {
+    @include respond-above('md') {
+      #{$property}: $tablet;
+    }
+  }
+
+  @if $desktop {
+    @include respond-above('lg') {
+      #{$property}: $desktop;
+    }
+  }
+}
+
+@mixin responsive-padding($mobile, $tablet: null, $desktop: null) {
+  @include responsive-spacing(padding, $mobile, $tablet, $desktop);
+}
+
+@mixin responsive-margin($mobile, $tablet: null, $desktop: null) {
+  @include responsive-spacing(margin, $mobile, $tablet, $desktop);
+}
+
+// ==========================================
 // FLEXBOX
 // ==========================================
 
@@ -98,7 +262,7 @@
 }
 
 // ==========================================
-// GRID
+// RESPONSIVE GRID
 // ==========================================
 
 @mixin grid($columns: 2, $gap: $spacing-4) {
@@ -111,6 +275,21 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
   gap: $gap;
+}
+
+// Responsive grid with breakpoints
+@mixin grid-responsive-breakpoints($mobile-columns: 1, $tablet-columns: 2, $desktop-columns: 3, $gap: $spacing-4) {
+  display: grid;
+  grid-template-columns: repeat($mobile-columns, 1fr);
+  gap: $gap;
+
+  @include respond-above('md') {
+    grid-template-columns: repeat($tablet-columns, 1fr);
+  }
+
+  @include respond-above('lg') {
+    grid-template-columns: repeat($desktop-columns, 1fr);
+  }
 }
 
 // ==========================================
@@ -139,7 +318,7 @@
 }
 
 // ==========================================
-// BUTTONS & INTERACTIVE
+// BUTTONS & INTERACTIVE - Using Sass Color Variables
 // ==========================================
 
 @mixin button-base {
@@ -157,28 +336,102 @@
   border-radius: $border-radius-base;
   cursor: pointer;
   transition: all $transition-fast;
+  min-height: 44px; // WCAG touch target size
+  min-width: 44px;
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
   }
+
+  @include respond-below('sm') {
+    padding: $spacing-2 $spacing-3;
+    font-size: $font-size-sm;
+    min-height: 40px;
+  }
 }
 
+/**
+ * Button variant using Sass color variables ONLY
+ * @param $bg - Sass color variable (e.g., $primary, NOT var(--primary))
+ * @param $color - Text color (default: $white)
+ * 
+ * NOTE: This mixin ONLY works with Sass color variables.
+ * For CSS variables, use button-variant-css or button-variant-opacity
+ */
 @mixin button-variant($bg, $color: $white) {
-  background-color: $bg;
+  @if type-of($bg) == color {
+    background-color: $bg;
+    color: $color;
+    border: 1px solid $bg;
+
+    &:hover:not(:disabled) {
+      background-color: darken($bg, 10%);
+      border-color: darken($bg, 10%);
+    }
+
+    &:active:not(:disabled) {
+      background-color: darken($bg, 15%);
+    }
+  } @else {
+    @warn "button-variant: `#{$bg}` is not a color. Use button-variant-css for CSS variables.";
+    // Fallback - use filter approach
+    background-color: $bg;
+    color: $color;
+    border: 1px solid $bg;
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.9);
+    }
+
+    &:active:not(:disabled) {
+      filter: brightness(0.8);
+    }
+  }
+}
+
+/**
+ * Button variant using CSS custom properties
+ * Uses CSS variables for colors and applies hover via CSS filter
+ * No Sass color functions are called on CSS variables
+ */
+@mixin button-variant-css($bg-var, $color: $white) {
+  background-color: $bg-var;
   color: $color;
-  border: 1px solid $bg;
+  border: 1px solid $bg-var;
 
   &:hover:not(:disabled) {
-    background-color: darken($bg, 10%);
-    border-color: darken($bg, 10%);
+    filter: brightness(0.9);
+    border-color: $bg-var;
   }
 
   &:active:not(:disabled) {
-    background-color: darken($bg, 15%);
+    filter: brightness(0.8);
   }
 }
 
+/**
+ * Button variant using CSS variables with custom hover color
+ * Allows separate hover color variable
+ */
+@mixin button-variant-css-hover($bg-var, $hover-var, $color: $white) {
+  background-color: $bg-var;
+  color: $color;
+  border: 1px solid $bg-var;
+
+  &:hover:not(:disabled) {
+    background-color: $hover-var;
+    border-color: $hover-var;
+  }
+
+  &:active:not(:disabled) {
+    background-color: var(--color-active, $hover-var);
+  }
+}
+
+/**
+ * Button outline variant using Sass color variables
+ */
 @mixin button-outline($color) {
   background-color: transparent;
   color: $color;
@@ -187,6 +440,70 @@
   &:hover:not(:disabled) {
     background-color: $color;
     color: $white;
+  }
+}
+
+/**
+ * Button variant with opacity-based hover (no darken required)
+ * Works with BOTH Sass colors and CSS variables
+ */
+@mixin button-variant-opacity($bg-color, $color: $white) {
+  background-color: $bg-color;
+  color: $color;
+  border: 1px solid $bg-color;
+
+  &:hover:not(:disabled) {
+    // If $bg-color is a Sass color, use rgba; if CSS var, use filter
+    @if type-of($bg-color) == color {
+      background-color: rgba($bg-color, 0.85);
+      border-color: rgba($bg-color, 0.85);
+    } @else {
+      filter: brightness(0.9);
+      border-color: $bg-color;
+    }
+  }
+
+  &:active:not(:disabled) {
+    @if type-of($bg-color) == color {
+      background-color: rgba($bg-color, 0.75);
+    } @else {
+      filter: brightness(0.8);
+    }
+  }
+}
+
+/**
+ * Unified button variant - automatically detects color type
+ * Works with both Sass colors and CSS variables
+ */
+@mixin button-variant-unified($bg, $color: $white) {
+  @if type-of($bg) == color {
+    // Sass color - use darken
+    background-color: $bg;
+    color: $color;
+    border: 1px solid $bg;
+
+    &:hover:not(:disabled) {
+      background-color: darken($bg, 10%);
+      border-color: darken($bg, 10%);
+    }
+
+    &:active:not(:disabled) {
+      background-color: darken($bg, 15%);
+    }
+  } @else {
+    // CSS variable or string - use filter
+    background-color: $bg;
+    color: $color;
+    border: 1px solid $bg;
+
+    &:hover:not(:disabled) {
+      filter: brightness(0.9);
+    }
+
+    &:active:not(:disabled) {
+      filter: brightness(0.8);
+    }
   }
 }
 
@@ -204,6 +521,7 @@
   border: 1px solid $border-color;
   border-radius: $border-radius-base;
   transition: border-color $transition-fast, box-shadow $transition-fast;
+  min-height: 44px; // WCAG touch target
 
   &:focus {
     outline: none;
@@ -218,6 +536,12 @@
   &:disabled {
     background-color: $gray-100;
     cursor: not-allowed;
+  }
+
+  @include respond-below('sm') {
+    font-size: $font-size-sm;
+    padding: $spacing-2;
+    min-height: 40px;
   }
 }
 
@@ -260,11 +584,34 @@
 }
 
 // ==========================================
+// RESPONSIVE IMAGES
+// ==========================================
+
+@mixin responsive-image {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+@mixin cover-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+@mixin contain-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+// ==========================================
 // BACKGROUNDS
 // ==========================================
 
 @mixin bg-blur($blur: 10px, $bg-opacity: 0.8) {
   backdrop-filter: blur($blur);
+  -webkit-backdrop-filter: blur($blur);
   background-color: rgba($white, $bg-opacity);
 }
 
@@ -333,6 +680,24 @@
 @mixin selection {
   ::selection {
     @content;
+  }
+}
+
+// ==========================================
+// RESPONSIVE CONTAINER
+// ==========================================
+
+@mixin container {
+  width: 100%;
+  max-width: map-get($container-max-widths, 'xl');
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: $container-padding-x;
+  padding-right: $container-padding-x;
+
+  @include respond-below('sm') {
+    padding-left: $spacing-3;
+    padding-right: $spacing-3;
   }
 }
 

@@ -12,15 +12,57 @@
 // to match your app's branding.
 // Tip: Use the "Theme Builder" on Quasar's documentation website.
 
-// Primary green theme for agricultural app
-$primary   : #2E7D32;  // Forest green - main brand color
-$secondary : #66BB6A;  // Light green - complementary
-$accent    : #81C784;  // Soft mint green - highlights
+// ============================================
+// BRAND COLORS - BCM Application Theme
+// ============================================
 
-$dark      : #1B5E20;  // Deep forest green for dark mode
-$dark-page : #0D3B12;  // Very dark green for dark backgrounds
+// Primary - Professional Blue
+$primary   : #1a73e8;  // Google Blue - trustworthy, professional
+$secondary : #5c6bc0;  // Indigo - complementary
+$accent    : #ff6f00;  // Amber - highlights and CTAs
 
-$positive  : #21BA45;  // Keep existing positive (success) green
-$negative  : #C10015;  // Keep existing negative (error) red
-$info      : #31CCEC;  // Keep existing info blue
-$warning   : #F2C037;  // Keep existing warning amber
+// Dark Theme Colors
+$dark      : #1a1f36;  // Dark navy for dark mode
+$dark-page : #121212;  // Very dark for dark backgrounds
+
+// Semantic Colors
+$positive  : #4caf50;  // Success green
+$negative  : #f44336;  // Error red
+$info      : #2196f3;  // Info blue
+$warning   : #ff9800;  // Warning orange
+
+// ============================================
+// TYPOGRAPHY - System Font Stack
+// ============================================
+
+// System font stack for optimal performance
+$typography-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+                         "Helvetica Neue", Arial, "Noto Sans", sans-serif,
+                         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
+                         "Noto Color Emoji";
+
+// ============================================
+// BRANDING
+// ============================================
+
+$brand-primary   : $primary;
+$brand-secondary : $secondary;
+$brand-accent    : $accent;
+
+// ============================================
+// APP LAYOUT
+// ============================================
+
+$app-header-height : 56px;
+$app-footer-height : 56px;
+
+// ============================================
+// BREAKPOINTS - Mobile-First
+// ============================================
+
+$breakpoint-xs : 375px;
+$breakpoint-sm : 640px;
+$breakpoint-md : 768px;
+$breakpoint-lg : 1024px;
+$breakpoint-xl : 1280px;
+$breakpoint-2xl: 1536px;
