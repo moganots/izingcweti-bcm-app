@@ -50,7 +50,7 @@
       <div class="col-12 col-md-6">
         <RecentActivityList
           title="Recent Incidents"
-          :items="dashboardStore.recentIncidents"
+          :items="recentIncidentItems"
           type="incident"
           :loading="dashboardStore.isLoading"
           view-all-route="/incidents"
@@ -59,7 +59,7 @@
       </div>
       <div class="col-12 col-md-6">
         <PendingWorkflowsWidget
-          :workflows="pendingWorkflowsData"
+          :workflows="pendingWorkflowsItems"
           :loading="dashboardStore.isLoading"
         />
       </div>
@@ -82,7 +82,8 @@ import PendingWorkflowsWidget from 'src/components/dashboard/PendingWorkflowsWid
 import type { KPI } from 'src/components/dashboard/KpiOverview.vue'
 import type { RiskData } from 'src/components/dashboard/RiskHeatMap.vue'
 import type { IncidentTrendData } from 'src/components/dashboard/IncidentTrendChart.vue'
-import type { Workflow } from 'src/models/entities'
+import type { SimpleWorkflow } from 'src/components/dashboard/PendingWorkflowsWidget.vue'
+import type { ActivityItem } from 'src/components/dashboard/RecentActivityList.vue'
 import QuickActions from 'src/components/dashboard/QuickActions.vue'
 
 const router = useRouter()
@@ -137,11 +138,11 @@ const kpiList = computed<KPI[]>(() => [
 
 // Sample risk data for heat map (until API is ready)
 const sampleRisks = ref<RiskData[]>([
-  { impact_severity: 'Insignificant', likelihood: 0.2 },
-  { impact_severity: 'Low', likelihood: 0.4 },
-  { impact_severity: 'Medium', likelihood: 0.6 },
-  { impact_severity: 'High', likelihood: 0.8 },
-  { impact_severity: 'Critical', likelihood: 1.0 },
+  { impactSeverity: 'Insignificant', likelihood: 0.2 },
+  { impactSeverity: 'Low', likelihood: 0.4 },
+  { impactSeverity: 'Medium', likelihood: 0.6 },
+  { impactSeverity: 'High', likelihood: 0.8 },
+  { impactSeverity: 'Critical', likelihood: 1.0 },
 ])
 
 // Transform risk trends to incident trend format
@@ -158,24 +159,28 @@ const incidentTrendData = computed<IncidentTrendData[]>(() => {
   }))
 })
 
-// Transform pending workflows to match Workflow interface
-const pendingWorkflowsData = computed<Workflow[]>(() => {
+// Transform recent incidents to ActivityItem format
+const recentIncidentItems = computed<ActivityItem[]>(() => {
+  const incidents = dashboardStore.recentIncidents || []
+  return incidents.map((incident) => ({
+    uuid: incident.uuid,
+    rootCause: incident.rootCause,
+    incidentSeverity: incident.incidentSeverity,
+    declaredAt: incident.declaredAt,
+    closedAt: incident.closedAt,
+  }))
+})
+
+// Transform pending workflows to SimpleWorkflow format
+const pendingWorkflowsItems = computed<SimpleWorkflow[]>(() => {
   const workflows = dashboardStore.pendingWorkflows || []
-  return workflows.map((workflow: any) => ({
-    uuid: workflow.uuid || `wf_${Date.now()}`,
+  return workflows.map((workflow) => ({
+    uuid: workflow.uuid,
     title: workflow.title || 'Untitled Workflow',
-    workflow_type: workflow.workflow_type || 'Unknown',
-    workflow_state: workflow.workflow_state || 'Draft',
+    workflowType: workflow.workflowType || 'Unknown',
+    workflowState: workflow.workflowState || 'Draft',
     priority: workflow.priority || 3,
-    due_date: workflow.due_date || null,
-    initiated_by: workflow.initiated_by || '',
-    escalation_level: workflow.escalation_level || 0,
-    created_by: workflow.created_by || '',
-    created_at: workflow.created_at || new Date().toISOString(),
-    updated_by: workflow.updated_by || '',
-    updated_at: workflow.updated_at || new Date().toISOString(),
-    version: workflow.version || 1,
-    sync_status: workflow.sync_status || 'SYNCED',
+    dueDate: workflow.dueDate || null,
   }))
 })
 
@@ -185,18 +190,16 @@ function handleHeatMapClick(cell: { impact: string; likelihood: number }) {
     type: 'info',
     position: 'top',
   })
-  // Navigate to risks page with filters
   router.push(`/risks?impact=${encodeURIComponent(cell.impact)}&likelihood=${cell.likelihood}`)
 }
 
 async function handlePeriodChange(period: string) {
-  // Load risk trends for the selected period
   await dashboardStore.loadRiskTrends(period)
 }
 
-function handleIncidentClick(incident: any) {
-  if (incident.uuid) {
-    router.push(`/incidents/${incident.uuid}`)
+function handleIncidentClick(item: ActivityItem) {
+  if (item.uuid) {
+    router.push(`/incidents/${item.uuid}`)
   } else {
     $q.notify({
       message: 'Incident details not available',

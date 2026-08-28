@@ -51,16 +51,11 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-
-export interface ComplianceData {
-  standard: string
-  compliant: number
-  total: number
-}
+import type { ComplianceOverview } from 'src/modules/dashboard'
 
 const props = withDefaults(
   defineProps<{
-    data?: ComplianceData[]
+    data?: ComplianceOverview[]
     loading?: boolean
   }>(),
   {

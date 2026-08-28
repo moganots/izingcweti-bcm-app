@@ -23,7 +23,7 @@
       <q-list v-else separator>
         <q-item
           v-for="item in items"
-          :key="(item.uuid || item.id)!"
+          :key="item.uuid || item.id"
           clickable
           v-ripple
           @click="emit('item-click', item)"
@@ -46,24 +46,26 @@
 
 <script setup lang="ts">
 import { formatDate } from '../../utils/date.utils'
+import type { DashboardIncident } from 'src/modules/dashboard'
 
 export type ActivityType = 'incident' | 'workflow' | 'test' | 'document' | 'notification'
 
+// Activity Item (camelCase)
 export interface ActivityItem {
   uuid?: string
   id?: string
   title?: string
   message?: string
-  root_cause?: string
-  incident_severity?: string
-  closed_at?: string | null
-  declared_at?: string
-  created_at?: string
+  rootCause?: string
+  incidentSeverity?: string
+  closedAt?: string | null
+  declaredAt?: string
+  createdAt?: string
   date?: string
-  due_date?: string
-  workflow_state?: string
-  workflow_type?: string
-  document_type?: string
+  dueDate?: string
+  workflowState?: string
+  workflowType?: string
+  documentType?: string
   status?: string
   passed?: boolean
   priority?: string
@@ -92,7 +94,7 @@ const emit = defineEmits<{
 function getIcon(item: ActivityItem): string {
   switch (props.type) {
     case 'incident':
-      return item.closed_at ? 'check_circle' : 'report'
+      return item.closedAt ? 'check_circle' : 'report'
     case 'workflow':
       return 'account_tree'
     case 'test':
@@ -109,12 +111,12 @@ function getIcon(item: ActivityItem): string {
 function getColor(item: ActivityItem): string {
   switch (props.type) {
     case 'incident':
-      if (item.incident_severity === 'Critical') return 'negative'
-      if (item.incident_severity === 'High') return 'warning'
+      if (item.incidentSeverity === 'Critical') return 'negative'
+      if (item.incidentSeverity === 'High') return 'warning'
       return 'grey'
     case 'workflow':
-      if (item.workflow_state === 'Submitted') return 'info'
-      if (item.workflow_state === 'InReview') return 'warning'
+      if (item.workflowState === 'Submitted') return 'info'
+      if (item.workflowState === 'InReview') return 'warning'
       return 'grey'
     default:
       return 'primary'
@@ -124,7 +126,7 @@ function getColor(item: ActivityItem): string {
 function getTitle(item: ActivityItem): string {
   switch (props.type) {
     case 'incident':
-      return item.root_cause || 'Incident Reported'
+      return item.rootCause || 'Incident Reported'
     case 'workflow':
       return item.title || 'Workflow'
     case 'test':
@@ -141,30 +143,30 @@ function getTitle(item: ActivityItem): string {
 function getSubtitle(item: ActivityItem): string {
   switch (props.type) {
     case 'incident':
-      return formatDate(item.declared_at || item.created_at || new Date().toISOString())
+      return formatDate(item.declaredAt || item.createdAt || new Date().toISOString())
     case 'workflow':
-      return `${item.workflow_state || 'Unknown'} | Due: ${
-        item.due_date ? formatDate(item.due_date) : 'Not set'
+      return `${item.workflowState || 'Unknown'} | Due: ${
+        item.dueDate ? formatDate(item.dueDate) : 'Not set'
       }`
     case 'test':
-      return formatDate(item.date || item.created_at || new Date().toISOString())
+      return formatDate(item.date || item.createdAt || new Date().toISOString())
     case 'document':
-      return `${item.document_type || 'Document'} | ${formatDate(
-        item.created_at || new Date().toISOString()
+      return `${item.documentType || 'Document'} | ${formatDate(
+        item.createdAt || new Date().toISOString()
       )}`
     case 'notification':
-      return formatDate(item.created_at || new Date().toISOString())
+      return formatDate(item.createdAt || new Date().toISOString())
     default:
-      return formatDate(item.created_at || new Date().toISOString())
+      return formatDate(item.createdAt || new Date().toISOString())
   }
 }
 
 function getBadgeLabel(item: ActivityItem): string {
   switch (props.type) {
     case 'incident':
-      return item.incident_severity || ''
+      return item.incidentSeverity || ''
     case 'workflow':
-      return item.workflow_state || ''
+      return item.workflowState || ''
     case 'test':
       return item.passed ? 'Passed' : 'Pending'
     case 'document':
@@ -186,7 +188,7 @@ function getBadgeColor(item: ActivityItem): string {
         Low: 'positive',
         Informational: 'info',
       }
-      return severityColors[item.incident_severity || ''] || 'grey'
+      return severityColors[item.incidentSeverity || ''] || 'grey'
     }
     case 'workflow': {
       const stateColors: Record<string, string> = {
@@ -197,7 +199,7 @@ function getBadgeColor(item: ActivityItem): string {
         Rejected: 'negative',
         Completed: 'positive',
       }
-      return stateColors[item.workflow_state || ''] || 'grey'
+      return stateColors[item.workflowState || ''] || 'grey'
     }
     case 'test':
       return item.passed ? 'positive' : 'warning'

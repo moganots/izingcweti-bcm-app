@@ -53,7 +53,7 @@
 import { computed } from 'vue'
 
 export interface RiskData {
-  impact_severity: string
+  impactSeverity: string
   likelihood: number
 }
 
@@ -85,7 +85,7 @@ const risksData = computed(() => props.risks)
 
 function getCellCount(i: number, j: number): number {
   return risksData.value.filter(
-    (r) => r.impact_severity === impacts[i] && Math.abs(r.likelihood - likelihoods[j]!?.value) < 0.2
+    (r) => r.impactSeverity === impacts[i] && Math.abs(r.likelihood - likelihoods[j].value) < 0.2
   ).length
 }
 

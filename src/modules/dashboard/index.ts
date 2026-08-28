@@ -187,7 +187,7 @@ export interface DashboardData {
 }
 
 /**
- * Dashboard Incident
+ * Dashboard Incident - camelCase
  */
 export interface DashboardIncident {
   uuid: string
@@ -199,7 +199,7 @@ export interface DashboardIncident {
 }
 
 /**
- * Dashboard Test
+ * Dashboard Test - camelCase
  */
 export interface DashboardTest {
   uuid: string
@@ -213,7 +213,7 @@ export interface DashboardTest {
 }
 
 /**
- * Dashboard Workflow - Matches backend DashboardWorkflow
+ * Dashboard Workflow - Matches backend DashboardWorkflow (camelCase)
  */
 export interface DashboardWorkflow {
   uuid: string
@@ -226,7 +226,7 @@ export interface DashboardWorkflow {
 }
 
 /**
- * Recent Activity - Matches backend RecentActivityDto
+ * Recent Activity - Matches backend RecentActivityDto (camelCase)
  */
 export interface RecentActivity {
   id: string
@@ -240,7 +240,7 @@ export interface RecentActivity {
 }
 
 /**
- * Upcoming Task - Matches backend UpcomingTaskDto
+ * Upcoming Task - Matches backend UpcomingTaskDto (camelCase)
  */
 export interface UpcomingTask {
   id: string

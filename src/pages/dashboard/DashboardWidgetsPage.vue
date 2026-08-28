@@ -164,7 +164,7 @@ function getWidgetProps(widget: Widget): Record<string, any> {
     case 'compliance':
       return { ...baseProps, data: dashboardStore.complianceOverview }
     case 'incident-trends':
-      return { ...baseProps, data: dashboardStore.riskTrends }
+      return { ...baseProps, incidents: dashboardStore.riskTrends }
     case 'maturity':
       return { ...baseProps, score: dashboardStore.kpis.maturityScore }
     case 'pending-workflows':

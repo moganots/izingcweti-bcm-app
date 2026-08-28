@@ -17,7 +17,7 @@
       <div v-if="loading" class="text-center q-pa-md">
         <q-spinner-dots size="30px" color="primary" />
       </div>
-      <div v-else-if="incidents!?.length === 0" class="text-center q-pa-md text-grey-7">
+      <div v-else-if="!incidents || incidents.length === 0" class="text-center q-pa-md text-grey-7">
         <q-icon name="insights" size="40px" color="grey-4" class="q-mb-sm" />
         <div>No incident data available</div>
       </div>
@@ -63,9 +63,9 @@
   </q-card>
 </template>
 
-<!-- src/components/dashboard/IncidentTrendChart.vue - update props -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { IncidentTrend } from 'src/modules/dashboard'
 
 export interface IncidentTrendData {
   period: string
@@ -79,11 +79,11 @@ export interface IncidentTrendData {
 
 const props = withDefaults(
   defineProps<{
-    incidents?: IncidentTrendData[]
+    incidents?: IncidentTrend[]
     loading?: boolean
   }>(),
   {
-    data: () => [],
+    incidents: () => [],
     loading: false,
   }
 )
@@ -101,8 +101,8 @@ const periodOptions = [
 ]
 
 const maxValue = computed(() => {
-  if (props.incidents!?.length === 0) return 1
-  return Math.max(...props.incidents!?.map((d) => d.total), 1)
+  if (!props.incidents || props.incidents.length === 0) return 1
+  return Math.max(...props.incidents.map((d) => d.total), 1)
 })
 
 function getHeight(value: number): number {

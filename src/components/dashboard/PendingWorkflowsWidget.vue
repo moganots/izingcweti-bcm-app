@@ -25,15 +25,15 @@
         >
           <q-item-section avatar>
             <q-icon
-              :name="getStateIcon(workflow.workflow_state)"
-              :color="getStateColor(workflow.workflow_state)"
+              :name="getStateIcon(workflow.workflowState)"
+              :color="getStateColor(workflow.workflowState)"
               size="28px"
             />
           </q-item-section>
           <q-item-section>
             <q-item-label class="text-weight-medium">{{ workflow.title }}</q-item-label>
             <q-item-label caption class="text-grey-7">
-              {{ workflow.workflow_type }} • {{ workflow.workflow_state }}
+              {{ workflow.workflowType }} • {{ workflow.workflowState }}
             </q-item-label>
           </q-item-section>
           <q-item-section side>
@@ -41,8 +41,8 @@
               :color="getPriorityColor(workflow.priority)"
               :label="`P${workflow.priority}`"
             />
-            <div v-if="workflow.due_date" class="text-caption text-grey-6 q-mt-xs">
-              {{ formatDate(workflow.due_date) }}
+            <div v-if="workflow.dueDate" class="text-caption text-grey-6 q-mt-xs">
+              {{ formatDate(workflow.dueDate) }}
             </div>
           </q-item-section>
         </q-item>
@@ -54,20 +54,21 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatDate } from '../../utils/date.utils'
+import type { DashboardWorkflow } from 'src/modules/dashboard'
 
-// Simplified Workflow interface for dashboard display
+// Simplified Workflow interface for dashboard display (camelCase)
 export interface SimpleWorkflow {
   uuid: string
   title: string
-  workflow_type: string
-  workflow_state: string
+  workflowType: string
+  workflowState: string
   priority: number
-  due_date?: string | null
+  dueDate?: string | null
 }
 
 const props = withDefaults(
   defineProps<{
-    workflows?: SimpleWorkflow[]
+    workflows?: SimpleWorkflow[] | DashboardWorkflow[]
     loading?: boolean
   }>(),
   {
