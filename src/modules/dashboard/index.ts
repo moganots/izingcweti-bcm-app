@@ -17,8 +17,9 @@ export enum DashboardRole {
 }
 
 import { QueryParams } from 'src/shared/types/common.types'
+
 // ============================================
-// Dashboard Module - Types
+// Dashboard Module - Types (camelCase)
 // ============================================
 
 import { BaseEntity } from '../../core/base/base.entity'
@@ -35,15 +36,15 @@ export interface DashboardWidget {
 }
 
 export interface DashboardConfig extends BaseEntity {
-  organisation_id: string
-  user_id?: string
+  organisationId: string
+  userId?: string
   role: DashboardRole
   name?: string
   description?: string
   widgets: DashboardWidget[]
   layout?: Record<string, any>
   preferences?: Record<string, any>
-  is_active: boolean
+  isActive: boolean
 }
 
 export interface DashboardKPIs {
@@ -89,9 +90,9 @@ export interface IncidentTrend {
 
 export interface DashboardQueryParams extends QueryParams {
   period?: 'day' | 'week' | 'month' | 'quarter' | 'year'
-  organisation_id?: string
-  start_date?: string
-  end_date?: string
+  organisationId?: string
+  startDate?: string
+  endDate?: string
 }
 
 export interface DashboardData {
@@ -108,32 +109,32 @@ export interface DashboardData {
 
 export interface DashboardIncident {
   uuid: string
-  incident_severity: string
-  root_cause: string
-  declared_at: string
-  closed_at?: string
+  incidentSeverity: string
+  rootCause: string
+  declaredAt: string
+  closedAt?: string
   organisation?: { uuid: string; name: string }
 }
 
 export interface DashboardTest {
   uuid: string
-  exercise_test_type: string
+  exerciseTestType: string
   date: string
   passed: boolean
-  business_continuity_plan?: {
+  businessContinuityPlan?: {
     uuid: string
-    critical_function?: { name: string }
+    criticalFunction?: { name: string }
   }
 }
 
 export interface DashboardWorkflow {
   uuid: string
-  workflow_type: string
-  workflow_state: string
+  workflowType: string
+  workflowState: string
   priority: number
   title: string
-  due_date?: string
-  assigned_to?: string
+  dueDate?: string
+  assignedTo?: string
 }
 
 export interface RecentActivity {
@@ -146,18 +147,18 @@ export interface RecentActivity {
     email: string
   }
   timestamp: string
-  entity_type: string
-  entity_id: string
+  entityType: string
+  entityId: string
 }
 
 export interface UpcomingTask {
   id: string
   title: string
   type: string
-  due_date: string
+  dueDate: string
   priority: string
   status: string
-  assigned_to?: string
+  assignedTo?: string
 }
 
 export interface MaturityProgress {
@@ -177,8 +178,8 @@ export interface MaturityDomain {
 }
 
 export interface CreateDashboardConfigRequest {
-  organisation_id: string
-  user_id?: string
+  organisationId: string
+  userId?: string
   role: DashboardRole
   name?: string
   description?: string
@@ -193,5 +194,5 @@ export interface UpdateDashboardConfigRequest {
   widgets?: DashboardWidget[]
   layout?: Record<string, any>
   preferences?: Record<string, any>
-  is_active?: boolean
+  isActive?: boolean
 }

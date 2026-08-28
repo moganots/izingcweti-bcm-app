@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { dashboardService } from './../../services/api/dashboard/DashboardService'
+import { useAuthStore } from '../auth/auth.store'
 import type {
   DashboardKPIs,
   DashboardIncident,
@@ -94,7 +95,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error.value = null
 
     try {
-      const completeData = await dashboardService.getCompleteDashboard()
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+
+      const completeData = await dashboardService.getCompleteDashboard(organisationId)
 
       // Safely set KPIs with rounding
       kpis.value = roundKPIs({
@@ -106,27 +114,27 @@ export const useDashboardStore = defineStore('dashboard', () => {
         maturityScore: completeData.kpis?.maturityScore ?? 0,
       })
 
-      // Transform recent activity to incidents (with safe navigation)
-      recentIncidents.value = (completeData.recentActivity?.activities || [])
-        .filter((a) => a.entity_type === 'Incident')
+      // Transform recent activity to incidents
+      recentIncidents.value = (completeData.recentActivity || [])
+        .filter((a) => a.entityType === 'Incident')
         .slice(0, 5)
         .map((a) => ({
           uuid: a.id,
           incident_severity: a.action,
-          root_cause: a.entity_name,
+          root_cause: a.description,
           declared_at: a.timestamp,
           closed_at: null,
           organisation: { uuid: '', name: '' },
         }))
 
-      // Extract tests from upcoming tasks (with safe navigation)
-      upcomingTests.value = (completeData.upcomingTasks?.tasks || [])
+      // Extract tests from upcoming tasks
+      upcomingTests.value = (completeData.upcomingTasks || [])
         .filter((t) => t.type === 'BCP_REVIEW')
         .slice(0, 5)
         .map((t) => ({
           uuid: t.id,
           exercise_test_type: t.type,
-          date: t.due_date,
+          date: t.dueDate,
           passed: false,
           business_continuity_plan: {
             uuid: t.id,
@@ -135,14 +143,19 @@ export const useDashboardStore = defineStore('dashboard', () => {
         }))
 
       // Round workflow priorities
-      pendingWorkflows.value = (completeData.workflowSummary?.recent_workflows || [])
+      pendingWorkflows.value = (completeData.pendingWorkflows || [])
         .slice(0, 5)
         .map((wf) => ({
-          ...wf,
+          uuid: wf.uuid,
+          workflow_type: wf.workflowType,
+          workflow_state: wf.workflowState,
           priority: Math.round(wf.priority ?? 0),
+          title: wf.title,
+          due_date: wf.dueDate ?? null,
+          assigned_to: wf.assignedTo ?? null,
         }))
 
-      complianceOverview.value = (completeData.complianceSummary?.compliance_by_standard || []).map(
+      complianceOverview.value = (completeData.complianceOverview || []).map(
         (standard) => ({
           ...standard,
           compliant: Math.round(standard.compliant ?? 0),
@@ -153,9 +166,8 @@ export const useDashboardStore = defineStore('dashboard', () => {
         })
       )
 
-      riskTrends.value = (completeData.riskSummary?.risk_trends || []).map(
-        (trend) =>
-        ({
+      riskTrends.value = (completeData.riskTrends || []).map(
+        (trend) => ({
           ...trend,
           highRisks: Math.round(trend.high ?? 0),
           mediumRisks: Math.round(trend.medium ?? 0),
@@ -167,7 +179,16 @@ export const useDashboardStore = defineStore('dashboard', () => {
       lastRefreshed.value = new Date().toISOString()
     } catch (err: any) {
       console.error('Failed to load dashboard:', err)
-      error.value = err.message || 'Failed to load dashboard data'
+
+      // Handle authentication errors
+      if (err.status === 401 || err.message?.includes('token')) {
+        error.value = 'Your session has expired. Please log in again.'
+        // Optionally redirect to login
+        // const router = useRouter()
+        // router.push('/auth/login')
+      } else {
+        error.value = err.message || 'Failed to load dashboard data'
+      }
     } finally {
       isLoading.value = false
     }
@@ -187,7 +208,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
     error.value = null
 
     try {
-      const trends = await dashboardService.getRiskTrends(period)
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+
+      const trends = await dashboardService.getRiskTrends(period, organisationId)
       riskTrends.value = (trends || []).map(
         (trend) =>
         ({
@@ -208,7 +236,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function loadKPIsOnly(): Promise<void> {
     try {
-      const kpiData = await dashboardService.getKPIs()
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+
+      const kpiData = await dashboardService.getKPIs(organisationId)
       kpis.value = roundKPIs({
         activeBCPs: kpiData.activeBCPs ?? 0,
         activeIncidents: kpiData.activeIncidents ?? 0,
@@ -225,7 +260,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function loadRecentActivity(limit: number = 10): Promise<void> {
     try {
-      const activity = await dashboardService.getRecentActivity(limit)
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+      
+      const activity = await dashboardService.getRecentActivity(limit, organisationId)
       console.log('Recent activity loaded:', activity)
     } catch (err: any) {
       console.error('Failed to load recent activity:', err)
@@ -234,7 +276,14 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function loadUpcomingTasks(limit: number = 10): Promise<void> {
     try {
-      const tasks = await dashboardService.getUpcomingTasks(limit)
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+      
+      const tasks = await dashboardService.getUpcomingTasks(limit, organisationId)
       console.log('Upcoming tasks loaded:', tasks)
     } catch (err: any) {
       console.error('Failed to load upcoming tasks:', err)
@@ -243,10 +292,22 @@ export const useDashboardStore = defineStore('dashboard', () => {
 
   async function loadPendingWorkflows(limit: number = 5): Promise<void> {
     try {
-      const summary = await dashboardService.getWorkflowSummary()
+      const authStore = useAuthStore()
+      const organisationId = authStore.userOrganisationId
+
+      if (!organisationId) {
+        throw new Error('No organisation ID found. Please log in again.')
+      }
+      
+      const summary = await dashboardService.getWorkflowSummary(organisationId)
       pendingWorkflows.value = (summary.recent_workflows || []).slice(0, limit).map((wf) => ({
-        ...wf,
+        uuid: wf.uuid,
+        workflow_type: wf.workflowType,
+        workflow_state: wf.workflowState,
         priority: Math.round(wf.priority ?? 0),
+        title: wf.title,
+        due_date: wf.dueDate!,
+        assigned_to: wf.assignedTo!,
       }))
     } catch (err: any) {
       console.error('Failed to load pending workflows:', err)

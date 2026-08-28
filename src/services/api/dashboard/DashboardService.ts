@@ -20,7 +20,7 @@ import {
 
 export class DashboardService extends BaseService {
   async getKPIs(organisationId?: string): Promise<DashboardKPIs> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<DashboardKPIs>(
       API_ENDPOINTS.DASHBOARD.KPIS(organisationId || ''),
       params
@@ -37,7 +37,7 @@ export class DashboardService extends BaseService {
     risk_trends: RiskTrend[]
     top_risk_categories: Array<{ category: string; count: number; percentage: number }>
   }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
       total_risks: number
       critical_risks: number
@@ -63,7 +63,7 @@ export class DashboardService extends BaseService {
     exercise_tests_completed: number
     exercise_tests_pending: number
   }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
       total_bcp_plans: number
       active_plans: number
@@ -92,7 +92,7 @@ export class DashboardService extends BaseService {
     incident_trends: IncidentTrend[]
     average_resolution_time_hours: number
   }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
       total_incidents: number
       active_incidents: number
@@ -117,7 +117,7 @@ export class DashboardService extends BaseService {
     upcoming_audits: number
     compliance_by_standard: ComplianceOverview[]
   }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
       overall_compliance_rate: number
       compliant_count: number
@@ -140,7 +140,7 @@ export class DashboardService extends BaseService {
     average_completion_days: number
     recent_workflows: DashboardWorkflow[]
   }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<{
       total_workflows: number
       pending_approvals: number
@@ -159,7 +159,7 @@ export class DashboardService extends BaseService {
     organisationId?: string
   ): Promise<{ tasks: UpcomingTask[] }> {
     try {
-      const params = { limit, ...(organisationId ? { organisation_id: organisationId } : {}) }
+      const params = { limit, ...(organisationId ? { organisationId: organisationId } : {}) }
       const response = await this.get<{ tasks: UpcomingTask[] }>(
         API_ENDPOINTS.DASHBOARD.UPCOMING_TASKS(organisationId || ''),
         params
@@ -176,7 +176,7 @@ export class DashboardService extends BaseService {
     organisationId?: string
   ): Promise<{ activities: RecentActivity[] }> {
     try {
-      const params = { limit, ...(organisationId ? { organisation_id: organisationId } : {}) }
+      const params = { limit, ...(organisationId ? { organisationId: organisationId } : {}) }
       const response = await this.get<{ activities: RecentActivity[] }>(
         API_ENDPOINTS.DASHBOARD.RECENT_ACTIVITY(organisationId || ''),
         params
@@ -189,7 +189,7 @@ export class DashboardService extends BaseService {
   }
 
   async getRiskTrends(period: string = 'month', organisationId?: string): Promise<RiskTrend[]> {
-    const params = { period, ...(organisationId ? { organisation_id: organisationId } : {}) }
+    const params = { period, ...(organisationId ? { organisationId: organisationId } : {}) }
     const response = await this.get<RiskTrend[]>(
       API_ENDPOINTS.DASHBOARD.RISK_TRENDS(organisationId || ''),
       params
@@ -198,7 +198,7 @@ export class DashboardService extends BaseService {
   }
 
   async getComplianceOverview(organisationId?: string): Promise<ComplianceOverview[]> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<ComplianceOverview[]>(
       API_ENDPOINTS.DASHBOARD.COMPLIANCE_OVERVIEW(organisationId || ''),
       params
@@ -206,9 +206,10 @@ export class DashboardService extends BaseService {
     return this.extractData(response)
   }
 
-  async getCompleteDashboard(organisationId?: string): Promise<DashboardData> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<DashboardData>(API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId || ''), params)
+  async getCompleteDashboard(organisationId: string): Promise<DashboardData> {
+    const response = await this.get<DashboardData>(
+      API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId)
+    )
     return this.extractData(response)
   }
 
@@ -226,7 +227,7 @@ export class DashboardService extends BaseService {
   }
 
   async getUserDashboardConfig(organisationId?: string): Promise<DashboardConfig> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId: organisationId } : undefined
     const response = await this.get<DashboardConfig>(API_ENDPOINTS.DASHBOARD.USER_CONFIG, params)
     return this.extractData(response)
   }
