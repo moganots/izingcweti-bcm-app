@@ -1,23 +1,25 @@
 <template>
   <q-footer elevated class="bg-primary text-white">
-    <q-tabs
-      v-model="selectedTab"
-      inline-label
-      class="text-white"
-      active-color="yellow"
-      indicator-color="yellow"
-      @update:model-value="handleTabChange"
-    >
-      <q-tab name="home" icon="home" />
-      <!-- Removed notifications tab -->
-      <q-tab name="sync" icon="sync">
-        <q-badge v-if="pendingCount > 0" color="orange" floating>
-          {{ pendingCount > 99 ? '99+' : pendingCount }}
-        </q-badge>
-      </q-tab>
-      <q-tab name="profile" icon="person" />
-      <q-tab name="menu" icon="menu" />
-    </q-tabs>
+    <div class="footer-tabs-wrapper">
+      <q-tabs
+        v-model="selectedTab"
+        inline-label
+        class="footer-tabs text-white"
+        active-color="yellow"
+        indicator-color="yellow"
+        align="center"
+        @update:model-value="handleTabChange"
+      >
+        <q-tab name="home" icon="home" label="Home" />
+        <q-tab name="sync" icon="sync" label="Sync">
+          <q-badge v-if="pendingCount > 0" color="orange" floating>
+            {{ pendingCount > 99 ? '99+' : pendingCount }}
+          </q-badge>
+        </q-tab>
+        <q-tab name="profile" icon="person" label="Profile" />
+        <q-tab name="menu" icon="menu" label="Menu" />
+      </q-tabs>
+    </div>
   </q-footer>
 
   <!-- Popup Menu Dialog for Mobile -->
@@ -600,6 +602,64 @@ onUnmounted(() => {
 </script>
 
 <style lang="scss" scoped>
+// ============================================
+// Footer Tabs - Centered
+// ============================================
+
+.footer-tabs-wrapper {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.footer-tabs {
+  width: 100%;
+  max-width: 500px;
+
+  // Ensure tabs are evenly spaced
+  :deep(.q-tabs__content) {
+    justify-content: space-around;
+  }
+
+  :deep(.q-tab) {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 4px;
+    font-size: 0.75rem;
+
+    // Make tabs more touch-friendly
+    min-height: 48px;
+  }
+
+  // Icon size in tabs
+  :deep(.q-tab__icon) {
+    font-size: 24px;
+  }
+
+  // Label styling
+  :deep(.q-tab__label) {
+    font-size: 0.65rem;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    margin-top: 2px;
+  }
+
+  // Badge positioning
+  :deep(.q-badge) {
+    font-size: 10px;
+    min-width: 18px;
+    height: 18px;
+    line-height: 18px;
+    padding: 0 5px;
+    top: 2px;
+    right: 2px;
+  }
+}
+
+// ============================================
+// Menu Dialog
+// ============================================
+
 .menu-dialog-card {
   border-radius: 20px 20px 0 0;
   max-width: 500px;
@@ -617,18 +677,53 @@ onUnmounted(() => {
   :deep(.q-dialog__inner--bottom) {
     padding-bottom: 56px;
   }
+
+  .footer-tabs {
+    :deep(.q-tab) {
+      padding: 6px 2px;
+      min-height: 44px;
+      font-size: 0.7rem;
+    }
+
+    :deep(.q-tab__icon) {
+      font-size: 20px;
+    }
+
+    :deep(.q-tab__label) {
+      font-size: 0.55rem;
+    }
+  }
 }
 
 @media (min-width: 601px) and (max-width: 1023px) {
   :deep(.q-dialog__inner--bottom) {
     padding-bottom: 60px;
   }
+
+  .footer-tabs {
+    :deep(.q-tab) {
+      padding: 8px 6px;
+      min-height: 48px;
+    }
+
+    :deep(.q-tab__icon) {
+      font-size: 22px;
+    }
+  }
 }
+
+// ============================================
+// User Info Section
+// ============================================
 
 .user-info-section {
   border-radius: 12px;
   margin: 8px;
 }
+
+// ============================================
+// Animations
+// ============================================
 
 .rotate-animation {
   animation: rotate 1s linear infinite;
@@ -642,6 +737,10 @@ onUnmounted(() => {
     transform: rotate(360deg);
   }
 }
+
+// ============================================
+// Drawer Header
+// ============================================
 
 .drawer-header {
   background: linear-gradient(135deg, var(--q-white, #ffffff) 0%, var(--q-grey-2, #f5f5f5) 100%);
