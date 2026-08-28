@@ -171,6 +171,8 @@ export const API_ENDPOINTS = {
     UPDATE_TRAINING: (uuid: string) => `/auth/users/${uuid}/training-completed`,
     DEACTIVATE: (uuid: string) => `/auth/users/${uuid}/deactivate`,
     ACTIVATE: (uuid: string) => `/auth/users/${uuid}/activate`,
+    LOCK_ACCOUNT: (uuid: string) => `/auth/users/${uuid}/lock`,
+    UNLOCK_ACCOUNT: (uuid: string) => `/auth/users/${uuid}/unlock`,
     DELETE: (uuid: string) => `/auth/users/${uuid}`,
     BULK_IMPORT: '/auth/users/bulk-import',
     EXPORT: '/auth/users/export',

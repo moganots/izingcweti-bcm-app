@@ -9,10 +9,11 @@ import type {
   ForgotPasswordRequest,
   ResetPasswordRequest,
   AuthToken,
-  SessionInfo
+  SessionInfo,
+  UpdateUserRequest,
 } from './../../models/entities/user/user.entity'
 import {
-  UserRole
+  UserRole,
 } from './../../models/entities/user/user.entity'
 import { authService } from './../../services/api/auth/AuthService'
 import { StorageUtils } from './../../utils/storage.utils'
@@ -25,7 +26,10 @@ export const useAuthStore = defineStore('auth', () => {
   const isLoading = ref(false)
   const error = ref<string | null>(null)
 
+  // ============================================
   // Getters
+  // ============================================
+
   const isAuthenticated = computed(() => !!tokens.value?.accessToken && !!user.value)
   const userId = computed(() => user.value?.uuid || '')
   const userEmail = computed(() => user.value?.email || '')
@@ -34,6 +38,7 @@ export const useAuthStore = defineStore('auth', () => {
   const userDepartmentId = computed(() => user.value?.departmentId || '')
   const isActive = computed(() => user.value?.isActive ?? false)
   const isEmailVerified = computed(() => user.value?.isEmailVerified ?? false)
+
   const fullName = computed(() => {
     if (user.value?.firstName && user.value?.lastName) {
       return `${user.value.firstName} ${user.value.lastName}`
@@ -87,8 +92,13 @@ export const useAuthStore = defineStore('auth', () => {
     return lockUntil.getTime() - now.getTime()
   })
 
+  // ============================================
   // Actions
+  // ============================================
 
+  /**
+   * Initialize auth state from localStorage
+   */
   async function initialize(): Promise<void> {
     if (isInitialized.value) return
 
@@ -118,6 +128,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Check authentication status
+   */
   async function checkAuth(): Promise<boolean> {
     if (!isInitialized.value) {
       await initialize()
@@ -125,14 +138,15 @@ export const useAuthStore = defineStore('auth', () => {
     return isAuthenticated.value
   }
 
+  /**
+   * Login user
+   */
   async function login(credentials: LoginCredentials): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await authService.login(credentials)
-
-      console.log(response)
 
       const newTokens: AuthTokens = {
         accessToken: response.tokens.accessToken,
@@ -156,7 +170,7 @@ export const useAuthStore = defineStore('auth', () => {
       console.log('Login successful:', {
         userId: response.user.uuid,
         email: response.user.email,
-        role: response.user.role
+        role: response.user.role,
       })
     } catch (err: any) {
       console.error('Login error:', err)
@@ -168,6 +182,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Register new user
+   */
   async function register(registrationData: RegistrationData): Promise<User> {
     isLoading.value = true
     error.value = null
@@ -184,6 +201,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Fetch user profile
+   */
   async function fetchProfile(): Promise<void> {
     try {
       const profile = await authService.getProfile()
@@ -198,6 +218,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Refresh access token
+   */
   async function refreshToken(): Promise<void> {
     if (!tokens.value?.refreshToken) {
       throw new Error('No refresh token available')
@@ -224,6 +247,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Refresh token if needed (expires in < 5 minutes)
+   */
   async function refreshTokenIfNeeded(): Promise<boolean> {
     if (!tokens.value?.accessToken) return false
 
@@ -243,6 +269,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Change password
+   */
   async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -263,6 +292,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Forgot password - send reset email
+   */
   async function forgotPassword(email: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -279,6 +311,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Reset password with token
+   */
   async function resetPassword(token: string, newPassword: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -299,9 +334,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Logout user
+   */
   async function logout(): Promise<void> {
     try {
-      await authService.logout().catch(() => { })
+      await authService.logout().catch(() => {})
     } finally {
       user.value = null
       tokens.value = null
@@ -311,6 +349,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Logout from all devices
+   */
   async function logoutAllDevices(): Promise<void> {
     try {
       await authService.logoutAllDevices()
@@ -323,7 +364,10 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  async function updateProfile(data: Partial<User>): Promise<void> {
+  /**
+   * Update user profile
+   */
+  async function updateProfile(data: UpdateUserRequest): Promise<void> {
     isLoading.value = true
     error.value = null
 
@@ -340,6 +384,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Get active sessions
+   */
   async function getSessions(): Promise<SessionInfo[]> {
     try {
       return await authService.getSessions()
@@ -349,6 +396,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Revoke a session
+   */
   async function revokeSession(sessionId: string): Promise<void> {
     try {
       await authService.revokeSession(sessionId)
@@ -358,6 +408,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Get user tokens
+   */
   async function getUserTokens(userId: string): Promise<AuthToken[]> {
     try {
       return await authService.getUserTokens(userId)
@@ -367,6 +420,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Revoke a token
+   */
   async function revokeToken(tokenId: string): Promise<void> {
     try {
       await authService.revokeToken(tokenId)
@@ -376,6 +432,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Check if user has a specific role
+   */
   function hasRole(role: string | string[]): boolean {
     if (!user.value) return false
     const roles = Array.isArray(role) ? role : [role]
@@ -383,32 +442,44 @@ export const useAuthStore = defineStore('auth', () => {
     return roles.some((r) => r.toUpperCase() === normalizedUserRole)
   }
 
+  /**
+   * Check if user has permission
+   */
   function hasPermission(permission: string): boolean {
     if (!user.value) return false
 
     const permissions: Record<string, string[]> = {
-      'admin': [
+      admin: [
         UserRole.SYSTEM_ADMINISTRATOR,
         UserRole.SUPER_ADMIN,
       ],
-      'bcm_manager': [
+      bcm_manager: [
         UserRole.BCM_MANAGER,
       ],
-      'risk_owner': [
+      risk_owner: [
         UserRole.RISK_OWNER,
       ],
-      'process_owner': [
+      process_owner: [
         UserRole.PROCESS_OWNER,
       ],
-      'bcm_coordinator': [
+      bcm_coordinator: [
         UserRole.BCM_COORDINATOR,
-      ]
+      ],
+      auditor: [
+        UserRole.AUDITOR,
+      ],
+      approver: [
+        UserRole.APPROVER,
+      ],
     }
 
     const allowedRoles = permissions[permission] || []
     return allowedRoles.includes(userRole.value as string)
   }
 
+  /**
+   * Parse JWT token
+   */
   function parseJWT(token: string): Record<string, any> | null {
     try {
       const parts = token.split('.')
@@ -428,6 +499,9 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  /**
+   * Reset auth state
+   */
   function reset(): void {
     user.value = null
     tokens.value = null
@@ -438,12 +512,14 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   return {
+    // State
     user,
     tokens,
     isInitialized,
     isLoading,
     error,
 
+    // Getters
     isAuthenticated,
     userId,
     userEmail,
@@ -461,6 +537,7 @@ export const useAuthStore = defineStore('auth', () => {
     isAccountLocked,
     lockRemainingTime,
 
+    // Actions
     initialize,
     checkAuth,
     login,

@@ -246,6 +246,9 @@ export interface CreateUserRequest {
   lastName?: string;
   phoneNumber?: string;
   role?: UserRole;
+  preferences?: Record<string, any>;
+  isActive?: boolean;
+  isEmailVerified?: boolean;
 }
 
 /**
@@ -269,6 +272,7 @@ export interface UpdateUserRequest {
 export interface UserQueryParams {
   organisationId?: string;
   departmentId?: string;
+  departmentIds?: string[];
   role?: UserRole;
   isActive?: boolean;
   search?: string;
@@ -278,7 +282,6 @@ export interface UserQueryParams {
   sortOrder?: 'ASC' | 'DESC';
   startDate?: string | Date;
   endDate?: string | Date;
-  departmentIds?: string[];
 }
 
 /**
@@ -328,4 +331,32 @@ export interface UpdateAuthTokenRequest {
   revokedAt?: string | Date;
   lastUsedAt?: string | Date;
   isActiveSession?: boolean;
+}
+
+/**
+ * Bulk Import Result (camelCase)
+ */
+export interface BulkImportResult {
+  created: number;
+  updated: number;
+  failed: number;
+  errors: string[];
+}
+
+/**
+ * Bulk User Update Request (camelCase)
+ */
+export interface BulkUserUpdateRequest {
+  userIds: string[];
+  isActive?: boolean;
+  role?: UserRole;
+  departmentId?: string;
+}
+
+/**
+ * Lock Account Request (camelCase)
+ */
+export interface LockAccountRequest {
+  lockedUntil?: string | Date;
+  reason?: string;
 }
