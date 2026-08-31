@@ -1,13 +1,32 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { Incident, IncidentStats } from './../../models/entities'
+import { incidentService } from './../../services/api/incident/IncidentService'
+import type {
+  Incident,
+  IncidentStats,
+  CreateIncidentRequest,
+  UpdateIncidentRequest,
+  CloseIncidentRequest,
+  EscalateIncidentRequest,
+  AssignIncidentRequest,
+  AcknowledgeIncidentRequest,
+  AddIncidentUpdateRequest,
+  IncidentQueryParams,
+  IncidentDashboardStats,
+  IncidentTimeline,
+  IncidentRecoveryMetrics,
+} from './../../models/entities/incident/incident.entity'
 import {
-  incidentService,
-  type CreateIncidentDTO,
-  type UpdateIncidentDTO,
-  type CloseIncidentDTO,
-} from './../../services/api'
-import type { IncidentQueryParams } from './../../types'
+  IncidentSeverity,
+  IncidentStatus,
+  EscalationLevel,
+  getIncidentSeverityLabel,
+  getIncidentSeverityColor,
+  getIncidentStatusLabel,
+  getIncidentStatusColor,
+  getEscalationLevelLabel,
+  calculateResolutionTime,
+} from './../../models/entities/incident/incident.entity'
 
 export const useIncidentStore = defineStore('incident', () => {
   // ============================================
@@ -15,72 +34,113 @@ export const useIncidentStore = defineStore('incident', () => {
   // ============================================
   const incidents = ref<Incident[]>([])
   const selectedIncident = ref<Incident | null>(null)
-  const stats = ref<IncidentStats | null>(null)
+  const incidentTimeline = ref<IncidentTimeline | null>(null)
+  const recoveryMetrics = ref<IncidentRecoveryMetrics | null>(null)
+  const stats = ref<IncidentDashboardStats | null>(null)
+  const summary = ref<IncidentStats | null>(null)
   const isLoading = ref(false)
   const isSaving = ref(false)
   const error = ref<string | null>(null)
   const currentPage = ref(1)
   const totalPages = ref(1)
   const totalItems = ref(0)
+  const itemsPerPage = ref(20)
 
   // ============================================
   // Getters
   // ============================================
-  const activeIncidents = computed(() => incidents.value.filter((i) => !i.closed_at))
 
-  const closedIncidents = computed(() => incidents.value.filter((i) => !!i.closed_at))
+  const activeIncidents = computed(() =>
+    incidents.value.filter((i) => i.incidentStatus === IncidentStatus.OPEN ||
+      i.incidentStatus === IncidentStatus.INVESTIGATING ||
+      i.incidentStatus === IncidentStatus.ESCALATED)
+  )
+
+  const closedIncidents = computed(() =>
+    incidents.value.filter((i) => i.incidentStatus === IncidentStatus.CLOSED ||
+      i.incidentStatus === IncidentStatus.RESOLVED)
+  )
 
   const criticalIncidents = computed(() =>
-    activeIncidents.value.filter((i) => i.incident_severity === 'Critical')
+    activeIncidents.value.filter((i) => i.incidentSeverity === IncidentSeverity.CRITICAL)
   )
 
   const highSeverityIncidents = computed(() =>
-    activeIncidents.value.filter(
-      (i) => i.incident_severity === 'Critical' || i.incident_severity === 'High'
+    activeIncidents.value.filter((i) =>
+      i.incidentSeverity === IncidentSeverity.CRITICAL ||
+      i.incidentSeverity === IncidentSeverity.HIGH
     )
+  )
+
+  const escalatedIncidents = computed(() =>
+    incidents.value.filter((i) => i.escalationLevel !== EscalationLevel.NO_ESCALATION)
   )
 
   const incidentsBySeverity = computed(() => {
     const grouped: Record<string, Incident[]> = {}
     incidents.value.forEach((i) => {
-      const severity = i.incident_severity || 'Unknown'
+      const severity = i.incidentSeverity || 'Unknown'
       if (!grouped[severity]) grouped[severity] = []
       grouped[severity].push(i)
     })
     return grouped
   })
 
+  const incidentsByStatus = computed(() => {
+    const grouped: Record<string, Incident[]> = {}
+    incidents.value.forEach((i) => {
+      const status = i.incidentStatus || 'Unknown'
+      if (!grouped[status]) grouped[status] = []
+      grouped[status].push(i)
+    })
+    return grouped
+  })
+
+  const incidentsByEscalationLevel = computed(() => {
+    const grouped: Record<string, Incident[]> = {}
+    incidents.value.forEach((i) => {
+      const level = i.escalationLevel || EscalationLevel.NO_ESCALATION
+      if (!grouped[level]) grouped[level] = []
+      grouped[level].push(i)
+    })
+    return grouped
+  })
+
   const averageResolutionTime = computed(() => {
-    const closed = closedIncidents.value.filter((i) => i.declared_at && i.closed_at)
+    const closed = closedIncidents.value.filter((i) => i.declaredAt && i.closedAt)
     if (closed.length === 0) return 0
 
-    const totalMs = closed.reduce((sum, i) => {
-      const declared = new Date(i.declared_at).getTime()
-      const closed = new Date(i.closed_at!).getTime()
-      return sum + (closed - declared)
+    const totalHours = closed.reduce((sum, i) => {
+      const hours = calculateResolutionTime(i.declaredAt, i.closedAt)
+      return sum + (hours || 0)
     }, 0)
 
-    return Math.round((totalMs / closed.length / (1000 * 60 * 60)) * 100) / 100 // Hours
+    return Math.round((totalHours / closed.length) * 100) / 100
   })
 
   const hasActiveIncidents = computed(() => activeIncidents.value.length > 0)
   const hasCriticalIncidents = computed(() => criticalIncidents.value.length > 0)
+  const hasEscalatedIncidents = computed(() => escalatedIncidents.value.length > 0)
+
+  const totalIncidents = computed(() => incidents.value.length)
+  const openCount = computed(() => activeIncidents.value.length)
+  const closedCount = computed(() => closedIncidents.value.length)
+
+  const isEmpty = computed(() => incidents.value.length === 0 && !isLoading.value)
 
   // ============================================
-  // Actions
+  // Actions - Load Operations
   // ============================================
 
-  /**
-   * Load incidents with optional filters
-   */
-  async function loadIncidents(filters?: IncidentQueryParams): Promise<void> {
+  async function loadIncidents(params?: IncidentQueryParams): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await incidentService.getIncidents({
-        ...filters,
+        ...params,
         page: currentPage.value,
+        limit: itemsPerPage.value,
       })
 
       incidents.value = response.data || []
@@ -94,9 +154,6 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Load a single incident by ID
-   */
   async function loadIncident(id: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -113,31 +170,65 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Load incident statistics
-   */
+  async function loadIncidentTimeline(id: string): Promise<void> {
+    isLoading.value = true
+
+    try {
+      incidentTimeline.value = await incidentService.getIncidentTimeline(id)
+    } catch (err: any) {
+      console.error('Failed to load incident timeline:', err)
+      error.value = err.message || 'Failed to load incident timeline'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadRecoveryMetrics(id: string): Promise<void> {
+    isLoading.value = true
+
+    try {
+      recoveryMetrics.value = await incidentService.getRecoveryMetrics(id)
+    } catch (err: any) {
+      console.error('Failed to load recovery metrics:', err)
+      error.value = err.message || 'Failed to load recovery metrics'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
   async function loadStats(organisationId?: string): Promise<void> {
     try {
-      const data = await incidentService.getStats(organisationId)
-      stats.value = data
+      stats.value = await incidentService.getStats(organisationId)
     } catch (err: any) {
       console.error('Failed to load incident stats:', err)
     }
   }
 
-  /**
-   * Load active incidents only
-   */
-  async function loadActiveIncidents(): Promise<void> {
+  async function loadSummary(organisationId?: string): Promise<void> {
+    try {
+      summary.value = await incidentService.getSummary(organisationId)
+    } catch (err: any) {
+      console.error('Failed to load incident summary:', err)
+    }
+  }
+
+  // ============================================
+  // Actions - Filtered Loads
+  // ============================================
+
+  async function loadActiveIncidents(params?: { page?: number; limit?: number }): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
       const response = await incidentService.getActiveIncidents({
+        ...params,
         page: currentPage.value,
+        limit: itemsPerPage.value,
       })
       incidents.value = response.data || []
       totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
     } catch (err: any) {
       console.error('Failed to load active incidents:', err)
       error.value = err.message || 'Failed to load active incidents'
@@ -146,17 +237,40 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Load critical incidents only
-   */
-  async function loadCriticalIncidents(): Promise<void> {
+  async function loadClosedIncidents(params?: { page?: number; limit?: number }): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
-      const response = await incidentService.getCriticalIncidents()
+      const response = await incidentService.getClosedIncidents({
+        ...params,
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+      })
       incidents.value = response.data || []
       totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
+    } catch (err: any) {
+      console.error('Failed to load closed incidents:', err)
+      error.value = err.message || 'Failed to load closed incidents'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  async function loadCriticalIncidents(params?: { page?: number; limit?: number }): Promise<void> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await incidentService.getCriticalIncidents({
+        ...params,
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+      })
+      incidents.value = response.data || []
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
     } catch (err: any) {
       console.error('Failed to load critical incidents:', err)
       error.value = err.message || 'Failed to load critical incidents'
@@ -165,18 +279,41 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Create a new incident
-   */
-  async function createIncident(data: CreateIncidentDTO): Promise<Incident> {
+  async function loadIncidentsByOrganisation(
+    organisationId: string,
+    params?: IncidentQueryParams
+  ): Promise<void> {
+    isLoading.value = true
+    error.value = null
+
+    try {
+      const response = await incidentService.getIncidentsByOrganisation(organisationId, {
+        ...params,
+        page: currentPage.value,
+        limit: itemsPerPage.value,
+      })
+      incidents.value = response.data || []
+      totalPages.value = response.totalPages || 1
+      totalItems.value = response.total || 0
+    } catch (err: any) {
+      console.error('Failed to load incidents by organisation:', err)
+      error.value = err.message || 'Failed to load incidents'
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  // ============================================
+  // Actions - CRUD Operations
+  // ============================================
+
+  async function createIncident(data: CreateIncidentRequest): Promise<Incident> {
     isSaving.value = true
     error.value = null
 
     try {
       const created = await incidentService.createIncident(data)
-      // Add to local list
       incidents.value.unshift(created)
-      // Refresh stats
       await loadStats()
       return created
     } catch (err: any) {
@@ -188,24 +325,13 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Update an incident
-   */
-  async function updateIncident(id: string, data: UpdateIncidentDTO): Promise<Incident> {
+  async function updateIncident(id: string, data: UpdateIncidentRequest): Promise<Incident> {
     isSaving.value = true
     error.value = null
 
     try {
       const updated = await incidentService.updateIncident(id, data)
-      // Update in local list
-      const index = incidents.value.findIndex((i) => i.uuid === id)
-      if (index !== -1) {
-        incidents.value[index] = updated
-      }
-      // Update selected if viewing
-      if (selectedIncident.value?.uuid === id) {
-        selectedIncident.value = updated
-      }
+      updateLocalIncident(updated)
       return updated
     } catch (err: any) {
       console.error('Failed to update incident:', err)
@@ -216,25 +342,37 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Close an incident
-   */
-  async function closeIncident(id: string, data: CloseIncidentDTO): Promise<Incident> {
+  async function deleteIncident(id: string): Promise<void> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      await incidentService.deleteIncident(id)
+      incidents.value = incidents.value.filter((i) => i.uuid !== id)
+      if (selectedIncident.value?.uuid === id) {
+        selectedIncident.value = null
+      }
+      await loadStats()
+    } catch (err: any) {
+      console.error('Failed to delete incident:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to delete incident'
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  // ============================================
+  // Actions - Incident Actions
+  // ============================================
+
+  async function closeIncident(id: string, data: CloseIncidentRequest): Promise<Incident> {
     isSaving.value = true
     error.value = null
 
     try {
       const closed = await incidentService.closeIncident(id, data)
-      // Update in local list
-      const index = incidents.value.findIndex((i) => i.uuid === id)
-      if (index !== -1) {
-        incidents.value[index] = closed
-      }
-      // Update selected if viewing
-      if (selectedIncident.value?.uuid === id) {
-        selectedIncident.value = closed
-      }
-      // Refresh stats
+      updateLocalIncident(closed)
       await loadStats()
       return closed
     } catch (err: any) {
@@ -246,25 +384,13 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Reopen a closed incident
-   */
   async function reopenIncident(id: string): Promise<Incident> {
     isSaving.value = true
     error.value = null
 
     try {
       const reopened = await incidentService.reopenIncident(id)
-      // Update in local list
-      const index = incidents.value.findIndex((i) => i.uuid === id)
-      if (index !== -1) {
-        incidents.value[index] = reopened
-      }
-      // Update selected if viewing
-      if (selectedIncident.value?.uuid === id) {
-        selectedIncident.value = reopened
-      }
-      // Refresh stats
+      updateLocalIncident(reopened)
       await loadStats()
       return reopened
     } catch (err: any) {
@@ -276,24 +402,13 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Escalate an incident
-   */
-  async function escalateIncident(id: string): Promise<Incident> {
+  async function escalateIncident(id: string, data: EscalateIncidentRequest): Promise<Incident> {
     isSaving.value = true
     error.value = null
 
     try {
-      const escalated = await incidentService.escalateIncident(id)
-      // Update in local list
-      const index = incidents.value.findIndex((i) => i.uuid === id)
-      if (index !== -1) {
-        incidents.value[index] = escalated
-      }
-      // Update selected if viewing
-      if (selectedIncident.value?.uuid === id) {
-        selectedIncident.value = escalated
-      }
+      const escalated = await incidentService.escalateIncident(id, data)
+      updateLocalIncident(escalated)
       return escalated
     } catch (err: any) {
       console.error('Failed to escalate incident:', err)
@@ -304,67 +419,180 @@ export const useIncidentStore = defineStore('incident', () => {
     }
   }
 
-  /**
-   * Set current page and reload
-   */
+  async function assignIncident(id: string, data: AssignIncidentRequest): Promise<Incident> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      const assigned = await incidentService.assignIncident(id, data)
+      updateLocalIncident(assigned)
+      return assigned
+    } catch (err: any) {
+      console.error('Failed to assign incident:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to assign incident'
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  async function acknowledgeIncident(id: string, data: AcknowledgeIncidentRequest): Promise<Incident> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      const acknowledged = await incidentService.acknowledgeIncident(id, data)
+      updateLocalIncident(acknowledged)
+      return acknowledged
+    } catch (err: any) {
+      console.error('Failed to acknowledge incident:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to acknowledge incident'
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  async function addIncidentUpdate(id: string, data: AddIncidentUpdateRequest): Promise<Incident> {
+    isSaving.value = true
+    error.value = null
+
+    try {
+      const updated = await incidentService.addIncidentUpdate(id, data)
+      updateLocalIncident(updated)
+      return updated
+    } catch (err: any) {
+      console.error('Failed to add incident update:', err)
+      error.value = err.response?.data?.message || err.message || 'Failed to add incident update'
+      throw err
+    } finally {
+      isSaving.value = false
+    }
+  }
+
+  // ============================================
+  // Actions - Pagination & Reset
+  // ============================================
+
   async function setPage(page: number): Promise<void> {
     currentPage.value = page
     await loadIncidents()
   }
 
-  /**
-   * Clear selected incident
-   */
-  function clearSelection(): void {
-    selectedIncident.value = null
+  function setItemsPerPage(limit: number): void {
+    itemsPerPage.value = limit
+    currentPage.value = 1
   }
 
-  /**
-   * Clear all incident data
-   */
+  function clearSelection(): void {
+    selectedIncident.value = null
+    incidentTimeline.value = null
+    recoveryMetrics.value = null
+  }
+
   function clearAll(): void {
     incidents.value = []
     selectedIncident.value = null
+    incidentTimeline.value = null
+    recoveryMetrics.value = null
     stats.value = null
+    summary.value = null
     error.value = null
     currentPage.value = 1
     totalPages.value = 1
     totalItems.value = 0
   }
 
+  function resetError(): void {
+    error.value = null
+  }
+
+  // ============================================
+  // Private Helpers
+  // ============================================
+
+  function updateLocalIncident(updated: Incident): void {
+    const index = incidents.value.findIndex((i) => i.uuid === updated.uuid)
+    if (index !== -1) {
+      incidents.value[index] = updated
+    }
+    if (selectedIncident.value?.uuid === updated.uuid) {
+      selectedIncident.value = updated
+    }
+  }
+
+  // ============================================
+  // Return Store Interface
+  // ============================================
+
   return {
     // State
     incidents,
     selectedIncident,
+    incidentTimeline,
+    recoveryMetrics,
     stats,
+    summary,
     isLoading,
     isSaving,
     error,
     currentPage,
     totalPages,
     totalItems,
+    itemsPerPage,
+
     // Getters
     activeIncidents,
     closedIncidents,
     criticalIncidents,
     highSeverityIncidents,
+    escalatedIncidents,
     incidentsBySeverity,
+    incidentsByStatus,
+    incidentsByEscalationLevel,
     averageResolutionTime,
     hasActiveIncidents,
     hasCriticalIncidents,
-    // Actions
+    hasEscalatedIncidents,
+    totalIncidents,
+    openCount,
+    closedCount,
+    isEmpty,
+
+    // Load Operations
     loadIncidents,
     loadIncident,
+    loadIncidentTimeline,
+    loadRecoveryMetrics,
     loadStats,
+    loadSummary,
+
+    // Filtered Loads
     loadActiveIncidents,
+    loadClosedIncidents,
     loadCriticalIncidents,
+    loadIncidentsByOrganisation,
+
+    // CRUD Operations
     createIncident,
     updateIncident,
+    deleteIncident,
+
+    // Incident Actions
     closeIncident,
     reopenIncident,
     escalateIncident,
+    assignIncident,
+    acknowledgeIncident,
+    addIncidentUpdate,
+
+    // Pagination
     setPage,
+    setItemsPerPage,
+
+    // Reset
     clearSelection,
     clearAll,
+    resetError,
   }
 })
