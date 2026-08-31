@@ -6,67 +6,85 @@ import {
   type ComplianceRecord,
   type CreateComplianceRecordRequest,
   type UpdateComplianceRecordRequest,
+  type UpdateComplianceStatusRequest,
+  type AddEvidenceRequest,
+  type ScheduleAuditRequest,
+  type BulkUpdateStatusRequest,
+  type ComplianceQueryParams,
+  type ComplianceStats,
+  type ComplianceSummary,
+  type ComplianceGap,
+  type ComplianceAuditEntry,
+  type ComplianceExportRequest,
+  type ComplianceVerificationResult,
+  type ComplianceReport,
   type PaginatedResponse,
-} from './../../../modules'
+} from '../../../models/entities/compliance/compliance.entity'
 
-export interface ComplianceQueryParams {
-  organisation_id?: string
-  compliance_standard?: ComplianceStandard
-  compliance_status?: ComplianceStatus
-  days?: number
-  page?: number
-  limit?: number
-}
-
-export interface ComplianceStats {
-  total: number
-  byStandard: Record<string, number>
-  byStatus: Record<string, number>
-  overallComplianceRate: number
-}
-
-export interface ComplianceGap {
-  requirement: string
-  currentStatus: string
-  targetStatus: string
-  actionItems: string[]
-  priority: 'high' | 'medium' | 'low'
-}
-
-export interface UpdateComplianceStatusRequest {
-  compliance_status: ComplianceStatus
-  last_audit_date?: string
-  next_audit_due?: string
-  evidence_links?: string[]
-}
-
+/**
+ * Compliance Service - Aligned with Backend DTOs (camelCase)
+ */
 export class ComplianceService extends BaseService {
+  // ============================================
+  // CRUD Operations
+  // ============================================
+
+  /**
+   * Get compliance records - GET /compliance/records
+   */
   async getRecords(params?: ComplianceQueryParams): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getPaginated<ComplianceRecord>(
+    const response = await this.getPaginated<ComplianceRecord>(
       API_ENDPOINTS.COMPLIANCE.BASE,
       params as Record<string, any>
     )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
   }
 
+  /**
+   * Get compliance record by ID - GET /compliance/records/:uuid
+   */
   async getRecord(id: string): Promise<ComplianceRecord> {
     const response = await this.get<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
     return this.extractData(response)
   }
 
+  /**
+   * Create compliance record - POST /compliance/records
+   */
   async createRecord(data: CreateComplianceRecordRequest): Promise<ComplianceRecord> {
     const response = await this.post<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BASE, data)
     return this.extractData(response)
   }
 
+  /**
+   * Update compliance record - PUT /compliance/records/:uuid
+   */
   async updateRecord(id: string, data: UpdateComplianceRecordRequest): Promise<ComplianceRecord> {
     const response = await this.put<ComplianceRecord>(API_ENDPOINTS.COMPLIANCE.BY_ID(id), data)
     return this.extractData(response)
   }
 
+  /**
+   * Delete compliance record - DELETE /compliance/records/:uuid
+   */
   async deleteRecord(id: string): Promise<void> {
     await this.delete(API_ENDPOINTS.COMPLIANCE.BY_ID(id))
   }
 
+  // ============================================
+  // Status & Audit Operations
+  // ============================================
+
+  /**
+   * Update compliance status - PATCH /compliance/records/:uuid/status
+   */
   async updateStatus(id: string, data: UpdateComplianceStatusRequest): Promise<ComplianceRecord> {
     const response = await this.patch<ComplianceRecord>(
       API_ENDPOINTS.COMPLIANCE.UPDATE_STATUS(id),
@@ -75,75 +93,210 @@ export class ComplianceService extends BaseService {
     return this.extractData(response)
   }
 
-  async addEvidence(id: string, links: string[]): Promise<ComplianceRecord> {
-    const response = await this.post<ComplianceRecord>(`/compliance/${id}/evidence`, {
-      evidence_links: links,
-    })
-    return this.extractData(response)
-  }
-
-  async removeEvidence(id: string, index: number): Promise<ComplianceRecord> {
-    const response = await this.delete<ComplianceRecord>(`/compliance/${id}/evidence/${index}`)
-    return this.extractData(response)
-  }
-
-  async getOverdueAudits(): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getRecords({
-      compliance_status: ComplianceStatus.NON_COMPLIANT,
-    } as ComplianceQueryParams)
-  }
-
-  async getUpcomingAudits(days: number = 30): Promise<PaginatedResponse<ComplianceRecord>> {
-    const date = new Date()
-    date.setDate(date.getDate() + days)
-    const params: ComplianceQueryParams = { days: days }
-    const response = await this.getPaginated<ComplianceRecord>(
-      API_ENDPOINTS.COMPLIANCE.UPCOMING,
-      params
+  /**
+   * Bulk update compliance status - POST /compliance/bulk-update-status
+   */
+  async bulkUpdateStatus(data: BulkUpdateStatusRequest): Promise<{ updated: number }> {
+    const response = await this.post<{ updated: number }>(
+      '/compliance/bulk-update-status',
+      data
     )
-    return response
+    return this.extractData(response)
   }
 
-  async getRecordsByStandard(
-    standard: ComplianceStandard,
-    params?: ComplianceQueryParams
-  ): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getRecords({ ...params, compliance_standard: standard })
+  /**
+   * Schedule audit - PATCH /compliance/records/:uuid/schedule-audit
+   */
+  async scheduleAudit(id: string, data: ScheduleAuditRequest): Promise<ComplianceRecord> {
+    const response = await this.patch<ComplianceRecord>(
+      `/compliance/records/${id}/schedule-audit`,
+      data
+    )
+    return this.extractData(response)
   }
 
+  /**
+   * Add evidence - POST /compliance/records/:uuid/evidence
+   */
+  async addEvidence(id: string, data: AddEvidenceRequest): Promise<ComplianceRecord> {
+    const response = await this.post<ComplianceRecord>(
+      `/compliance/records/${id}/evidence`,
+      data
+    )
+    return this.extractData(response)
+  }
+
+  /**
+   * Remove evidence - DELETE /compliance/records/:uuid/evidence/:index
+   */
+  async removeEvidence(id: string, index: number): Promise<ComplianceRecord> {
+    const response = await this.delete<ComplianceRecord>(
+      `/compliance/records/${id}/evidence/${index}`
+    )
+    return this.extractData(response)
+  }
+
+  // ============================================
+  // Query Operations
+  // ============================================
+
+  /**
+   * Get records by organisation - GET /compliance/organisation/:organisationId
+   */
   async getRecordsByOrganisation(
     organisationId: string,
     params?: ComplianceQueryParams
   ): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getRecords({ ...params, organisation_id: organisationId })
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.BY_ORGANISATION(organisationId),
+      params as Record<string, any>
+    )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
   }
 
+  /**
+   * Get records by standard - GET /compliance/standard/:standard
+   */
+  async getRecordsByStandard(
+    standard: ComplianceStandard,
+    params?: ComplianceQueryParams
+  ): Promise<PaginatedResponse<ComplianceRecord>> {
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.BY_STANDARD(standard),
+      params as Record<string, any>
+    )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
+  }
+
+  /**
+   * Get records by status - GET /compliance/status/:status
+   */
   async getRecordsByStatus(
     status: ComplianceStatus,
     params?: ComplianceQueryParams
   ): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getRecords({ ...params, compliance_status: status })
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.BY_STATUS(status),
+      params as Record<string, any>
+    )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
   }
 
+  /**
+   * Get overdue audits - GET /compliance/overdue
+   */
+  async getOverdueAudits(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<ComplianceRecord>> {
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.OVERDUE,
+      params as Record<string, any>
+    )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
+  }
+
+  /**
+   * Get upcoming audits - GET /compliance/upcoming
+   */
+  async getUpcomingAudits(
+    days: number = 30,
+    params?: { page?: number; limit?: number }
+  ): Promise<PaginatedResponse<ComplianceRecord>> {
+    const response = await this.getPaginated<ComplianceRecord>(
+      API_ENDPOINTS.COMPLIANCE.UPCOMING,
+      { days, ...params } as Record<string, any>
+    )
+    return {
+      data: response.data || [],
+      total: response.total || 0,
+      page: response.page || 1,
+      limit: response.limit || 10,
+      totalPages: response.totalPages || 1,
+      hasMore: response.hasMore || false,
+    }
+  }
+
+  // ============================================
+  // Statistics & Analytics
+  // ============================================
+
+  /**
+   * Get compliance statistics - GET /compliance/stats
+   */
   async getStats(organisationId?: string): Promise<ComplianceStats> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<ComplianceStats>(API_ENDPOINTS.COMPLIANCE.SUMMARY, params)
+    const params = organisationId ? { organisationId } : undefined
+    const response = await this.get<ComplianceStats>(
+      API_ENDPOINTS.COMPLIANCE.STATS,
+      params
+    )
     return this.extractData(response)
   }
 
+  /**
+   * Get compliance summary - GET /compliance/summary
+   */
+  async getSummary(organisationId?: string): Promise<ComplianceSummary> {
+    const params = organisationId ? { organisationId } : undefined
+    const response = await this.get<ComplianceSummary>(
+      API_ENDPOINTS.COMPLIANCE.SUMMARY,
+      params
+    )
+    return this.extractData(response)
+  }
+
+  /**
+   * Get gap analysis - GET /compliance/gaps
+   */
   async getGapAnalysis(organisationId?: string): Promise<ComplianceGap[]> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
+    const params = organisationId ? { organisationId } : undefined
     const response = await this.get<ComplianceGap[]>('/compliance/gaps', params)
     return this.extractData(response)
   }
 
-  async exportRecords(params?: {
-    standard?: ComplianceStandard
-    status?: ComplianceStatus
-    start_date?: string
-    end_date?: string
-    format?: 'csv' | 'json'
-  }): Promise<void> {
+  /**
+   * Get audit history - GET /compliance/records/:uuid/audit-history
+   */
+  async getAuditHistory(id: string): Promise<ComplianceAuditEntry[]> {
+    const response = await this.get<ComplianceAuditEntry[]>(
+      `/compliance/records/${id}/audit-history`
+    )
+    return this.extractData(response)
+  }
+
+  // ============================================
+  // Export & Reporting
+  // ============================================
+
+  /**
+   * Export compliance records - GET /compliance/export
+   */
+  async exportRecords(params?: ComplianceExportRequest): Promise<void> {
     const format = params?.format || 'csv'
     await this.download(
       '/compliance/export',
@@ -152,89 +305,53 @@ export class ComplianceService extends BaseService {
     )
   }
 
-  async getAuditHistory(id: string): Promise<any[]> {
-    const response = await this.get<any[]>(`/compliance/${id}/audit-history`)
-    return this.extractData(response)
-  }
-
-  async scheduleAudit(id: string, nextAuditDue: string): Promise<ComplianceRecord> {
-    const response = await this.patch<ComplianceRecord>(`/compliance/${id}/schedule-audit`, {
-      next_audit_due: nextAuditDue,
-    })
-    return this.extractData(response)
-  }
-
-  async bulkUpdateStatus(ids: string[], status: ComplianceStatus): Promise<{ updated: number }> {
-    const response = await this.post<{ updated: number }>('/compliance/bulk-update-status', {
-      ids,
-      compliance_status: status,
-    })
-    return this.extractData(response)
-  }
-
-  async getSummary(organisationId?: string): Promise<{
-    totalRecords: number
-    compliantRate: number
-    overdueCount: number
-    upcomingCount: number
-    recentUpdates: ComplianceRecord[]
-  }> {
-    const params = organisationId ? { organisation_id: organisationId } : undefined
-    const response = await this.get<{
-      totalRecords: number
-      compliantRate: number
-      overdueCount: number
-      upcomingCount: number
-      recentUpdates: ComplianceRecord[]
-    }>('/compliance/summary', params)
-    return this.extractData(response)
-  }
-
-  async getRecordsByDateRange(
-    startDate: string,
-    endDate: string,
-    params?: ComplianceQueryParams
-  ): Promise<PaginatedResponse<ComplianceRecord>> {
-    return this.getRecords({
-      ...params,
-      last_audit_date_start: startDate,
-      last_audit_date_end: endDate,
-    } as any)
-  }
-
-  async verifyCompliance(
-    organisationId: string,
-    standard: ComplianceStandard
-  ): Promise<{
-    verified: boolean
-    score: number
-    missingRequirements: string[]
-    recommendations: string[]
-  }> {
-    const response = await this.post<{
-      verified: boolean
-      score: number
-      missingRequirements: string[]
-      recommendations: string[]
-    }>('/compliance/verify', {
-      organisation_id: organisationId,
-      compliance_standard: standard,
-    })
-    return this.extractData(response)
-  }
-
+  /**
+   * Generate compliance report - POST /compliance/generate-report
+   */
   async generateReport(
     organisationId: string,
     format: 'pdf' | 'html' = 'pdf'
-  ): Promise<{ reportUrl: string; generatedAt: string }> {
-    const response = await this.post<{ reportUrl: string; generatedAt: string }>(
+  ): Promise<ComplianceReport> {
+    const response = await this.post<ComplianceReport>(
       '/compliance/generate-report',
       {
-        organisation_id: organisationId,
+        organisationId,
         format,
       }
     )
     return this.extractData(response)
+  }
+
+  /**
+   * Verify compliance - POST /compliance/verify
+   */
+  async verifyCompliance(
+    organisationId: string,
+    standard: ComplianceStandard
+  ): Promise<ComplianceVerificationResult> {
+    const response = await this.post<ComplianceVerificationResult>(
+      '/compliance/verify',
+      {
+        organisationId,
+        complianceStandard: standard,
+      }
+    )
+    return this.extractData(response)
+  }
+
+  /**
+   * Get records by date range
+   */
+  async getRecordsByDateRange(
+    startDate: string | Date,
+    endDate: string | Date,
+    params?: ComplianceQueryParams
+  ): Promise<PaginatedResponse<ComplianceRecord>> {
+    return this.getRecords({
+      ...params,
+      lastAuditDateStart: startDate,
+      lastAuditDateEnd: endDate,
+    } as any)
   }
 }
 
