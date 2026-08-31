@@ -1,9 +1,5 @@
-import { User } from './../user/user.entity'
-import { SyncStatus } from './../sync/sync.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
-/**
- * Notification Type Enum
- */
 export enum NotificationType {
   WORKFLOW_UPDATE = 'WORKFLOW_UPDATE',
   WORKFLOW_ASSIGNED = 'WORKFLOW_ASSIGNED',
@@ -33,9 +29,6 @@ export enum NotificationType {
   CUSTOM = 'CUSTOM',
 }
 
-/**
- * Notification Priority Enum
- */
 export enum NotificationPriority {
   LOW = 'LOW',
   MEDIUM = 'MEDIUM',
@@ -43,9 +36,6 @@ export enum NotificationPriority {
   URGENT = 'URGENT',
 }
 
-/**
- * Notification Status Enum
- */
 export enum NotificationStatus {
   UNREAD = 'UNREAD',
   READ = 'READ',
@@ -53,93 +43,197 @@ export enum NotificationStatus {
   DISMISSED = 'DISMISSED',
 }
 
-/**
- * Notification Channel Enum
- */
 export enum NotificationChannel {
-  EMAIL = 'email',
-  SMS = 'sms',
-  IN_APP = 'in-app',
-  DASHBOARD = 'dashboard',
+  EMAIL = 'EMAIL',
+  SMS = 'SMS',
+  IN_APP = 'IN_APP',
+  PUSH = 'PUSH',
 }
 
-/**
- * Notification Entity
- */
-export interface Notification {
-  uuid: string
-  recipient_id: string
-  sender_id?: string | null
-  notification_type: NotificationType
-  priority: NotificationPriority
-  status: NotificationStatus
-  title: string
-  message?: string | null
-  channel: NotificationChannel
-  action_data?: Record<string, any> | null
-  action_url?: string | null
-  entity_id?: string | null
-  entity_type?: string | null
-  is_read: boolean
-  read_at?: string | null
-  email_sent: boolean
-  sms_sent: boolean
-  push_sent: boolean
-  scheduled_for?: string | null
-  expires_at?: string | null
-  metadata?: Record<string, any> | null
-  created_by: string
-  created_at: string
-  updated_by: string
-  updated_at: string
-  version: number
-  sync_status: SyncStatus
-  recipient?: User
-  sender?: User
+export interface Notification extends BaseEntity {
+  organisationId: string;
+  businessUnitId?: string;
+  departmentId?: string;
+  recipientId: string;
+  senderId?: string;
+  notificationType: NotificationType;
+  priority: NotificationPriority;
+  status: NotificationStatus;
+  title: string;
+  message?: string;
+  channel: NotificationChannel;
+  actionData?: any;
+  actionUrl?: string;
+  entityId?: string;
+  entityType?: string;
+  isRead: boolean;
+  readAt?: Date;
+  emailSent: boolean;
+  smsSent: boolean;
+  pushSent: boolean;
+  scheduledFor?: Date;
+  expiresAt?: Date;
+  metadata?: any;
+  readReceipts?: Array<{
+    userId: string;
+    readAt: Date;
+    deviceId?: string;
+  }>;
+  isAcknowledged: boolean;
+  acknowledgedAt?: Date;
+  deliveryStatus?: {
+    emailDelivered: boolean;
+    emailDeliveredAt?: Date;
+    smsDelivered: boolean;
+    smsDeliveredAt?: Date;
+    pushDelivered: boolean;
+    pushDeliveredAt?: Date;
+    inAppDelivered: boolean;
+    inAppDeliveredAt?: Date;
+  };
 }
 
-/**
- * Notification Preference Entity
- */
-export interface NotificationPreference {
-  uuid: string
-  user_id: string
-  notification_type: NotificationType
-  email_enabled: boolean
-  sms_enabled: boolean
-  push_enabled: boolean
-  in_app_enabled: boolean
-  created_by: string
-  created_at: string
-  updated_by: string
-  updated_at: string
+export interface NotificationPreference extends BaseEntity {
+  userId: string;
+  notificationType: NotificationType;
+  emailEnabled: boolean;
+  smsEnabled: boolean;
+  pushEnabled: boolean;
+  inAppEnabled: boolean;
 }
 
-/**
- * Notification Counts
- */
-export interface NotificationCounts {
-  total: number
-  unread: number
-  byType: Record<string, number>
-  byPriority: Record<string, number>
+export interface NotificationTemplate extends BaseEntity {
+  organisationId: string;
+  notificationType: NotificationType;
+  titleTemplate: string;
+  messageTemplate: string;
+  isActive: boolean;
 }
 
-/**
- * Create Notification DTO
- */
-export interface CreateNotificationDTO {
-  recipient_id: string
-  sender_id?: string
-  notification_type: NotificationType
-  priority?: NotificationPriority
-  title: string
-  message?: string
-  channel?: NotificationChannel
-  action_data?: Record<string, any>
-  action_url?: string
-  entity_id?: string
-  entity_type?: string
-  scheduled_for?: string
-  expires_at?: string
+// DTOs
+export interface NotificationDto {
+  uuid: string;
+  recipientId: string;
+  senderId?: string;
+  notificationType: NotificationType;
+  priority: NotificationPriority;
+  status: NotificationStatus;
+  title: string;
+  message?: string;
+  channel: NotificationChannel;
+  actionData?: any;
+  actionUrl?: string;
+  entityId?: string;
+  entityType?: string;
+  isRead: boolean;
+  readAt?: Date;
+  emailSent: boolean;
+  smsSent: boolean;
+  pushSent: boolean;
+  scheduledFor?: Date;
+  expiresAt?: Date;
+  metadata?: any;
+  createdBy: string;
+  createdAt: Date;
+  updatedBy?: string;
+  updatedAt: Date;
+  version: number;
+  deletedBy?: string;
+  deletedAt?: Date;
+  syncStatus?: string;
+}
+
+export interface CreateNotificationDto {
+  recipientId: string;
+  senderId?: string;
+  notificationType: NotificationType;
+  priority?: NotificationPriority;
+  title: string;
+  message?: string;
+  channel?: NotificationChannel;
+  actionData?: any;
+  actionUrl?: string;
+  entityId?: string;
+  entityType?: string;
+  scheduledFor?: Date;
+  expiresAt?: Date;
+  sendEmail?: boolean;
+  sendSms?: boolean;
+  sendPush?: boolean;
+  metadata?: any;
+  organisationId?: string;
+}
+
+export interface BulkCreateNotificationDto {
+  notifications: CreateNotificationDto[];
+}
+
+export type UpdateNotificationDto = {
+  status?: NotificationStatus;
+  isRead?: boolean;
+};
+
+export interface NotificationPreferenceDto {
+  userId?: string;
+  notificationType: NotificationType;
+  emailEnabled?: boolean;
+  smsEnabled?: boolean;
+  pushEnabled?: boolean;
+  inAppEnabled?: boolean;
+}
+
+export interface NotificationTemplateDto {
+  notificationType: NotificationType;
+  titleTemplate: string;
+  messageTemplate: string;
+  isActive?: boolean;
+}
+
+export interface NotificationQueryDto {
+  status?: NotificationStatus;
+  notificationType?: NotificationType;
+  priority?: NotificationPriority;
+  limit?: number;
+  offset?: number;
+  unreadOnly?: boolean;
+}
+
+export interface NotificationCountDto {
+  total: number;
+  unread: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+}
+
+// Metrics
+export interface NotificationStats {
+  total: number;
+  unread: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+  byStatus: Record<string, number>;
+}
+
+export interface NotificationSummary {
+  totalSent: number;
+  totalRead: number;
+  readRate: number;
+  byType: Record<string, number>;
+  byPriority: Record<string, number>;
+  byChannel: Record<string, number>;
+  dailyStats: NotificationDailyStats[];
+}
+
+export interface NotificationDailyStats {
+  date: string;
+  sent: number;
+  read: number;
+  clicked: number;
+}
+
+export interface TemplateStats {
+  total: number;
+  active: number;
+  inactive: number;
+  byType: Record<string, number>;
 }
