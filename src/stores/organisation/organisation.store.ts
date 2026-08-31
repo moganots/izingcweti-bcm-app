@@ -1,443 +1,692 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { Organisation, BusinessUnit, Department } from './../../models/entities'
-import { organisationService, departmentService, businessUnitService } from './../../services/api'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { organisationService, businessUnitService, departmentService } from '@/services/organisation';
+import { useAuth } from '@/composables/auth/useAuth';
 import type {
-  CreateOrganisationRequest,
-  UpdateOrganisationRequest,
-  OrganisationStats,
-  OrganisationDashboard,
+  Organisation,
+  BusinessUnit,
+  Department,
+  CreateOrganisationDto,
+  UpdateOrganisationDto,
+  CreateBusinessUnitDto,
+  UpdateBusinessUnitDto,
+  CreateDepartmentDto,
+  UpdateDepartmentDto,
   OrganisationQueryParams,
-  BulkImportResult,
-  ExportOptions,
-} from './../../types'
+  OrganisationStatsDto,
+  OrganisationHierarchy,
+  BusinessUnitStatsDto,
+  DepartmentStatsDto,
+} from '@/types/organisation';
 
 export const useOrganisationStore = defineStore('organisation', () => {
   // ============================================
+  // Dependencies - Auth Integration
+  // ============================================
+  const auth = useAuth();
+  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+
+  // ============================================
   // State - Organisations
   // ============================================
-  const organisations = ref<Organisation[]>([])
-  const selectedOrganisation = ref<Organisation | null>(null)
-  const organisationHierarchy = ref<{
-    organisation: Organisation
-    business_units: Array<{
-      business_unit: BusinessUnit
-      departments: Department[]
-    }>
-  } | null>(null)
-  const organisationStats = ref<OrganisationStats | null>(null)
-  const organisationDashboard = ref<OrganisationDashboard | null>(null)
+  const organisations = ref<Organisation[]>([]);
+  const selectedOrganisation = ref<Organisation | null>(null);
+  const organisationStats = ref<OrganisationStatsDto | null>(null);
+  const organisationHierarchy = ref<OrganisationHierarchy | null>(null);
 
   // ============================================
   // State - Business Units (Cached)
   // ============================================
-  const businessUnitsCache = ref<Map<string, BusinessUnit[]>>(new Map())
-  const selectedBusinessUnit = ref<BusinessUnit | null>(null)
+  const businessUnitsCache = ref<Map<string, BusinessUnit[]>>(new Map());
+  const selectedBusinessUnit = ref<BusinessUnit | null>(null);
+  const businessUnitStats = ref<BusinessUnitStatsDto | null>(null);
 
   // ============================================
   // State - Departments (Cached)
   // ============================================
-  const departmentsCache = ref<Map<string, Department[]>>(new Map())
-  const selectedDepartment = ref<Department | null>(null)
+  const departmentsCache = ref<Map<string, Department[]>>(new Map());
+  const selectedDepartment = ref<Department | null>(null);
+  const departmentStats = ref<DepartmentStatsDto | null>(null);
 
   // ============================================
   // State - UI & Pagination
   // ============================================
-  const isLoading = ref(false)
-  const isSaving = ref(false)
-  const error = ref<string | null>(null)
+  const isLoading = ref(false);
+  const isSaving = ref(false);
+  const error = ref<string | null>(null);
 
-  const currentPage = ref(1)
-  const totalPages = ref(1)
-  const totalItems = ref(0)
-  const itemsPerPage = ref(20)
+  const pagination = ref({
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    itemsPerPage: 20,
+  });
 
-  // ============================================
-  // State - Filters
-  // ============================================
-  const organisationFilters = ref<OrganisationQueryParams>({})
+  const filters = ref<OrganisationQueryParams>({});
 
   // ============================================
   // Getters - Organisations
   // ============================================
-  const hasOrganisations = computed(() => organisations.value.length > 0)
+  const hasOrganisations = computed(() => organisations.value.length > 0);
 
   const organisationsByIndustry = computed(() => {
-    const grouped: Record<string, Organisation[]> = {}
+    const grouped: Record<string, Organisation[]> = {};
     organisations.value.forEach((org) => {
-      const industry = org.industry_type || 'Unknown'
-      if (!grouped[industry]) grouped[industry] = []
-      grouped[industry].push(org)
-    })
-    return grouped
-  })
+      const industry = org.industryType || 'Unknown';
+      if (!grouped[industry]) grouped[industry] = [];
+      grouped[industry].push(org);
+    });
+    return grouped;
+  });
+
+  const organisationsByMaturity = computed(() => {
+    const grouped: Record<string, Organisation[]> = {};
+    organisations.value.forEach((org) => {
+      const maturity = org.maturityScore || 'Unknown';
+      if (!grouped[maturity]) grouped[maturity] = [];
+      grouped[maturity].push(org);
+    });
+    return grouped;
+  });
 
   const highMaturityOrganisations = computed(() =>
-    organisations.value.filter((org) => (org.maturity_score || 0) >= 70)
-  )
-
-  const lowMaturityOrganisations = computed(() =>
-    organisations.value.filter((org) => (org.maturity_score || 0) < 50)
-  )
-
-  const averageMaturityScore = computed(() => {
-    if (organisations.value.length === 0) return 0
-    const sum = organisations.value.reduce((acc, org) => acc + (org.maturity_score || 0), 0)
-    return Math.round(sum / organisations.value.length)
-  })
+    organisations.value.filter((org) =>
+      org.maturityScore === 'OPTIMIZING' || org.maturityScore === 'QUANTITATIVELY_MANAGED'
+    )
+  );
 
   // ============================================
   // Getters - Business Units
   // ============================================
   const getBusinessUnitsForOrganisation = (organisationId: string) => {
-    return businessUnitsCache.value.get(organisationId) || []
-  }
+    return businessUnitsCache.value.get(organisationId) || [];
+  };
 
   const hasBusinessUnits = (organisationId: string) => {
-    return (businessUnitsCache.value.get(organisationId)?.length || 0) > 0
-  }
+    return (businessUnitsCache.value.get(organisationId)?.length || 0) > 0;
+  };
+
+  const businessUnitsByCriticality = computed(() => {
+    const grouped: Record<string, BusinessUnit[]> = {};
+    const allBus = Array.from(businessUnitsCache.value.values()).flat();
+    allBus.forEach((bu) => {
+      const score = bu.criticalityScore || 'Unknown';
+      if (!grouped[score]) grouped[score] = [];
+      grouped[score].push(bu);
+    });
+    return grouped;
+  });
 
   // ============================================
   // Getters - Departments
   // ============================================
   const getDepartmentsForBusinessUnit = (businessUnitId: string) => {
-    return departmentsCache.value.get(businessUnitId) || []
-  }
+    return departmentsCache.value.get(businessUnitId) || [];
+  };
 
   const hasDepartments = (businessUnitId: string) => {
-    return (departmentsCache.value.get(businessUnitId)?.length || 0) > 0
-  }
+    return (departmentsCache.value.get(businessUnitId)?.length || 0) > 0;
+  };
+
+  const departmentsWithRTO = computed(() => {
+    const allDepts = Array.from(departmentsCache.value.values()).flat();
+    return allDepts.filter((dept) => dept.recoveryTimeObjectiveHours);
+  });
+
+  const departmentsWithRPO = computed(() => {
+    const allDepts = Array.from(departmentsCache.value.values()).flat();
+    return allDepts.filter((dept) => dept.recoveryPointObjectiveHours);
+  });
+
+  // ============================================
+  // Actions - Authentication Check Helpers
+  // ============================================
+  const requireAuth = (): boolean => {
+    if (!isAuthenticated.value) {
+      error.value = 'User not authenticated';
+      return false;
+    }
+    return true;
+  };
+
+  const requireAdmin = (): boolean => {
+    if (!requireAuth()) return false;
+    if (!isAdmin.value && !isGlobalAdmin.value) {
+      error.value = 'Insufficient permissions: Administrator access required';
+      return false;
+    }
+    return true;
+  };
+
+  const requireGlobalAdmin = (): boolean => {
+    if (!requireAuth()) return false;
+    if (!isGlobalAdmin.value) {
+      error.value = 'Insufficient permissions: System administrator access required';
+      return false;
+    }
+    return true;
+  };
 
   // ============================================
   // Actions - Organisations
   // ============================================
 
-  async function loadOrganisations(params?: OrganisationQueryParams): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchOrganisations(params?: OrganisationQueryParams) {
+    if (!requireAuth()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
       const queryParams = {
-        ...organisationFilters.value,
+        ...filters.value,
         ...params,
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      }
-      const response = await organisationService.getOrganisations(queryParams)
-
-      organisations.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-
-      if (params) organisationFilters.value = { ...organisationFilters.value, ...params }
+        page: pagination.value.currentPage,
+        limit: pagination.value.itemsPerPage,
+      };
+      const response = await organisationService.getOrganisations(queryParams);
+      organisations.value = response.data || [];
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      if (params) filters.value = { ...filters.value, ...params };
+      return response;
     } catch (err: any) {
-      console.error('Failed to load organisations:', err)
-      error.value = err.message || 'Failed to load organisations'
+      error.value = err.message || 'Failed to fetch organisations';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  async function loadOrganisation(id: string, include?: string[]): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchOrganisationById(uuid: string) {
+    if (!requireAuth()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
-      selectedOrganisation.value = await organisationService.getOrganisation(id, include)
+      const organisation = await organisationService.getOrganisation(uuid);
+      selectedOrganisation.value = organisation;
+      return organisation;
     } catch (err: any) {
-      console.error('Failed to load organisation:', err)
-      error.value = err.message || 'Failed to load organisation'
-      throw err
+      error.value = err.message || 'Failed to fetch organisation';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  async function loadOrganisationDashboard(organisationId: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchOrganisationStats(organisationId?: string) {
+    if (!requireAuth()) return null;
 
     try {
-      organisationDashboard.value = await organisationService.getDashboard(organisationId)
+      const stats = await organisationService.getStats(organisationId);
+      organisationStats.value = stats;
+      return stats;
     } catch (err: any) {
-      console.error('Failed to load organisation dashboard:', err)
-      error.value = err.message || 'Failed to load dashboard'
-    } finally {
-      isLoading.value = false
+      console.error('Failed to fetch organisation stats:', err);
+      throw err;
     }
   }
 
-  async function loadOrganisationStats(organisationId?: string): Promise<void> {
-    try {
-      organisationStats.value = await organisationService.getStats(organisationId)
-    } catch (err: any) {
-      console.error('Failed to load organisation stats:', err)
-    }
-  }
+  async function fetchOrganisationHierarchy(organisationId: string) {
+    if (!requireAuth()) return null;
 
-  async function loadOrganisationHierarchy(organisationId: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
+    isLoading.value = true;
+    error.value = null;
     try {
-      organisationHierarchy.value = await organisationService.getOrganisationHierarchy(
-        organisationId
-      )
+      const hierarchy = await organisationService.getOrganisationHierarchy(organisationId);
+      organisationHierarchy.value = hierarchy;
 
       // Cache business units
-      if (organisationHierarchy.value) {
-        const bus = organisationHierarchy.value.business_units.map((bu) => bu.business_unit)
-        businessUnitsCache.value.set(organisationId, bus)
+      if (hierarchy) {
+        const bus = hierarchy.businessUnits.map((bu) => bu.businessUnit);
+        businessUnitsCache.value.set(organisationId, bus);
 
         // Cache departments
-        for (const bu of organisationHierarchy.value.business_units) {
-          departmentsCache.value.set(bu.business_unit.uuid, bu.departments)
+        for (const bu of hierarchy.businessUnits) {
+          departmentsCache.value.set(bu.businessUnit.uuid, bu.departments);
         }
       }
+      return hierarchy;
     } catch (err: any) {
-      console.error('Failed to load organisation hierarchy:', err)
-      error.value = err.message || 'Failed to load organisation structure'
-      throw err
+      error.value = err.message || 'Failed to fetch organisation hierarchy';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  async function createOrganisation(data: CreateOrganisationRequest): Promise<Organisation> {
-    isSaving.value = true
-    error.value = null
+  async function createOrganisation(data: CreateOrganisationDto) {
+    if (!requireGlobalAdmin()) return null;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      const created = await organisationService.createOrganisation(data)
-      organisations.value.unshift(created)
-      return created
+      const organisation = await organisationService.createOrganisation(data);
+      organisations.value.unshift(organisation);
+      return organisation;
     } catch (err: any) {
-      console.error('Failed to create organisation:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to create organisation'
-      throw err
+      error.value = err.message || 'Failed to create organisation';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function updateOrganisation(
-    id: string,
-    data: UpdateOrganisationRequest
-  ): Promise<Organisation> {
-    isSaving.value = true
-    error.value = null
+  async function updateOrganisation(uuid: string, data: UpdateOrganisationDto) {
+    if (!requireAdmin()) return null;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      const updated = await organisationService.updateOrganisation(id, data)
-      const index = organisations.value.findIndex((org) => org.uuid === id)
+      const organisation = await organisationService.updateOrganisation(uuid, data);
+      const index = organisations.value.findIndex((org) => org.uuid === uuid);
       if (index !== -1) {
-        organisations.value[index] = updated
+        organisations.value[index] = organisation;
       }
-      if (selectedOrganisation.value?.uuid === id) {
-        selectedOrganisation.value = updated
+      if (selectedOrganisation.value?.uuid === uuid) {
+        selectedOrganisation.value = organisation;
       }
-      return updated
+      return organisation;
     } catch (err: any) {
-      console.error('Failed to update organisation:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to update organisation'
-      throw err
+      error.value = err.message || 'Failed to update organisation';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function deleteOrganisation(id: string): Promise<void> {
-    isSaving.value = true
-    error.value = null
+  async function deleteOrganisation(uuid: string) {
+    if (!requireGlobalAdmin()) return;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      await organisationService.deleteOrganisation(id)
-      organisations.value = organisations.value.filter((org) => org.uuid !== id)
-      if (selectedOrganisation.value?.uuid === id) {
-        selectedOrganisation.value = null
+      await organisationService.deleteOrganisation(uuid);
+      organisations.value = organisations.value.filter((org) => org.uuid !== uuid);
+      if (selectedOrganisation.value?.uuid === uuid) {
+        selectedOrganisation.value = null;
       }
-      // Clear cached data
-      businessUnitsCache.value.delete(id)
+      businessUnitsCache.value.delete(uuid);
     } catch (err: any) {
-      console.error('Failed to delete organisation:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to delete organisation'
-      throw err
+      error.value = err.message || 'Failed to delete organisation';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function restoreOrganisation(id: string): Promise<Organisation> {
-    isSaving.value = true
-    error.value = null
+  async function searchOrganisations(query: string) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await organisationService.searchOrganisations(query);
+      organisations.value = response.data || [];
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      return response;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to search organisations';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Business Units
+  // ============================================
+
+  async function fetchBusinessUnitsForOrganisation(organisationId: string, params?: any) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await businessUnitService.getBusinessUnitsByOrganisation(organisationId, params);
+      businessUnitsCache.value.set(organisationId, response.data || []);
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      return response;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch business units';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function createBusinessUnit(data: CreateBusinessUnitDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const businessUnit = await businessUnitService.createBusinessUnit(data);
+      const cached = businessUnitsCache.value.get(data.organisationId) || [];
+      businessUnitsCache.value.set(data.organisationId, [businessUnit, ...cached]);
+      return businessUnit;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to create business unit';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function updateBusinessUnit(uuid: string, data: UpdateBusinessUnitDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const businessUnit = await businessUnitService.updateBusinessUnit(uuid, data);
+
+      // Update cache
+      for (const [orgId, bus] of businessUnitsCache.value.entries()) {
+        const index = bus.findIndex((bu) => bu.uuid === uuid);
+        if (index !== -1) {
+          bus[index] = businessUnit;
+          businessUnitsCache.value.set(orgId, bus);
+          break;
+        }
+      }
+
+      if (selectedBusinessUnit.value?.uuid === uuid) {
+        selectedBusinessUnit.value = businessUnit;
+      }
+      return businessUnit;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to update business unit';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function deleteBusinessUnit(uuid: string) {
+    if (!requireAdmin()) return;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      await businessUnitService.deleteBusinessUnit(uuid);
+
+      // Remove from cache
+      for (const [orgId, bus] of businessUnitsCache.value.entries()) {
+        const filtered = bus.filter((bu) => bu.uuid !== uuid);
+        if (filtered.length !== bus.length) {
+          businessUnitsCache.value.set(orgId, filtered);
+          break;
+        }
+      }
+
+      if (selectedBusinessUnit.value?.uuid === uuid) {
+        selectedBusinessUnit.value = null;
+      }
+    } catch (err: any) {
+      error.value = err.message || 'Failed to delete business unit';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function fetchBusinessUnitStats(organisationId?: string) {
+    if (!requireAuth()) return null;
 
     try {
-      const restored = await organisationService.restoreOrganisation(id)
-      organisations.value.unshift(restored)
-      return restored
+      const stats = await businessUnitService.getStats(organisationId);
+      businessUnitStats.value = stats;
+      return stats;
     } catch (err: any) {
-      console.error('Failed to restore organisation:', err)
-      error.value = err.message || 'Failed to restore organisation'
-      throw err
-    } finally {
-      isSaving.value = false
+      console.error('Failed to fetch business unit stats:', err);
+      throw err;
     }
   }
 
-  async function searchOrganisations(query: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  // ============================================
+  // Actions - Departments
+  // ============================================
+
+  async function fetchDepartmentsForBusinessUnit(businessUnitId: string, params?: any) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const response = await departmentService.getDepartmentsByBusinessUnit(businessUnitId, params);
+      departmentsCache.value.set(businessUnitId, response.data || []);
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      return response;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch departments';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function createDepartment(data: CreateDepartmentDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const department = await departmentService.createDepartment(data);
+      const cached = departmentsCache.value.get(data.businessUnitId) || [];
+      departmentsCache.value.set(data.businessUnitId, [department, ...cached]);
+      return department;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to create department';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function updateDepartment(uuid: string, data: UpdateDepartmentDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const department = await departmentService.updateDepartment(uuid, data);
+
+      // Update cache
+      for (const [buId, depts] of departmentsCache.value.entries()) {
+        const index = depts.findIndex((d) => d.uuid === uuid);
+        if (index !== -1) {
+          depts[index] = department;
+          departmentsCache.value.set(buId, depts);
+          break;
+        }
+      }
+
+      if (selectedDepartment.value?.uuid === uuid) {
+        selectedDepartment.value = department;
+      }
+      return department;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to update department';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function deleteDepartment(uuid: string) {
+    if (!requireAdmin()) return;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      await departmentService.deleteDepartment(uuid);
+
+      // Remove from cache
+      for (const [buId, depts] of departmentsCache.value.entries()) {
+        const filtered = depts.filter((d) => d.uuid !== uuid);
+        if (filtered.length !== depts.length) {
+          departmentsCache.value.set(buId, filtered);
+          break;
+        }
+      }
+
+      if (selectedDepartment.value?.uuid === uuid) {
+        selectedDepartment.value = null;
+      }
+    } catch (err: any) {
+      error.value = err.message || 'Failed to delete department';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function reorderDepartments(departmentIds: string[]) {
+    if (!requireAdmin()) return;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      await departmentService.reorderDepartments(departmentIds);
+    } catch (err: any) {
+      error.value = err.message || 'Failed to reorder departments';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function fetchDepartmentStats(businessUnitId?: string) {
+    if (!requireAuth()) return null;
 
     try {
-      const response = await organisationService.searchOrganisations(query)
-      organisations.value = response.data || []
-      totalPages.value = response.totalPages || 1
+      const stats = await departmentService.getStats(businessUnitId);
+      departmentStats.value = stats;
+      return stats;
     } catch (err: any) {
-      error.value = err.message || 'Failed to search organisations'
-    } finally {
-      isLoading.value = false
+      console.error('Failed to fetch department stats:', err);
+      throw err;
     }
   }
 
-  async function bulkImportOrganisations(
-    organisationsData: CreateOrganisationRequest[]
-  ): Promise<BulkImportResult> {
-    isSaving.value = true
-    error.value = null
+  // ============================================
+  // Utility Actions
+  // ============================================
 
-    try {
-      const result = await organisationService.bulkImportOrganisations(organisationsData)
-      await loadOrganisations()
-      return result
-    } catch (err: any) {
-      error.value = err.message || 'Failed to import organisations'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
+  function clearError() {
+    error.value = null;
   }
 
-  async function exportOrganisations(options?: ExportOptions): Promise<void> {
-    try {
-      await organisationService.exportOrganisations(options)
-    } catch (err: any) {
-      console.error('Failed to export organisations:', err)
-      error.value = err.message || 'Failed to export organisations'
-      throw err
-    }
-  }
-
-  async function loadBusinessUnitsForOrganisation(organisationId: string): Promise<void> {
-    isLoading.value = true
-
-    try {
-      const response = await businessUnitService.getBusinessUnitsByOrganisation(organisationId)
-      businessUnitsCache.value.set(organisationId, response.data || [])
-    } catch (err: any) {
-      console.error('Failed to load business units:', err)
-      error.value = err.message || 'Failed to load business units'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function loadDepartmentsForBusinessUnit(businessUnitId: string): Promise<void> {
-    isLoading.value = true
-
-    try {
-      const response = await departmentService.getDepartmentsByBusinessUnit(businessUnitId)
-      departmentsCache.value.set(businessUnitId, response.data || [])
-    } catch (err: any) {
-      console.error('Failed to load departments:', err)
-      error.value = err.message || 'Failed to load departments'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  function clearOrganisationSelection(): void {
-    selectedOrganisation.value = null
-  }
-
-  function clearBusinessUnitSelection(): void {
-    selectedBusinessUnit.value = null
-  }
-
-  function clearDepartmentSelection(): void {
-    selectedDepartment.value = null
-  }
-
-  function clearAll(): void {
-    organisations.value = []
-    selectedOrganisation.value = null
-    organisationHierarchy.value = null
-    organisationStats.value = null
-    organisationDashboard.value = null
-    businessUnitsCache.value.clear()
-    selectedBusinessUnit.value = null
-    departmentsCache.value.clear()
-    selectedDepartment.value = null
-    error.value = null
-    currentPage.value = 1
-    totalPages.value = 1
-    totalItems.value = 0
-  }
-
-  async function setPage(page: number): Promise<void> {
-    currentPage.value = page
-    await loadOrganisations()
+  function resetState() {
+    organisations.value = [];
+    selectedOrganisation.value = null;
+    organisationStats.value = null;
+    organisationHierarchy.value = null;
+    businessUnitsCache.value.clear();
+    selectedBusinessUnit.value = null;
+    businessUnitStats.value = null;
+    departmentsCache.value.clear();
+    selectedDepartment.value = null;
+    departmentStats.value = null;
+    isLoading.value = false;
+    isSaving.value = false;
+    error.value = null;
+    pagination.value = {
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      itemsPerPage: 20,
+    };
+    filters.value = {};
   }
 
   return {
     // State
     organisations,
     selectedOrganisation,
-    organisationHierarchy,
     organisationStats,
-    organisationDashboard,
+    organisationHierarchy,
     businessUnitsCache,
     selectedBusinessUnit,
+    businessUnitStats,
     departmentsCache,
     selectedDepartment,
+    departmentStats,
     isLoading,
     isSaving,
     error,
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
-    organisationFilters,
+    pagination,
+    filters,
 
-    // Getters
+    // Getters - Organisations
     hasOrganisations,
     organisationsByIndustry,
+    organisationsByMaturity,
     highMaturityOrganisations,
-    lowMaturityOrganisations,
-    averageMaturityScore,
+
+    // Getters - Business Units
     getBusinessUnitsForOrganisation,
     hasBusinessUnits,
+    businessUnitsByCriticality,
+
+    // Getters - Departments
     getDepartmentsForBusinessUnit,
     hasDepartments,
+    departmentsWithRTO,
+    departmentsWithRPO,
 
-    // Actions
-    loadOrganisations,
-    loadOrganisation,
-    loadOrganisationDashboard,
-    loadOrganisationStats,
-    loadOrganisationHierarchy,
+    // Auth Helpers
+    requireAuth,
+    requireAdmin,
+    requireGlobalAdmin,
+
+    // Actions - Organisations
+    fetchOrganisations,
+    fetchOrganisationById,
+    fetchOrganisationStats,
+    fetchOrganisationHierarchy,
     createOrganisation,
     updateOrganisation,
     deleteOrganisation,
-    restoreOrganisation,
     searchOrganisations,
-    bulkImportOrganisations,
-    exportOrganisations,
-    loadBusinessUnitsForOrganisation,
-    loadDepartmentsForBusinessUnit,
-    clearOrganisationSelection,
-    clearBusinessUnitSelection,
-    clearDepartmentSelection,
-    clearAll,
-    setPage,
-  }
-})
+
+    // Actions - Business Units
+    fetchBusinessUnitsForOrganisation,
+    createBusinessUnit,
+    updateBusinessUnit,
+    deleteBusinessUnit,
+    fetchBusinessUnitStats,
+
+    // Actions - Departments
+    fetchDepartmentsForBusinessUnit,
+    createDepartment,
+    updateDepartment,
+    deleteDepartment,
+    reorderDepartments,
+    fetchDepartmentStats,
+
+    // Utility
+    clearError,
+    resetState,
+  };
+});
