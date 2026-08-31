@@ -1,39 +1,64 @@
+// ============================================
+// Cache Module - Enums (Aligned with Backend)
+// ============================================
+
+export enum CacheEvictionPolicy {
+  LRU = 'lru',
+  LFU = 'lfu',
+  FIFO = 'fifo',
+  TTL = 'ttl',
+}
+
+export enum CacheCompressionAlgorithm {
+  NONE = 'none',
+  GZIP = 'gzip',
+  LZ4 = 'lz4',
+}
+
+// ============================================
+// Cache Module - Types (camelCase - Aligned with Backend DTOs)
+// ============================================
+
 /**
- * Cache Entity
+ * Cache Entry - Matches backend Cache entity
  */
 export interface CacheEntry {
+  uuid: string
   key: string
   value: any
-  expires_at?: string | null
+  expiresAt?: string | Date | null
   tags?: string | null
-  hit_count: number
-  last_accessed_at?: string | null
-  size_bytes: number
-  is_compressed: boolean
-  compression_algorithm?: string | null
-  uuid: string
-  created_by: string
-  created_at: string
-  updated_by: string
-  updated_at: string
+  hitCount: number
+  lastAccessedAt?: string | Date | null
+  sizeBytes: number
+  isCompressed: boolean
+  compressionAlgorithm?: string | null
+  createdBy: string
+  createdAt: string | Date
+  updatedBy: string
+  updatedAt: string | Date
+  version: number
+  deletedBy?: string | null
+  deletedAt?: string | null
+  syncStatus?: string
 }
 
 /**
- * Cache Stats
+ * Cache Stats - Matches backend CacheStatsDto
  */
 export interface CacheStats {
-  total_entries: number
-  total_size_bytes: number
-  active_entries: number
-  expired_entries: number
-  total_hits: number
-  cache_hit_ratio: number
+  totalEntries: number
+  totalSizeBytes: number
+  activeEntries: number
+  expiredEntries: number
+  totalHits: number
+  cacheHitRatio: number
 }
 
 /**
- * Create Cache DTO
+ * Create Cache DTO - Matches backend CreateCacheDto
  */
-export interface CreateCacheDTO {
+export interface CreateCacheRequest {
   key: string
   value: any
   ttl?: number // Time to live in seconds
@@ -42,11 +67,55 @@ export interface CreateCacheDTO {
 }
 
 /**
- * Cache Query Parameters
+ * Update Cache DTO - Matches backend UpdateCacheDto
  */
-export interface CacheQueryParams extends QueryParams {
+export interface UpdateCacheRequest {
+  value: any
+  ttl?: number // Time to live in seconds
+  tags?: string
+}
+
+/**
+ * Bulk Cache DTO - Matches backend BulkCacheDto
+ */
+export interface BulkCacheRequest {
+  items: CreateCacheRequest[]
+}
+
+/**
+ * Cache Query Parameters - Matches backend CacheQueryDto
+ */
+export interface CacheQueryParams {
   tags?: string
   pattern?: string
   limit?: number
   offset?: number
+}
+
+/**
+ * Cache Entry Metadata
+ */
+export interface CacheEntryMetadata {
+  key: string
+  sizeBytes: number
+  expiresAt?: string | Date
+  tags?: string
+  hitCount: number
+  lastAccessedAt?: string | Date
+}
+
+/**
+ * Cache Cleanup Result
+ */
+export interface CacheCleanupResult {
+  cleaned: number
+  freedBytes: number
+}
+
+/**
+ * Bulk Cache Response
+ */
+export interface BulkCacheResponse {
+  entries: CacheEntry[]
+  missedKeys: string[]
 }

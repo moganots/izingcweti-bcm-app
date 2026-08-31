@@ -1,6 +1,11 @@
-export { default as CacheStatsCard } from './CacheStatsCard.vue'
+// ============================================
+// Cache Component Exports
+// ============================================
+
+export { default as CacheStatsWidget } from './CacheStatsWidget.vue'
 export { default as CacheEntryList } from './CacheEntryList.vue'
-export { default as CacheEntryDetail } from './CacheEntryDetail.vue'
-export { default as CacheSettings } from './CacheSettings.vue'
-export { default as CacheManagementPanel } from './CacheManagementPanel.vue'
-export { default as CacheStatusBadge } from './CacheStatusBadge.vue'
+export { default as CacheManager } from './CacheManager.vue'
+export { default as CacheHealthIndicator } from './CacheHealthIndicator.vue'
+
+// Composable
+export { useCache } from './../../composables/useCache'
