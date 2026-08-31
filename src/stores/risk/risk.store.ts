@@ -1,372 +1,649 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { Risk, RiskStats } from './../../models/entities'
-import { riskService } from './../../services/api'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { riskService } from '@/services/risk/risk.service';
+import { useAuth } from '@/composables/auth/useAuth';
 import type {
-  RiskQueryParams,
-  CreateRiskRequest,
-  UpdateRiskRequest,
-  ReassessRiskRequest,
-} from '../../types'
-import { useAuthStore } from '../auth/auth.store'
+  Risk,
+  CreateRiskDto,
+  UpdateRiskDto,
+  AssessRiskDto,
+  ApproveRiskDto,
+  AssignRiskDto,
+  AddControlDto,
+  RiskQueryDto,
+  RiskStatsDto,
+  RiskComprehensiveAnalytics,
+} from '@/types/risk';
+import { RiskStatus, getRiskScoreLevel, getRiskColor } from '@/types/risk/enums';
 
 export const useRiskStore = defineStore('risk', () => {
-  const authStore = useAuthStore()
+  // ============================================
+  // Dependencies - Auth Integration
+  // ============================================
+  const auth = useAuth();
+  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
 
   // ============================================
   // State
   // ============================================
-  const risks = ref<Risk[]>([])
-  const selectedRisk = ref<Risk | null>(null)
-  const stats = ref<RiskStats | null>(null)
-  const isLoading = ref(false)
-  const isSaving = ref(false)
-  const error = ref<string | null>(null)
-  const currentPage = ref(1)
-  const totalPages = ref(1)
-  const totalItems = ref(0)
+  const risks = ref<Risk[]>([]);
+  const selectedRisk = ref<Risk | null>(null);
+  const stats = ref<RiskStatsDto | null>(null);
+  const comprehensiveAnalytics = ref<RiskComprehensiveAnalytics | null>(null);
+  const riskMatrix = ref<number[][] | null>(null);
+  const riskTrends = ref<any[]>([]);
+
+  const isLoading = ref(false);
+  const isSaving = ref(false);
+  const error = ref<string | null>(null);
+
+  const pagination = ref({
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    itemsPerPage: 20,
+  });
+
+  const filters = ref<RiskQueryDto>({});
 
   // ============================================
   // Getters
   // ============================================
-  const criticalRisks = computed(() => risks.value.filter((r) => r.inherent_risk_score >= 8.5))
+
+  // Risk Level Groupings
+  const criticalRisks = computed(() =>
+    risks.value.filter((r) => (r.inherentRiskScore || 0) >= 20)
+  );
+
   const highRisks = computed(() =>
-    risks.value.filter((r) => r.inherent_risk_score >= 7 && r.inherent_risk_score < 8.5)
-  )
+    risks.value.filter((r) => (r.inherentRiskScore || 0) >= 15 && (r.inherentRiskScore || 0) < 20)
+  );
+
   const mediumRisks = computed(() =>
-    risks.value.filter((r) => r.inherent_risk_score >= 5 && r.inherent_risk_score < 7)
-  )
-  const lowRisks = computed(() => risks.value.filter((r) => r.inherent_risk_score < 5))
-  const mitigatedRisks = computed(() =>
-    risks.value.filter(
-      (r) => Array.isArray(r.mitigation_control_ids) && r.mitigation_control_ids.length > 0
-    )
-  )
-  const unmitigatedRisks = computed(() =>
-    risks.value.filter(
-      (r) => !Array.isArray(r.mitigation_control_ids) || r.mitigation_control_ids.length === 0
-    )
-  )
+    risks.value.filter((r) => (r.inherentRiskScore || 0) >= 8 && (r.inherentRiskScore || 0) < 15)
+  );
 
+  const lowRisks = computed(() =>
+    risks.value.filter((r) => (r.inherentRiskScore || 0) < 8)
+  );
+
+  // Status Groupings
+  const openRisks = computed(() =>
+    risks.value.filter((r) => r.status !== RiskStatus.CLOSED)
+  );
+
+  const closedRisks = computed(() =>
+    risks.value.filter((r) => r.status === RiskStatus.CLOSED)
+  );
+
+  const pendingApprovalRisks = computed(() =>
+    risks.value.filter((r) => r.requiresApproval && !r.approvedBy)
+  );
+
+  const overdueReviewRisks = computed(() => {
+    const now = new Date();
+    return risks.value.filter(
+      (r) =>
+        r.reviewDate &&
+        new Date(r.reviewDate) < now &&
+        r.status !== RiskStatus.CLOSED
+    );
+  });
+
+  const myAssignedRisks = computed(() =>
+    risks.value.filter((r) => r.assignedTo === userId.value)
+  );
+
+  // Groupings
   const risksByCategory = computed(() => {
-    const grouped: Record<string, Risk[]> = {}
+    const grouped: Record<string, Risk[]> = {};
     risks.value.forEach((r) => {
-      const category = r.risk_category || 'Unknown'
-      if (!grouped[category]) grouped[category] = []
-      grouped[category].push(r)
-    })
-    return grouped
-  })
+      const category = r.riskCategory || 'Unknown';
+      if (!grouped[category]) grouped[category] = [];
+      grouped[category].push(r);
+    });
+    return grouped;
+  });
 
-  const risksBySeverity = computed(() => {
-    const grouped: Record<string, Risk[]> = {}
+  const risksByStatus = computed(() => {
+    const grouped: Record<string, Risk[]> = {};
     risks.value.forEach((r) => {
-      const severity = r.impact_severity || 'Unknown'
-      if (!grouped[severity]) grouped[severity] = []
-      grouped[severity].push(r)
-    })
-    return grouped
-  })
+      const status = r.status || 'Unknown';
+      if (!grouped[status]) grouped[status] = [];
+      grouped[status].push(r);
+    });
+    return grouped;
+  });
 
+  // Score Aggregates
   const averageInherentScore = computed(() => {
-    if (risks.value.length === 0) return 0
-    const total = risks.value.reduce(
-      (sum, r) => sum + (typeof r.inherent_risk_score === 'number' ? r.inherent_risk_score : 0),
-      0
-    )
-    return Math.round((total / risks.value.length) * 100) / 100
-  })
+    if (risks.value.length === 0) return 0;
+    const total = risks.value.reduce((sum, r) => sum + (r.inherentRiskScore || 0), 0);
+    return Math.round((total / risks.value.length) * 100) / 100;
+  });
 
   const averageResidualScore = computed(() => {
-    if (risks.value.length === 0) return 0
-    const total = risks.value.reduce(
-      (sum, r) => sum + (typeof r.residual_risk_score === 'number' ? r.residual_risk_score : 0),
-      0
-    )
-    return Math.round((total / risks.value.length) * 100) / 100
-  })
+    const withResidual = risks.value.filter((r) => r.residualRiskScore !== undefined);
+    if (withResidual.length === 0) return 0;
+    const total = withResidual.reduce((sum, r) => sum + (r.residualRiskScore || 0), 0);
+    return Math.round((total / withResidual.length) * 100) / 100;
+  });
 
   const riskReduction = computed(() => {
-    return Math.round((averageInherentScore.value - averageResidualScore.value) * 100) / 100
-  })
+    return Math.round((averageInherentScore.value - averageResidualScore.value) * 100) / 100;
+  });
 
-  const hasCriticalRisks = computed(() => criticalRisks.value.length > 0)
-  const hasHighRisks = computed(() => highRisks.value.length > 0)
+  const riskReductionPercentage = computed(() => {
+    if (averageInherentScore.value === 0) return 0;
+    return Math.round((riskReduction.value / averageInherentScore.value) * 100 * 100) / 100;
+  });
+
+  const hasCriticalRisks = computed(() => criticalRisks.value.length > 0);
+  const hasHighRisks = computed(() => highRisks.value.length > 0);
 
   // ============================================
-  // Actions
+  // Auth Check Helpers
+  // ============================================
+  const requireAuth = (): boolean => {
+    if (!isAuthenticated.value) {
+      error.value = 'User not authenticated';
+      return false;
+    }
+    return true;
+  };
+
+  const requireAdmin = (): boolean => {
+    if (!requireAuth()) return false;
+    if (!isAdmin.value && !isGlobalAdmin.value) {
+      error.value = 'Insufficient permissions: Administrator access required';
+      return false;
+    }
+    return true;
+  };
+
+  // ============================================
+  // Actions - CRUD
   // ============================================
 
-  async function loadRisks(filters?: RiskQueryParams): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchRisks(params?: RiskQueryDto) {
+    if (!requireAuth()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
-      const response = await riskService.getRisks({
-        ...filters,
-        organisation_id: authStore.user!?.organisation_id,
-        page: currentPage.value,
-      })
-
-      risks.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
+      const queryParams = {
+        ...filters.value,
+        ...params,
+        page: pagination.value.currentPage,
+        limit: pagination.value.itemsPerPage,
+        organisationId: params?.organisationId || userOrgId.value,
+      };
+      const response = await riskService.getRisks(queryParams);
+      risks.value = response.data || [];
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      if (params) filters.value = { ...filters.value, ...params };
+      return response;
     } catch (err: any) {
-      console.error('Failed to load risks:', err)
-      error.value = err.message || 'Failed to load risks'
+      error.value = err.message || 'Failed to fetch risks';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  async function loadRisk(id: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchRiskById(uuid: string) {
+    if (!requireAuth()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
-      const data = await riskService.getRisk(id)
-      selectedRisk.value = data
+      const risk = await riskService.getRisk(uuid);
+      selectedRisk.value = risk;
+      return risk;
     } catch (err: any) {
-      console.error('Failed to load risk:', err)
-      error.value = err.message || 'Failed to load risk'
-      throw err
+      error.value = err.message || 'Failed to fetch risk';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  async function loadStats(organisationId?: string): Promise<void> {
-    try {
-      const data = await riskService.getStats(organisationId)
-      stats.value = data
-    } catch (err: any) {
-      console.error('Failed to load risk stats:', err)
+  async function createRisk(data: CreateRiskDto) {
+    if (!requireAuth()) return null;
+
+    // Ensure organisationId is set
+    if (!data.organisationId) {
+      data.organisationId = userOrgId.value || '';
     }
-  }
 
-  async function loadHighRisks(threshold?: number): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
+    isSaving.value = true;
+    error.value = null;
     try {
-      const response = await riskService.getHighRisks(threshold)
-      risks.value = response.data || []
-      totalPages.value = response.totalPages || 1
+      const risk = await riskService.createRisk(data);
+      risks.value.unshift(risk);
+      return risk;
     } catch (err: any) {
-      console.error('Failed to load high risks:', err)
-      error.value = err.message || 'Failed to load high risks'
+      error.value = err.message || 'Failed to create risk';
+      throw err;
     } finally {
-      isLoading.value = false
+      isSaving.value = false;
     }
   }
 
-  async function loadCriticalRisks(): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function updateRisk(uuid: string, data: UpdateRiskDto) {
+    if (!requireAuth()) return null;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      const response = await riskService.getCriticalRisks()
-      risks.value = response.data || []
-      totalPages.value = response.totalPages || 1
-    } catch (err: any) {
-      console.error('Failed to load critical risks:', err)
-      error.value = err.message || 'Failed to load critical risks'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  async function createRisk(data: CreateRiskRequest): Promise<Risk> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      // Fix: Ensure organisation_id is set from auth store
-      if (!data.organisation_id && authStore.user?.organisation_id) {
-        data.organisation_id = authStore.user.organisation_id
-      }
-
-      const created = await riskService.createRisk(data)
-      risks.value.unshift(created)
-      await loadStats(data.organisation_id ?? authStore.user!?.organisation_id!)
-      return created
-    } catch (err: any) {
-      console.error('Failed to create risk:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to create risk'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  async function updateRisk(id: string, data: UpdateRiskRequest): Promise<Risk> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await riskService.updateRisk(id, data)
-      const index = risks.value.findIndex((r) => r.uuid === id)
+      const risk = await riskService.updateRisk(uuid, data);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
       if (index !== -1) {
-        risks.value[index] = updated
+        risks.value[index] = risk;
       }
-      if (selectedRisk.value?.uuid === id) {
-        selectedRisk.value = updated
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
       }
-      return updated
+      return risk;
     } catch (err: any) {
-      console.error('Failed to update risk:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to update risk'
-      throw err
+      error.value = err.message || 'Failed to update risk';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function reassessRisk(id: string, data: ReassessRiskRequest): Promise<Risk> {
-    isSaving.value = true
-    error.value = null
+  async function deleteRisk(uuid: string) {
+    if (!requireAdmin()) return;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      const reassessed = await riskService.reassessRisk(id, data)
-      const index = risks.value.findIndex((r) => r.uuid === id)
+      await riskService.deleteRisk(uuid);
+      risks.value = risks.value.filter((r) => r.uuid !== uuid);
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = null;
+      }
+    } catch (err: any) {
+      error.value = err.message || 'Failed to delete risk';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Risk Operations
+  // ============================================
+
+  async function assessRisk(uuid: string, data: AssessRiskDto) {
+    if (!requireAuth()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const risk = await riskService.assessRisk(uuid, data);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
       if (index !== -1) {
-        risks.value[index] = reassessed
+        risks.value[index] = risk;
       }
-      if (selectedRisk.value?.uuid === id) {
-        selectedRisk.value = reassessed
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
       }
-      await loadStats(authStore.user!?.organisation_id!)
-      return reassessed
+      return risk;
     } catch (err: any) {
-      console.error('Failed to reassess risk:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to reassess risk'
-      throw err
+      error.value = err.message || 'Failed to assess risk';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function deleteRisk(id: string): Promise<void> {
-    isSaving.value = true
-    error.value = null
+  async function approveRisk(uuid: string, data: ApproveRiskDto) {
+    if (!requireAdmin()) return null;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      await riskService.deleteRisk(id)
-      risks.value = risks.value.filter((r) => r.uuid !== id)
-      if (selectedRisk.value?.uuid === id) {
-        selectedRisk.value = null
-      }
-      await loadStats(authStore.user!?.organisation_id!)
-    } catch (err: any) {
-      console.error('Failed to delete risk:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to delete risk'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  async function addMitigationControls(id: string, controlIds: string[]): Promise<Risk> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await riskService.addMitigationControls(id, controlIds)
-      const index = risks.value.findIndex((r) => r.uuid === id)
+      const risk = await riskService.approveRisk(uuid, data);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
       if (index !== -1) {
-        risks.value[index] = updated
+        risks.value[index] = risk;
       }
-      if (selectedRisk.value?.uuid === id) {
-        selectedRisk.value = updated
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
       }
-      return updated
+      return risk;
     } catch (err: any) {
-      console.error('Failed to add mitigation controls:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to add controls'
-      throw err
+      error.value = err.message || 'Failed to approve risk';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  async function removeMitigationControl(id: string, controlId: string): Promise<Risk> {
-    isSaving.value = true
-    error.value = null
+  async function assignRisk(uuid: string, data: AssignRiskDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const risk = await riskService.assignRisk(uuid, data);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
+      if (index !== -1) {
+        risks.value[index] = risk;
+      }
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
+      }
+      return risk;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to assign risk';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function closeRisk(uuid: string) {
+    if (!requireAuth()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const risk = await riskService.closeRisk(uuid);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
+      if (index !== -1) {
+        risks.value[index] = risk;
+      }
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
+      }
+      return risk;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to close risk';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Control Operations
+  // ============================================
+
+  async function addControl(uuid: string, data: AddControlDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const risk = await riskService.addControl(uuid, data);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
+      if (index !== -1) {
+        risks.value[index] = risk;
+      }
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
+      }
+      return risk;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to add control';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function removeControl(uuid: string, controlId: string) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const risk = await riskService.removeControl(uuid, controlId);
+      const index = risks.value.findIndex((r) => r.uuid === uuid);
+      if (index !== -1) {
+        risks.value[index] = risk;
+      }
+      if (selectedRisk.value?.uuid === uuid) {
+        selectedRisk.value = risk;
+      }
+      return risk;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to remove control';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Statistics
+  // ============================================
+
+  async function fetchStats(organisationId?: string) {
+    if (!requireAuth()) return null;
 
     try {
-      const updated = await riskService.removeMitigationControl(id, controlId)
-      const index = risks.value.findIndex((r) => r.uuid === id)
-      if (index !== -1) {
-        risks.value[index] = updated
-      }
-      if (selectedRisk.value?.uuid === id) {
-        selectedRisk.value = updated
-      }
-      return updated
+      const statsData = await riskService.getStats(organisationId || userOrgId.value);
+      stats.value = statsData;
+      return statsData;
     } catch (err: any) {
-      console.error('Failed to remove mitigation control:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to remove control'
-      throw err
-    } finally {
-      isSaving.value = false
+      console.error('Failed to fetch risk stats:', err);
+      throw err;
     }
   }
 
-  async function setPage(page: number): Promise<void> {
-    currentPage.value = page
-    await loadRisks()
+  async function fetchComprehensiveAnalytics(organisationId?: string) {
+    if (!requireAuth()) return null;
+
+    try {
+      const analytics = await riskService.getComprehensiveAnalytics(organisationId || userOrgId.value);
+      comprehensiveAnalytics.value = analytics;
+      return analytics;
+    } catch (err: any) {
+      console.error('Failed to fetch comprehensive analytics:', err);
+      throw err;
+    }
   }
 
-  function clearSelection(): void {
-    selectedRisk.value = null
+  // ============================================
+  // Actions - Matrix & Trends
+  // ============================================
+
+  async function fetchRiskMatrix(organisationId?: string) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const matrix = await riskService.getRiskMatrix(organisationId || userOrgId.value);
+      riskMatrix.value = matrix;
+      return matrix;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch risk matrix';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
   }
 
-  function clearAll(): void {
-    risks.value = []
-    selectedRisk.value = null
-    stats.value = null
-    error.value = null
-    currentPage.value = 1
-    totalPages.value = 1
-    totalItems.value = 0
+  async function fetchRiskTrends(organisationId?: string, from?: Date, to?: Date) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const trends = await riskService.getRiskTrends(organisationId || userOrgId.value, from, to);
+      riskTrends.value = trends;
+      return trends;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch risk trends';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Query Helpers
+  // ============================================
+
+  async function fetchHighRisks(organisationId?: string) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const highRisks = await riskService.getHighRisks(organisationId || userOrgId.value);
+      return highRisks;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch high risks';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchMyAssignedRisks() {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const assigned = await riskService.getMyAssignedRisks();
+      return assigned;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch assigned risks';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchOverdueReviews(organisationId?: string) {
+    if (!requireAuth()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const overdue = await riskService.getOverdueReviews(organisationId || userOrgId.value);
+      return overdue;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch overdue reviews';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Utility Actions
+  // ============================================
+
+  function clearError() {
+    error.value = null;
+  }
+
+  function clearSelection() {
+    selectedRisk.value = null;
+  }
+
+  function resetState() {
+    risks.value = [];
+    selectedRisk.value = null;
+    stats.value = null;
+    comprehensiveAnalytics.value = null;
+    riskMatrix.value = null;
+    riskTrends.value = [];
+    isLoading.value = false;
+    isSaving.value = false;
+    error.value = null;
+    pagination.value = {
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      itemsPerPage: 20,
+    };
+    filters.value = {};
   }
 
   return {
+    // State
     risks,
     selectedRisk,
     stats,
+    comprehensiveAnalytics,
+    riskMatrix,
+    riskTrends,
     isLoading,
     isSaving,
     error,
-    currentPage,
-    totalPages,
-    totalItems,
+    pagination,
+    filters,
+
+    // Getters
     criticalRisks,
     highRisks,
     mediumRisks,
     lowRisks,
-    mitigatedRisks,
-    unmitigatedRisks,
+    openRisks,
+    closedRisks,
+    pendingApprovalRisks,
+    overdueReviewRisks,
+    myAssignedRisks,
     risksByCategory,
-    risksBySeverity,
+    risksByStatus,
     averageInherentScore,
     averageResidualScore,
     riskReduction,
+    riskReductionPercentage,
     hasCriticalRisks,
     hasHighRisks,
-    loadRisks,
-    loadRisk,
-    loadStats,
-    loadHighRisks,
-    loadCriticalRisks,
+
+    // Auth Helpers
+    requireAuth,
+    requireAdmin,
+
+    // CRUD Actions
+    fetchRisks,
+    fetchRiskById,
     createRisk,
     updateRisk,
-    reassessRisk,
     deleteRisk,
-    addMitigationControls,
-    removeMitigationControl,
-    setPage,
+
+    // Risk Operations
+    assessRisk,
+    approveRisk,
+    assignRisk,
+    closeRisk,
+
+    // Control Operations
+    addControl,
+    removeControl,
+
+    // Statistics
+    fetchStats,
+    fetchComprehensiveAnalytics,
+
+    // Matrix & Trends
+    fetchRiskMatrix,
+    fetchRiskTrends,
+
+    // Query Helpers
+    fetchHighRisks,
+    fetchMyAssignedRisks,
+    fetchOverdueReviews,
+
+    // Utility
+    clearError,
     clearSelection,
-    clearAll,
-  }
-})
+    resetState,
+  };
+});
