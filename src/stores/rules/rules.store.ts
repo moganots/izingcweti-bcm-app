@@ -1,447 +1,718 @@
-import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { Rule, RuleExecutionLog, RuleStats } from './../../models/entities'
-import { rulesService } from './../../services/api'
-import type { RuleQueryParams } from './../../types'
+import { defineStore } from 'pinia';
+import { ref, computed } from 'vue';
+import { rulesService } from '@/services/rules/rules.service';
+import { useAuth } from '@/composables/auth/useAuth';
+import type {
+  Rule,
+  RuleExecutionLog,
+  CreateRuleDto,
+  UpdateRuleDto,
+  ExecuteRuleDto,
+  RuleTestDto,
+  RuleQueryDto,
+  RuleStatsDto,
+  RuleExecutionStatsDto,
+  RuleExecutionSummaryDto,
+  PaginatedResult,
+} from '@/types/rules';
+import { RuleStatus, RulePriority } from '@/types/rules/enums';
 
 export const useRulesStore = defineStore('rules', () => {
   // ============================================
-  // State
+  // Dependencies - Auth Integration
   // ============================================
-  const rules = ref<Rule[]>([])
-  const selectedRule = ref<Rule | null>(null)
-  const executionLogs = ref<RuleExecutionLog[]>([])
-  const stats = ref<RuleStats | null>(null)
-  const isLoading = ref(false)
-  const isSaving = ref(false)
-  const isLoadingLogs = ref(false)
-  const error = ref<string | null>(null)
-  const currentPage = ref(1)
-  const totalPages = ref(1)
-  const totalItems = ref(0)
-  const hasMoreLogs = ref(false)
+  const auth = useAuth();
+  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
 
   // ============================================
-  // Getters
+  // State - Rules
   // ============================================
+  const rules = ref<Rule[]>([]);
+  const selectedRule = ref<Rule | null>(null);
+  const stats = ref<RuleStatsDto | null>(null);
+  const executionStats = ref<RuleExecutionStatsDto | null>(null);
+  const executionSummary = ref<RuleExecutionSummaryDto | null>(null);
+
+  // ============================================
+  // State - Execution Logs
+  // ============================================
+  const executionLogs = ref<RuleExecutionLog[]>([]);
+  const selectedLog = ref<RuleExecutionLog | null>(null);
+
+  // ============================================
+  // State - UI
+  // ============================================
+  const isLoading = ref(false);
+  const isSaving = ref(false);
+  const isLoadingLogs = ref(false);
+  const error = ref<string | null>(null);
+
+  const pagination = ref({
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    itemsPerPage: 20,
+  });
+
+  const logsPagination = ref({
+    currentPage: 1,
+    totalPages: 0,
+    totalItems: 0,
+    itemsPerPage: 20,
+  });
+
+  const filters = ref<RuleQueryDto>({});
+
+  // ============================================
+  // Getters - Rule Groupings
+  // ============================================
+
   const activeRules = computed(() =>
-    rules.value.filter((r) => r.status === 'ACTIVE' && r.is_active)
-  )
+    rules.value.filter((r) => r.isActive && r.status === RuleStatus.ACTIVE)
+  );
 
   const inactiveRules = computed(() =>
-    rules.value.filter((r) => r.status === 'INACTIVE' || !r.is_active)
-  )
+    rules.value.filter((r) => !r.isActive || r.status === RuleStatus.INACTIVE)
+  );
 
-  const draftRules = computed(() => rules.value.filter((r) => r.status === 'DRAFT'))
+  const draftRules = computed(() =>
+    rules.value.filter((r) => r.status === RuleStatus.DRAFT)
+  );
 
-  const testingRules = computed(() => rules.value.filter((r) => r.status === 'TESTING'))
+  const archivedRules = computed(() =>
+    rules.value.filter((r) => r.status === RuleStatus.ARCHIVED)
+  );
 
-  const deprecatedRules = computed(() => rules.value.filter((r) => r.status === 'DEPRECATED'))
+  // ============================================
+  // Getters - Groupings
+  // ============================================
 
   const rulesByType = computed(() => {
-    const grouped: Record<string, Rule[]> = {}
+    const grouped: Record<string, Rule[]> = {};
     rules.value.forEach((r) => {
-      const type = r.rule_type || 'Unknown'
-      if (!grouped[type]) grouped[type] = []
-      grouped[type].push(r)
-    })
-    return grouped
-  })
+      const type = r.ruleType || 'Unknown';
+      if (!grouped[type]) grouped[type] = [];
+      grouped[type].push(r);
+    });
+    return grouped;
+  });
 
-  const rulesByTrigger = computed(() => {
-    const grouped: Record<string, Rule[]> = {}
+  const rulesByStatus = computed(() => {
+    const grouped: Record<string, Rule[]> = {};
     rules.value.forEach((r) => {
-      const trigger = r.rule_trigger || 'Unknown'
-      if (!grouped[trigger]) grouped[trigger] = []
-      grouped[trigger].push(r)
-    })
-    return grouped
-  })
+      const status = r.status || 'Unknown';
+      if (!grouped[status]) grouped[status] = [];
+      grouped[status].push(r);
+    });
+    return grouped;
+  });
 
-  const rulesByEntityType = computed(() => {
-    const grouped: Record<string, Rule[]> = {}
+  const rulesByPriority = computed(() => {
+    const grouped: Record<string, Rule[]> = {};
     rules.value.forEach((r) => {
-      const entityType = r.entity_type || 'Unknown'
-      if (!grouped[entityType]) grouped[entityType] = []
-      grouped[entityType].push(r)
-    })
-    return grouped
-  })
+      const priority = r.priority || 'MEDIUM';
+      if (!grouped[priority]) grouped[priority] = [];
+      grouped[priority].push(r);
+    });
+    return grouped;
+  });
 
-  const highPriorityRules = computed(() => rules.value.filter((r) => r.priority <= 2))
+  // ============================================
+  // Getters - Aggregates
+  // ============================================
+
+  const totalRules = computed(() => rules.value.length);
+  const totalActiveRules = computed(() => activeRules.value.length);
+  const totalDraftRules = computed(() => draftRules.value.length);
 
   const successRate = computed(() => {
-    const total = rules.value.reduce((sum, r) => sum + (r.execution_count || 0), 0)
-    const failures = rules.value.reduce((sum, r) => sum + (r.failure_count || 0), 0)
-    if (total === 0) return 100
-    return Math.round(((total - failures) / total) * 100)
-  })
+    if (!stats.value) return 0;
+    return stats.value.successRate || 0;
+  });
 
-  const conditionCount = computed(() => selectedRule.value?.conditions?.length || 0)
+  const averageExecutionTime = computed(() => {
+    if (!stats.value) return 0;
+    return stats.value.averageExecutionTimeMs || 0;
+  });
 
-  const actionCount = computed(() => selectedRule.value?.actions?.length || 0)
+  const highPriorityRules = computed(() =>
+    rules.value.filter((r) => r.priority === RulePriority.HIGH || r.priority === RulePriority.CRITICAL)
+  );
 
   // ============================================
-  // Actions
+  // Auth Check Helpers
+  // ============================================
+  const requireAuth = (): boolean => {
+    if (!isAuthenticated.value) {
+      error.value = 'User not authenticated';
+      return false;
+    }
+    return true;
+  };
+
+  const requireAdmin = (): boolean => {
+    if (!requireAuth()) return false;
+    if (!isAdmin.value && !isGlobalAdmin.value) {
+      error.value = 'Insufficient permissions: Administrator access required';
+      return false;
+    }
+    return true;
+  };
+
+  // ============================================
+  // Actions - CRUD
   // ============================================
 
-  /**
-   * Load rules with optional filters
-   */
-  async function loadRules(filters?: RuleQueryParams): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchRules(params?: RuleQueryDto) {
+    if (!requireAdmin()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
-      const response = await rulesService.getRules({
-        ...filters,
-        page: currentPage.value,
-      } as any)
-
-      rules.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
+      const queryParams = {
+        ...filters.value,
+        ...params,
+        page: pagination.value.currentPage,
+        limit: pagination.value.itemsPerPage,
+        organisationId: params?.organisationId || userOrgId.value,
+      };
+      const response = await rulesService.getRules(queryParams);
+      rules.value = response.data || [];
+      pagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      if (params) filters.value = { ...filters.value, ...params };
+      return response;
     } catch (err: any) {
-      console.error('Failed to load rules:', err)
-      error.value = err.message || 'Failed to load rules'
+      error.value = err.message || 'Failed to fetch rules';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  /**
-   * Load a single rule by ID
-   */
-  async function loadRule(id: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
+  async function fetchRuleById(uuid: string) {
+    if (!requireAdmin()) return null;
 
+    isLoading.value = true;
+    error.value = null;
     try {
-      selectedRule.value = await rulesService.getRule(id)
+      const rule = await rulesService.getRule(uuid);
+      selectedRule.value = rule;
+      return rule;
     } catch (err: any) {
-      console.error('Failed to load rule:', err)
-      error.value = err.message || 'Failed to load rule'
-      throw err
+      error.value = err.message || 'Failed to fetch rule';
+      throw err;
     } finally {
-      isLoading.value = false
+      isLoading.value = false;
     }
   }
 
-  /**
-   * Load rule statistics
-   */
-  async function loadStats(organisationId?: string): Promise<void> {
-    try {
-      const response = await rulesService.getStats(organisationId)
-      stats.value = response
-    } catch (err: any) {
-      console.error('Failed to load rule stats:', err)
+  async function createRule(data: CreateRuleDto) {
+    if (!requireAdmin()) return null;
+
+    if (!data.organisationId) {
+      data.organisationId = userOrgId.value || '';
     }
-  }
 
-  /**
-   * Create a new rule
-   */
-  async function createRule(data: Partial<Rule>): Promise<Rule> {
-    isSaving.value = true
-    error.value = null
-
+    isSaving.value = true;
+    error.value = null;
     try {
-      const created = await rulesService.createRule(data)
-      rules.value.unshift(created)
-      return created
+      const rule = await rulesService.createRule(data);
+      rules.value.unshift(rule);
+      return rule;
     } catch (err: any) {
-      console.error('Failed to create rule:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to create rule'
-      throw err
+      error.value = err.message || 'Failed to create rule';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  /**
-   * Update a rule
-   */
-  async function updateRule(id: string, data: Partial<Rule>): Promise<Rule> {
-    isSaving.value = true
-    error.value = null
+  async function updateRule(uuid: string, data: UpdateRuleDto) {
+    if (!requireAdmin()) return null;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      const updated = await rulesService.updateRule(id, data)
-      const index = rules.value.findIndex((r) => r.uuid === id)
+      const rule = await rulesService.updateRule(uuid, data);
+      const index = rules.value.findIndex((r) => r.uuid === uuid);
       if (index !== -1) {
-        rules.value[index] = updated
+        rules.value[index] = rule;
       }
-      if (selectedRule.value?.uuid === id) {
-        selectedRule.value = updated
+      if (selectedRule.value?.uuid === uuid) {
+        selectedRule.value = rule;
       }
-      return updated
+      return rule;
     } catch (err: any) {
-      console.error('Failed to update rule:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to update rule'
-      throw err
+      error.value = err.message || 'Failed to update rule';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
   }
 
-  /**
-   * Delete a rule
-   */
-  async function deleteRule(id: string): Promise<void> {
-    isSaving.value = true
-    error.value = null
+  async function deleteRule(uuid: string) {
+    if (!requireAdmin()) return;
 
+    isSaving.value = true;
+    error.value = null;
     try {
-      await rulesService.deleteRule(id)
-      rules.value = rules.value.filter((r) => r.uuid !== id)
-      if (selectedRule.value?.uuid === id) {
-        selectedRule.value = null
+      await rulesService.deleteRule(uuid);
+      rules.value = rules.value.filter((r) => r.uuid !== uuid);
+      if (selectedRule.value?.uuid === uuid) {
+        selectedRule.value = null;
       }
     } catch (err: any) {
-      console.error('Failed to delete rule:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to delete rule'
-      throw err
+      error.value = err.message || 'Failed to delete rule';
+      throw err;
     } finally {
-      isSaving.value = false
+      isSaving.value = false;
     }
-  }
-
-  /**
-   * Activate a rule
-   */
-  async function activateRule(id: string): Promise<Rule> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await rulesService.activateRule(id)
-      updateLocalRule(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to activate rule:', err)
-      error.value = err.message || 'Failed to activate rule'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Deactivate a rule
-   */
-  async function deactivateRule(id: string): Promise<Rule> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await rulesService.deactivateRule(id)
-      updateLocalRule(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to deactivate rule:', err)
-      error.value = err.message || 'Failed to deactivate rule'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Duplicate a rule
-   */
-  async function duplicateRule(id: string, newName: string): Promise<Rule> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const duplicated = await rulesService.duplicateRule(id, newName)
-      rules.value.unshift(duplicated)
-      return duplicated
-    } catch (err: any) {
-      console.error('Failed to duplicate rule:', err)
-      error.value = err.message || 'Failed to duplicate rule'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Test a rule
-   */
-  async function testRule(data: {
-    conditions: any[]
-    actions: any[]
-    test_data: any
-  }): Promise<any> {
-    try {
-      return await rulesService.testRule(data)
-    } catch (err: any) {
-      console.error('Failed to test rule:', err)
-      error.value = err.message || 'Failed to test rule'
-      throw err
-    }
-  }
-
-  /**
-   * Execute a rule manually
-   */
-  async function executeRule(
-    id: string,
-    data: { entity_id: string; entity_type: string; context_data?: any }
-  ): Promise<RuleExecutionLog> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const result = await rulesService.executeRule(id, data)
-      if (selectedRule.value?.uuid === id) {
-        await loadRule(id)
-      }
-      return result
-    } catch (err: any) {
-      console.error('Failed to execute rule:', err)
-      error.value = err.message || 'Failed to execute rule'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Load execution logs for a rule
-   */
-  async function loadExecutionLogs(ruleId: string, page: number = 1): Promise<void> {
-    isLoadingLogs.value = true
-    error.value = null
-
-    try {
-      const response = await rulesService.getExecutionLogs(ruleId, {
-        page,
-        limit: 20,
-      })
-      executionLogs.value = response.data || []
-      hasMoreLogs.value = (response.data || []).length === 20
-    } catch (err: any) {
-      console.error('Failed to load execution logs:', err)
-      error.value = err.message || 'Failed to load execution logs'
-    } finally {
-      isLoadingLogs.value = false
-    }
-  }
-
-  /**
-   * Load more execution logs
-   */
-  async function loadMoreLogs(ruleId: string): Promise<void> {
-    if (!hasMoreLogs.value || isLoadingLogs.value) return
-    // Increment page and load
-    const nextPage = Math.floor(executionLogs.value.length / 20) + 1
-    await loadExecutionLogs(ruleId, nextPage)
-  }
-
-  /**
-   * Get execution statistics for a rule
-   */
-  async function getExecutionStats(ruleId: string, days?: number): Promise<any> {
-    try {
-      return await rulesService.getExecutionStats(ruleId, days)
-    } catch (err: any) {
-      console.error('Failed to get execution stats:', err)
-      return null
-    }
-  }
-
-  /**
-   * Set current page and reload
-   */
-  async function setPage(page: number): Promise<void> {
-    currentPage.value = page
-    await loadRules()
-  }
-
-  /**
-   * Clear selected rule
-   */
-  function clearSelection(): void {
-    selectedRule.value = null
-    executionLogs.value = []
-  }
-
-  /**
-   * Clear all rule data
-   */
-  function clearAll(): void {
-    rules.value = []
-    selectedRule.value = null
-    executionLogs.value = []
-    stats.value = null
-    error.value = null
-    currentPage.value = 1
-    totalPages.value = 1
-    totalItems.value = 0
-    hasMoreLogs.value = false
   }
 
   // ============================================
-  // Private Helpers
+  // Actions - Rule Lifecycle
   // ============================================
 
-  function updateLocalRule(id: string, updated: Rule): void {
-    const index = rules.value.findIndex((r) => r.uuid === id)
+  async function activateRule(uuid: string) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const rule = await rulesService.activateRule(uuid);
+      updateLocalRule(uuid, rule);
+      return rule;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to activate rule';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function deactivateRule(uuid: string) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const rule = await rulesService.deactivateRule(uuid);
+      updateLocalRule(uuid, rule);
+      return rule;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to deactivate rule';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function archiveRule(uuid: string) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const rule = await rulesService.archiveRule(uuid);
+      updateLocalRule(uuid, rule);
+      return rule;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to archive rule';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function duplicateRule(uuid: string, name: string) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const rule = await rulesService.duplicateRule(uuid, name);
+      rules.value.unshift(rule);
+      return rule;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to duplicate rule';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function restoreRuleVersion(uuid: string, versionNumber: number) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const rule = await rulesService.restoreRuleVersion(uuid, versionNumber);
+      updateLocalRule(uuid, rule);
+      return rule;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to restore rule version';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Execution & Testing
+  // ============================================
+
+  async function executeRule(uuid: string, data: ExecuteRuleDto) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const result = await rulesService.executeRule(uuid, data);
+      if (selectedRule.value?.uuid === uuid) {
+        await fetchRuleById(uuid);
+      }
+      return result;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to execute rule';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function testRule(uuid: string, data: RuleTestDto) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      return await rulesService.testRule(uuid, data);
+    } catch (err: any) {
+      error.value = err.message || 'Failed to test rule';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function testRuleDefinition(data: {
+    conditions: any[];
+    actions: any[];
+    testData: any;
+  }) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      return await rulesService.testRuleDefinition(data);
+    } catch (err: any) {
+      error.value = err.message || 'Failed to test rule definition';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function validateRule(data: Partial<Rule>) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      return await rulesService.validateRule(data);
+    } catch (err: any) {
+      error.value = err.message || 'Failed to validate rule';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Statistics
+  // ============================================
+
+  async function fetchStats(organisationId?: string) {
+    if (!requireAdmin()) return null;
+
+    try {
+      const statsData = await rulesService.getStats(organisationId || userOrgId.value);
+      stats.value = statsData;
+      return statsData;
+    } catch (err: any) {
+      console.error('Failed to fetch rule stats:', err);
+      throw err;
+    }
+  }
+
+  async function fetchExecutionStats(ruleId: string, days?: number) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const statsData = await rulesService.getExecutionStats(ruleId, days);
+      executionStats.value = statsData;
+      return statsData;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch execution stats';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  async function fetchExecutionSummary(ruleId: string, days: number = 30) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const summary = await rulesService.getExecutionSummary(ruleId, days);
+      executionSummary.value = summary;
+      return summary;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch execution summary';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Execution Logs
+  // ============================================
+
+  async function fetchExecutionLogs(ruleId: string, params?: ExecutionLogQueryDto) {
+    if (!requireAdmin()) return null;
+
+    isLoadingLogs.value = true;
+    error.value = null;
+    try {
+      const queryParams = {
+        ...params,
+        page: logsPagination.value.currentPage,
+        limit: logsPagination.value.itemsPerPage,
+      };
+      const response = await rulesService.getExecutionLogs(ruleId, queryParams);
+      executionLogs.value = response.data || [];
+      logsPagination.value = {
+        currentPage: response.page || 1,
+        totalPages: response.totalPages || 0,
+        totalItems: response.total || 0,
+        itemsPerPage: response.limit || 20,
+      };
+      return response;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch execution logs';
+      throw err;
+    } finally {
+      isLoadingLogs.value = false;
+    }
+  }
+
+  async function fetchExecutionLogById(uuid: string) {
+    if (!requireAdmin()) return null;
+
+    isLoadingLogs.value = true;
+    error.value = null;
+    try {
+      const log = await rulesService.getExecutionLog(uuid);
+      selectedLog.value = log;
+      return log;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch execution log';
+      throw err;
+    } finally {
+      isLoadingLogs.value = false;
+    }
+  }
+
+  async function cleanupExecutionLogs(days: number = 90) {
+    if (!requireAdmin()) return null;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      const result = await rulesService.cleanupExecutionLogs(days);
+      return result;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to cleanup execution logs';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  async function deleteExecutionLog(uuid: string) {
+    if (!requireAdmin()) return;
+
+    isSaving.value = true;
+    error.value = null;
+    try {
+      await rulesService.deleteExecutionLog(uuid);
+      executionLogs.value = executionLogs.value.filter((l) => l.uuid !== uuid);
+      if (selectedLog.value?.uuid === uuid) {
+        selectedLog.value = null;
+      }
+    } catch (err: any) {
+      error.value = err.message || 'Failed to delete execution log';
+      throw err;
+    } finally {
+      isSaving.value = false;
+    }
+  }
+
+  // ============================================
+  // Actions - Query Helpers
+  // ============================================
+
+  async function fetchActiveRules(organisationId?: string) {
+    if (!requireAdmin()) return null;
+
+    isLoading.value = true;
+    error.value = null;
+    try {
+      const active = await rulesService.getActiveRules(organisationId || userOrgId.value);
+      return active;
+    } catch (err: any) {
+      error.value = err.message || 'Failed to fetch active rules';
+      throw err;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  // ============================================
+  // Utility Actions
+  // ============================================
+
+  function updateLocalRule(uuid: string, updated: Rule): void {
+    const index = rules.value.findIndex((r) => r.uuid === uuid);
     if (index !== -1) {
-      rules.value[index] = updated
+      rules.value[index] = updated;
     }
-    if (selectedRule.value?.uuid === id) {
-      selectedRule.value = updated
+    if (selectedRule.value?.uuid === uuid) {
+      selectedRule.value = updated;
     }
+  }
+
+  function clearError() {
+    error.value = null;
+  }
+
+  function clearSelection() {
+    selectedRule.value = null;
+    selectedLog.value = null;
+  }
+
+  function resetState() {
+    rules.value = [];
+    selectedRule.value = null;
+    stats.value = null;
+    executionStats.value = null;
+    executionSummary.value = null;
+    executionLogs.value = [];
+    selectedLog.value = null;
+    isLoading.value = false;
+    isSaving.value = false;
+    isLoadingLogs.value = false;
+    error.value = null;
+    pagination.value = {
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      itemsPerPage: 20,
+    };
+    logsPagination.value = {
+      currentPage: 1,
+      totalPages: 0,
+      totalItems: 0,
+      itemsPerPage: 20,
+    };
+    filters.value = {};
   }
 
   return {
     // State
     rules,
     selectedRule,
-    executionLogs,
     stats,
+    executionStats,
+    executionSummary,
+    executionLogs,
+    selectedLog,
     isLoading,
     isSaving,
     isLoadingLogs,
     error,
-    currentPage,
-    totalPages,
-    totalItems,
-    hasMoreLogs,
+    pagination,
+    logsPagination,
+    filters,
+
     // Getters
     activeRules,
     inactiveRules,
     draftRules,
-    testingRules,
-    deprecatedRules,
+    archivedRules,
     rulesByType,
-    rulesByTrigger,
-    rulesByEntityType,
-    highPriorityRules,
+    rulesByStatus,
+    rulesByPriority,
+    totalRules,
+    totalActiveRules,
+    totalDraftRules,
     successRate,
-    conditionCount,
-    actionCount,
-    // Actions
-    loadRules,
-    loadRule,
-    loadStats,
+    averageExecutionTime,
+    highPriorityRules,
+
+    // Auth Helpers
+    requireAuth,
+    requireAdmin,
+
+    // CRUD Actions
+    fetchRules,
+    fetchRuleById,
     createRule,
     updateRule,
     deleteRule,
+
+    // Lifecycle Actions
     activateRule,
     deactivateRule,
+    archiveRule,
     duplicateRule,
-    testRule,
+    restoreRuleVersion,
+
+    // Execution & Testing
     executeRule,
-    loadExecutionLogs,
-    loadMoreLogs,
-    getExecutionStats,
-    setPage,
+    testRule,
+    testRuleDefinition,
+    validateRule,
+
+    // Statistics
+    fetchStats,
+    fetchExecutionStats,
+    fetchExecutionSummary,
+
+    // Execution Logs
+    fetchExecutionLogs,
+    fetchExecutionLogById,
+    cleanupExecutionLogs,
+    deleteExecutionLog,
+
+    // Query Helpers
+    fetchActiveRules,
+
+    // Utility
+    clearError,
     clearSelection,
-    clearAll,
-  }
-})
+    resetState,
+  };
+});

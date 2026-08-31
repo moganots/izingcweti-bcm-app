@@ -1,8 +1,5 @@
-import { SyncStatus } from './../../entities'
+import type { BaseEntity } from '@/types/common/base.entity';
 
-/**
- * Rule Type Enum
- */
 export enum RuleType {
   VALIDATION = 'VALIDATION',
   NOTIFICATION = 'NOTIFICATION',
@@ -17,11 +14,12 @@ export enum RuleType {
   ACCESS_CONTROL = 'ACCESS_CONTROL',
   DATA_RETENTION = 'DATA_RETENTION',
   CUSTOM = 'CUSTOM',
+  ALERT = 'ALERT',
+  AUTOMATION = 'AUTOMATION',
+  REMINDER = 'REMINDER',
+  SCHEDULED = 'SCHEDULED',
 }
 
-/**
- * Rule Trigger Enum
- */
 export enum RuleTrigger {
   ON_CREATE = 'ON_CREATE',
   ON_UPDATE = 'ON_UPDATE',
@@ -34,32 +32,35 @@ export enum RuleTrigger {
   ON_ESCALATION = 'ON_ESCALATION',
   ON_SYNC = 'ON_SYNC',
   ON_MANUAL = 'ON_MANUAL',
+  ON_SAVE = 'ON_SAVE',
+  SCHEDULED = 'SCHEDULED',
+  ENTITY_CREATED = 'ENTITY_CREATED',
+  TIME_BASED = 'TIME_BASED',
+  ENTITY_UPDATED = 'ENTITY_UPDATED',
 }
 
-/**
- * Rule Status Enum
- */
 export enum RuleStatus {
   ACTIVE = 'ACTIVE',
   INACTIVE = 'INACTIVE',
   DRAFT = 'DRAFT',
   TESTING = 'TESTING',
+  ARCHIVED = 'ARCHIVED',
   DEPRECATED = 'DEPRECATED',
 }
 
-/**
- * Rule Priority Enum
- */
 export enum RulePriority {
-  LOW = 1,
-  MEDIUM = 2,
-  HIGH = 3,
-  CRITICAL = 4,
+  LOW = 'LOW',
+  MEDIUM = 'MEDIUM',
+  HIGH = 'HIGH',
+  CRITICAL = 'CRITICAL',
 }
 
-/**
- * Comparison Operator Enum
- */
+export enum LogicalOperator {
+  AND = 'AND',
+  OR = 'OR',
+  NOT = 'NOT',
+}
+
 export enum ComparisonOperator {
   EQUALS = 'EQUALS',
   NOT_EQUALS = 'NOT_EQUALS',
@@ -76,144 +77,256 @@ export enum ComparisonOperator {
   MATCHES_REGEX = 'MATCHES_REGEX',
 }
 
-/**
- * Logical Operator Enum
- */
-export enum LogicalOperator {
-  AND = 'AND',
-  OR = 'OR',
-  NOT = 'NOT',
-}
+// ============================================
+// Core Types (camelCase aligned with backend)
+// ============================================
 
-/**
- * Rule Statistics interface
- */
-export interface RuleStats {
-  total_rules: number
-  active_rules: number
-  total_executions: number
-  total_failures: number
-  success_rate: number
-  by_type: Record<string, number>
-  by_status: Record<string, number>
-}
-
-/**
- * Rule Entity
- */
-export interface Rule {
-  uuid: string
-  name: string
-  description?: string | null
-  rule_type: RuleType
-  rule_trigger: RuleTrigger
-  status: RuleStatus
-  priority: RulePriority
-  entity_type: string
-  conditions: RuleCondition[]
-  actions: RuleAction[]
-  is_active: boolean
-  execution_count: number
-  last_executed_at?: string | null
-  failure_count: number
-  organisation_id?: string | null
-  error_log?: RuleError[]
-  version: number
-  created_by: string
-  created_at: string
-  updated_by: string
-  updated_at: string
-  sync_status: SyncStatus
-}
-
-/**
- * Rule Condition
- */
 export interface RuleCondition {
-  field: string
-  operator: ComparisonOperator
-  value: any
-  logical_operator?: LogicalOperator
-  conditions?: RuleCondition[]
+  field: string;
+  operator: ComparisonOperator;
+  value: any;
+  logicalOperator?: LogicalOperator;
 }
 
-/**
- * Rule Action
- */
 export interface RuleAction {
-  type: string
-  params: Record<string, any>
-  order?: number
-  condition?: RuleCondition
+  type: string;
+  parameters: Record<string, any>;
+  delay?: number;
 }
 
-/**
- * Rule Error
- */
-export interface RuleError {
-  timestamp: string
-  error: string
-  entity_id: string
-  entity_type: string
+export interface RuleSchedule {
+  cron: string;
+  timezone: string;
+  startDate?: Date;
+  endDate?: Date;
 }
 
-/**
- * Rule Execution Log
- */
-export interface RuleExecutionLog {
-  uuid: string
-  rule_id: string
-  entity_id: string
-  entity_type: string
-  success: boolean
-  input_data?: Record<string, any>
-  output_data?: Record<string, any>
-  error_message?: string
-  execution_time_ms: number
-  executed_at: string
+// ============================================
+// Rule Entity (camelCase aligned with backend)
+// ============================================
+
+export interface Rule extends BaseEntity {
+  organisationId: string;
+  name: string;
+  description?: string;
+  ruleType: RuleType;
+  triggerEvent: RuleTrigger;
+  status: RuleStatus;
+  priority: RulePriority;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  schedule?: RuleSchedule;
+  isActive: boolean;
+  executionCount: number;
+  successCount: number;
+  failureCount: number;
+  lastExecutedAt?: Date;
+  executionHistory?: Array<{
+    executedAt: Date;
+    success: boolean;
+    message?: string;
+    durationMs: number;
+  }>;
+  timeoutSeconds: number;
+  retryCount: number;
+  retryDelaySeconds: number;
+  tags?: string[];
+  metadata?: Record<string, any>;
 }
 
-/**
- * Create Rule DTO
- */
-export interface CreateRuleDTO {
-  name: string
-  description?: string
-  rule_type: RuleType
-  rule_trigger: RuleTrigger
-  priority?: RulePriority
-  entity_type: string
-  conditions: RuleCondition[]
-  actions: RuleAction[]
-  organisation_id?: string
-  is_active?: boolean
+// ============================================
+// Execution Log Entity (camelCase aligned with backend)
+// ============================================
+
+export interface RuleExecutionLog extends BaseEntity {
+  ruleId: string;
+  entityId: string;
+  entityType: string;
+  success: boolean;
+  inputData?: any;
+  outputData?: any;
+  errorMessage?: string;
+  executionTimeMs: number;
+  executedAt: Date;
 }
 
-/**
- * Test Rule DTO
- */
-export interface TestRuleDTO {
-  conditions: RuleCondition[]
-  actions: RuleAction[]
-  test_data: Record<string, any>
+// ============================================
+// DTOs (camelCase aligned with backend)
+// ============================================
+
+export interface RuleDto extends BaseEntity {
+  name: string;
+  description?: string;
+  ruleType: RuleType;
+  triggerEvent: RuleTrigger;
+  status: RuleStatus;
+  priority: RulePriority;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  schedule?: RuleSchedule;
+  isActive: boolean;
+  executionCount: number;
+  successCount: number;
+  failureCount: number;
+  lastExecutedAt?: Date;
+  tags?: string[];
+  metadata?: Record<string, any>;
+  organisationId: string;
+  timeoutSeconds: number;
+  retryCount: number;
+  retryDelaySeconds: number;
 }
 
-/**
- * Test Rule Result
- */
-export interface TestRuleResult {
-  success: boolean
-  conditions_met: boolean
-  execution_time_ms: number
-  results: RuleActionResult[]
-  error?: string
+export interface CreateRuleDto {
+  name: string;
+  description?: string;
+  ruleType: RuleType;
+  triggerEvent: RuleTrigger;
+  priority?: RulePriority;
+  conditions: RuleCondition[];
+  actions: RuleAction[];
+  schedule?: RuleSchedule;
+  tags?: string[];
+  metadata?: Record<string, any>;
+  organisationId: string;
+  timeoutSeconds?: number;
+  retryCount?: number;
+  retryDelaySeconds?: number;
 }
 
-/**
- * Rule Action Result
- */
-export interface RuleActionResult {
-  action: string
-  success: boolean
-  result: any
+export interface UpdateRuleDto {
+  name?: string;
+  description?: string;
+  ruleType?: RuleType;
+  triggerEvent?: RuleTrigger;
+  priority?: RulePriority;
+  conditions?: RuleCondition[];
+  actions?: RuleAction[];
+  schedule?: RuleSchedule;
+  isActive?: boolean;
+  tags?: string[];
+  metadata?: Record<string, any>;
+  timeoutSeconds?: number;
+  retryCount?: number;
+  retryDelaySeconds?: number;
+}
+
+export interface ExecuteRuleDto {
+  context?: Record<string, any>;
+  async?: boolean;
+}
+
+export interface RuleTestDto {
+  context: Record<string, any>;
+}
+
+export interface RuleTestResultDto {
+  matches: boolean;
+  matchedConditions: RuleCondition[];
+  failedConditions: RuleCondition[];
+  actionsToExecute: RuleAction[];
+  evaluationTimeMs: number;
+}
+
+export interface RuleQueryDto {
+  organisationId?: string;
+  ruleType?: RuleType;
+  triggerEvent?: RuleTrigger;
+  status?: RuleStatus;
+  isActive?: boolean;
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'ASC' | 'DESC';
+}
+
+// ============================================
+// Execution Log DTOs
+// ============================================
+
+export interface RuleExecutionLogDto extends BaseEntity {
+  ruleId: string;
+  entityId: string;
+  entityType: string;
+  success: boolean;
+  inputData?: any;
+  outputData?: any;
+  errorMessage?: string;
+  executionTimeMs: number;
+  executedAt: Date;
+}
+
+export interface CreateRuleExecutionLogDto {
+  ruleId: string;
+  entityId: string;
+  entityType: string;
+  success: boolean;
+  inputData?: any;
+  outputData?: any;
+  errorMessage?: string;
+  executionTimeMs: number;
+  executedAt?: Date;
+}
+
+export interface ExecutionLogQueryDto {
+  page?: number;
+  limit?: number;
+  startDate?: Date;
+  endDate?: Date;
+  success?: boolean;
+  entityId?: string;
+  entityType?: string;
+}
+
+// ============================================
+// Statistics DTOs
+// ============================================
+
+export interface RuleStatsDto {
+  total: number;
+  byType: Record<string, number>;
+  byStatus: Record<string, number>;
+  byPriority: Record<string, number>;
+  activeCount: number;
+  inactiveCount: number;
+  totalExecutions: number;
+  successRate: number;
+  averageExecutionTimeMs: number;
+}
+
+export interface RuleExecutionStatsDto {
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  successRate: number;
+  avgExecutionTimeMs: number;
+  maxExecutionTimeMs: number;
+  minExecutionTimeMs: number;
+  lastExecutionAt: Date | null;
+  executionsByDay: Array<{ date: string; count: number }>;
+}
+
+export interface RuleExecutionSummaryDto {
+  ruleId: string;
+  periodDays: number;
+  totalExecutions: number;
+  successfulExecutions: number;
+  failedExecutions: number;
+  successRate: number;
+  avgExecutionTimeMs: number;
+  executionTrend: Array<{
+    date: string;
+    successCount: number;
+    failureCount: number;
+  }>;
+}
+
+export interface GlobalExecutionStatsDto {
+  totalExecutions: number;
+  totalSuccessful: number;
+  totalFailed: number;
+  overallSuccessRate: number;
+  avgExecutionTimeMs: number;
+  executionsByRule: Array<{ ruleId: string; count: number }>;
+  executionsByEntityType: Record<string, number>;
 }
