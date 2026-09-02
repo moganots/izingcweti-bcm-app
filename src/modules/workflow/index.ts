@@ -50,7 +50,7 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Workflow Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface ApprovalStep {
   approver_id: string

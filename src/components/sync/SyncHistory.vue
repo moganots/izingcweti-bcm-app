@@ -13,25 +13,15 @@
       </div>
 
       <q-timeline v-else color="primary">
-        <q-timeline-entry
-          v-for="entry in history"
-          :key="entry.id"
-          :icon="getSyncIcon(entry.type)"
-          :color="getSyncColor(entry.status)"
-          :title="getSyncTitle(entry)"
-          :subtitle="formatTimeAgo(entry.timestamp)"
-        >
+        <q-timeline-entry v-for="entry in history" :key="entry.id" :icon="getSyncIcon(entry.type)"
+          :color="getSyncColor(entry.status)" :title="getSyncTitle(entry)" :subtitle="formatTimeAgo(entry.timestamp)">
           <div v-if="entry.details" class="text-caption text-grey-7">
             {{ entry.details }}
           </div>
           <div class="row q-gutter-xs q-mt-sm">
             <q-badge v-if="entry.pushed! > 0" color="blue" :label="entry.pushed + ' pushed'" />
             <q-badge v-if="entry.pulled! > 0" color="green" :label="entry.pulled + ' pulled'" />
-            <q-badge
-              v-if="entry.conflicts! > 0"
-              color="red"
-              :label="entry.conflicts + ' conflicts'"
-            />
+            <q-badge v-if="entry.conflicts! > 0" color="red" :label="entry.conflicts + ' conflicts'" />
           </div>
         </q-timeline-entry>
       </q-timeline>
@@ -76,8 +66,8 @@ function getSyncTitle(entry: any): string {
     entry.status === 'success'
       ? 'Completed'
       : entry.status === 'failed'
-      ? 'Failed'
-      : 'Partially Completed'
+        ? 'Failed'
+        : 'Partially Completed'
   return `${type} - ${status}`
 }
 </script>

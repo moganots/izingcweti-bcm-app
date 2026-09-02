@@ -3,22 +3,12 @@
     <q-card-section>
       <div class="row items-center justify-between q-mb-md">
         <div class="text-h6">Synchronization</div>
-        <SyncStatusIndicator
-          :status="status"
-          :pending-count="pendingCount"
-          :last-sync-at="lastSyncAt"
-        />
+        <SyncStatusIndicator :status="status" :pending-count="pendingCount" :last-sync-at="lastSyncAt" />
       </div>
 
       <!-- Progress Bar -->
       <div v-if="isSyncing" class="q-mb-md">
-        <q-linear-progress
-          :value="progress / 100"
-          color="orange"
-          size="20px"
-          rounded
-          class="q-mb-sm"
-        />
+        <q-linear-progress :value="progress / 100" color="orange" size="20px" rounded class="q-mb-sm" />
         <div class="row justify-between text-caption">
           <span>Syncing...</span>
           <span>{{ progress }}%</span>
@@ -26,11 +16,7 @@
       </div>
 
       <!-- Error Message -->
-      <q-banner
-        v-if="error && status === 'error'"
-        class="bg-red-1 text-red-8 q-mb-md rounded-borders"
-        rounded
-      >
+      <q-banner v-if="error && status === 'error'" class="bg-red-1 text-red-8 q-mb-md rounded-borders" rounded>
         <template v-slot:avatar>
           <q-icon name="error" color="red-8" />
         </template>
@@ -41,11 +27,7 @@
       </q-banner>
 
       <!-- Offline Banner -->
-      <q-banner
-        v-if="status === 'offline'"
-        class="bg-orange-1 text-orange-8 q-mb-md rounded-borders"
-        rounded
-      >
+      <q-banner v-if="status === 'offline'" class="bg-orange-1 text-orange-8 q-mb-md rounded-borders" rounded>
         <template v-slot:avatar>
           <q-icon name="wifi_off" color="orange-8" />
         </template>
@@ -55,40 +37,18 @@
       <!-- Sync Actions -->
       <div class="row q-col-gutter-md q-mb-md">
         <div class="col-6">
-          <q-btn
-            color="primary"
-            icon="cloud_upload"
-            label="Push Changes"
-            class="full-width"
-            :disable="isSyncing || status === 'offline' || pendingCount === 0"
-            :loading="isSyncing"
-            unelevated
-            @click="$emit('push')"
-          />
+          <q-btn color="primary" icon="cloud_upload" label="Push Changes" class="full-width"
+            :disable="isSyncing || status === 'offline' || pendingCount === 0" :loading="isSyncing" unelevated
+            @click="$emit('push')" />
         </div>
         <div class="col-6">
-          <q-btn
-            color="secondary"
-            icon="cloud_download"
-            label="Pull Changes"
-            class="full-width"
-            :disable="isSyncing || status === 'offline'"
-            outline
-            @click="$emit('pull')"
-          />
+          <q-btn color="secondary" icon="cloud_download" label="Pull Changes" class="full-width"
+            :disable="isSyncing || status === 'offline'" outline @click="$emit('pull')" />
         </div>
       </div>
 
-      <q-btn
-        color="primary"
-        icon="sync"
-        label="Full Sync"
-        class="full-width"
-        :disable="isSyncing || status === 'offline'"
-        :loading="isSyncing"
-        unelevated
-        @click="$emit('full-sync')"
-      />
+      <q-btn color="primary" icon="sync" label="Full Sync" class="full-width"
+        :disable="isSyncing || status === 'offline'" :loading="isSyncing" unelevated @click="$emit('full-sync')" />
 
       <!-- Sync Stats -->
       <div v-if="lastSyncAt" class="q-mt-md text-center">

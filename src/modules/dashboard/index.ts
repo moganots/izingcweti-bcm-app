@@ -16,13 +16,12 @@ export enum DashboardRole {
   USER = 'USER',
 }
 
+import type { BaseEntity } from './../../core/base/base.entity';
 import { QueryParams } from 'src/shared/types/common.types'
 
 // ============================================
 // Dashboard Module - Types (camelCase - Aligned with Backend DTOs)
 // ============================================
-
-import { BaseEntity } from '../../core/base/base.entity'
 
 /**
  * Dashboard Widget - Matches backend DashboardWidgetDto

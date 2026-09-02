@@ -1,4 +1,3 @@
-// src/services/sync/ConflictResolver.ts
 import { db } from '../db/Database'
 import { ConflictResolutionStrategy, ConflictType, SyncConflict } from './../../models/entities'
 
@@ -355,10 +354,10 @@ export class ConflictResolver {
     const byStrategy: Record<string, number> = {}
 
     all.forEach((c: SyncConflict) => {
-      byType[c.conflict_type] = (byType[c.conflict_type] || 0) + 1
-      if (c.resolution_strategy) {
-        byStrategy[String(c.resolution_strategy)] =
-          (byStrategy[String(c.resolution_strategy)] || 0) + 1
+      byType[c.conflictType] = (byType[c.conflictType] || 0) + 1
+      if (c.resolutionStrategy) {
+        byStrategy[String(c.resolutionStrategy)] =
+          (byStrategy[String(c.resolutionStrategy)] || 0) + 1
       }
     })
 

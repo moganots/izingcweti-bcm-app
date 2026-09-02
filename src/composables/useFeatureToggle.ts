@@ -5,17 +5,10 @@ import { useAuth } from './useAuth'
 import type {
     FeatureToggle,
     FeatureToggleOverride,
-    FeatureToggleAuditLog,
-    CreateFeatureToggleRequest,
-    UpdateFeatureToggleRequest,
-    CreateFeatureToggleOverrideRequest,
-    UpdateFeatureToggleOverrideRequest,
     EvaluateFeatureRequest,
     FeatureEvaluationResponse,
     BatchFeatureEvaluationRequest,
     FeatureToggleQueryParams,
-    FeatureToggleStats,
-    FeatureToggleAuditQueryParams,
 } from '../models/entities/feature-toggle/feature-toggle.entity'
 import {
     FeatureToggleStatus,
@@ -51,7 +44,7 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
     } = options
 
     const toggleStore = useFeatureToggleStore()
-    const { organisationId: authOrgId, isAuthenticated } = useAuth()
+    const { userOrganisationId, isAuthenticated } = useAuth()
 
     // Store refs for reactivity
     const {
@@ -118,7 +111,7 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
     const refreshTimer = ref<number | null>(null)
     const isInitialLoad = ref(true)
     const isReady = ref(false)
-    const currentOrganisationId = computed(() => defaultOrgId || authOrgId.value)
+    const currentOrganisationId = computed(() => defaultOrgId || userOrganisationId.value)
 
     // ============================================
     // Computed Getters - Derived Metrics
@@ -254,11 +247,13 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
         if (!orgId) return false
 
         try {
-            const result = await evaluateFeature({
+            const request: EvaluateFeatureRequest = {
                 featureName,
                 organisationId: orgId,
-                context,
-            })
+                ...(context ? { context } : {}),
+            }
+
+            const result = await evaluateFeature(request)
             return result.enabled
         } catch {
             return false

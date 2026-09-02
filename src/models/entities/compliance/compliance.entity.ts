@@ -1,5 +1,5 @@
-import { BaseEntity } from '../../core/base/base.entity'
-import { Organisation } from '../organisation'
+import type { BaseEntity } from './../../../core/base/base.entity';
+import type { Organisation } from './../organisation/organisation.entity'
 
 // ============================================
 // Compliance Module - Enums (Aligned with Backend)

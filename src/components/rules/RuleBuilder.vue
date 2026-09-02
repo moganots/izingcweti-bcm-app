@@ -4,84 +4,33 @@
       <div class="text-h6 q-mb-md">{{ editing ? 'Edit Rule' : 'Create Rule' }}</div>
       <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
         <!-- Basic Info -->
-        <q-input
-          v-model="form.name"
-          label="Rule Name *"
-          outlined
-          dense
-          :rules="[requiredRule]"
-          autofocus
-        />
-        <q-input
-          v-model="form.description"
-          label="Description"
-          outlined
-          dense
-          type="textarea"
-          rows="2"
-        />
+        <q-input v-model="form.name" label="Rule Name *" outlined dense :rules="[requiredRule]" autofocus />
+        <q-input v-model="form.description" label="Description" outlined dense type="textarea" rows="2" />
 
         <div class="row q-col-gutter-md">
           <div class="col-6">
-            <q-select
-              v-model="form.rule_type"
-              :options="typeOptions"
-              label="Rule Type *"
-              outlined
-              dense
-              :rules="[requiredRule]"
-              emit-value
-              map-options
-            />
+            <q-select v-model="form.rule_type" :options="typeOptions" label="Rule Type *" outlined dense
+              :rules="[requiredRule]" emit-value map-options />
           </div>
           <div class="col-6">
-            <q-select
-              v-model="form.rule_trigger"
-              :options="triggerOptions"
-              label="Trigger *"
-              outlined
-              dense
-              :rules="[requiredRule]"
-              emit-value
-              map-options
-            />
+            <q-select v-model="form.rule_trigger" :options="triggerOptions" label="Trigger *" outlined dense
+              :rules="[requiredRule]" emit-value map-options />
           </div>
         </div>
 
         <div class="row q-col-gutter-md">
           <div class="col-6">
-            <q-select
-              v-model="form.entity_type"
-              :options="entityOptions"
-              label="Entity Type *"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
+            <q-select v-model="form.entity_type" :options="entityOptions" label="Entity Type *" outlined dense
+              :rules="[requiredRule]" />
           </div>
           <div class="col-6">
-            <q-select
-              v-model="form.priority"
-              :options="priorityOptions"
-              label="Priority"
-              outlined
-              dense
-              emit-value
-              map-options
-            />
+            <q-select v-model="form.priority" :options="priorityOptions" label="Priority" outlined dense emit-value
+              map-options />
           </div>
         </div>
 
-        <q-select
-          v-model="form.organisation_id"
-          :options="orgOptions"
-          label="Organisation (optional)"
-          outlined
-          dense
-          clearable
-          emit-value
-          map-options
-        />
+        <q-select v-model="form.organisation_id" :options="orgOptions" label="Organisation (optional)" outlined dense
+          clearable emit-value map-options />
 
         <!-- Conditions -->
         <q-separator />
@@ -89,58 +38,29 @@
           <div class="text-subtitle1 text-weight-bold">Conditions</div>
           <q-btn flat color="primary" icon="add" label="Add Condition" @click="addCondition" />
         </div>
-        <div
-          v-if="form.conditions.length === 0"
-          class="text-center q-py-sm text-grey-7 bg-grey-1 rounded-borders"
-        >
+        <div v-if="form.conditions.length === 0" class="text-center q-py-sm text-grey-7 bg-grey-1 rounded-borders">
           No conditions defined. Add at least one condition.
         </div>
-        <div
-          v-for="(condition, index) in form.conditions"
-          :key="index"
-          class="condition-item q-pa-sm bg-grey-1 rounded-borders"
-        >
+        <div v-for="(condition, index) in form.conditions" :key="index"
+          class="condition-item q-pa-sm bg-grey-1 rounded-borders">
           <div class="row items-center q-col-gutter-sm">
             <div class="col-4">
               <q-input v-model="condition.field" label="Field" outlined dense size="sm" />
             </div>
             <div class="col-3">
-              <q-select
-                v-model="condition.operator"
-                :options="operatorOptions"
-                label="Operator"
-                outlined
-                dense
-                size="sm"
-                emit-value
-                map-options
-              />
+              <q-select v-model="condition.operator" :options="operatorOptions" label="Operator" outlined dense
+                size="sm" emit-value map-options />
             </div>
             <div class="col-4">
               <q-input v-model="condition.value" label="Value" outlined dense size="sm" />
             </div>
             <div class="col-1">
-              <q-btn
-                flat
-                round
-                color="negative"
-                icon="close"
-                size="sm"
-                @click="removeCondition(index)"
-              />
+              <q-btn flat round color="negative" icon="close" size="sm" @click="removeCondition(index)" />
             </div>
           </div>
           <div v-if="index < form.conditions.length - 1" class="q-mt-sm">
-            <q-select
-              v-model="condition.logical_operator"
-              :options="logicalOptions"
-              label="AND/OR"
-              outlined
-              dense
-              size="sm"
-              emit-value
-              map-options
-            />
+            <q-select v-model="condition.logical_operator" :options="logicalOptions" label="AND/OR" outlined dense
+              size="sm" emit-value map-options />
           </div>
         </div>
 
@@ -150,42 +70,20 @@
           <div class="text-subtitle1 text-weight-bold">Actions</div>
           <q-btn flat color="primary" icon="add" label="Add Action" @click="addAction" />
         </div>
-        <div
-          v-if="form.actions.length === 0"
-          class="text-center q-py-sm text-grey-7 bg-grey-1 rounded-borders"
-        >
+        <div v-if="form.actions.length === 0" class="text-center q-py-sm text-grey-7 bg-grey-1 rounded-borders">
           No actions defined. Add at least one action.
         </div>
-        <div
-          v-for="(action, index) in form.actions"
-          :key="index"
-          class="action-item q-pa-sm bg-grey-1 rounded-borders"
-        >
+        <div v-for="(action, index) in form.actions" :key="index" class="action-item q-pa-sm bg-grey-1 rounded-borders">
           <div class="row items-center q-col-gutter-sm">
             <div class="col-5">
-              <q-select
-                v-model="action.type"
-                :options="actionTypeOptions"
-                label="Action Type"
-                outlined
-                dense
-                size="sm"
-                emit-value
-                map-options
-              />
+              <q-select v-model="action.type" :options="actionTypeOptions" label="Action Type" outlined dense size="sm"
+                emit-value map-options />
             </div>
             <div class="col-6">
               <q-input v-model="action.params" label="Params (JSON)" outlined dense size="sm" />
             </div>
             <div class="col-1">
-              <q-btn
-                flat
-                round
-                color="negative"
-                icon="close"
-                size="sm"
-                @click="removeAction(index)"
-              />
+              <q-btn flat round color="negative" icon="close" size="sm" @click="removeAction(index)" />
             </div>
           </div>
         </div>
@@ -201,14 +99,8 @@
             <q-btn flat color="grey" label="Cancel" class="full-width" @click="$emit('cancel')" />
           </div>
           <div class="col-6">
-            <q-btn
-              type="submit"
-              color="primary"
-              :label="editing ? 'Update' : 'Create'"
-              :loading="submitting"
-              class="full-width"
-              unelevated
-            />
+            <q-btn type="submit" color="primary" :label="editing ? 'Update' : 'Create'" :loading="submitting"
+              class="full-width" unelevated />
           </div>
         </div>
       </q-form>

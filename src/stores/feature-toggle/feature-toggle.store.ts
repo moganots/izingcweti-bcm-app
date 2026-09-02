@@ -18,12 +18,6 @@ import type {
 } from './../../models/entities/feature-toggle/feature-toggle.entity'
 import {
     FeatureToggleStatus,
-    ToggleEnvironment,
-    FeatureToggleType,
-    getFeatureToggleStatusLabel,
-    getFeatureToggleStatusColor,
-    getToggleEnvironmentLabel,
-    getFeatureToggleTypeLabel,
 } from './../../models/entities/feature-toggle/feature-toggle.entity'
 
 export const useFeatureToggleStore = defineStore('feature-toggle', () => {

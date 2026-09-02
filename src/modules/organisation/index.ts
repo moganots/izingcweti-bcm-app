@@ -33,7 +33,7 @@ export enum CriticalityScore {
 // Organisation Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface Organisation extends BaseEntity {
   name: string

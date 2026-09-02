@@ -1,5 +1,3 @@
-// src/composables/useCompliance.ts
-
 import { computed, watch, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useComplianceStore } from '../stores/compliance/compliance.store'
@@ -10,14 +8,16 @@ import type {
   UpdateComplianceRecordRequest,
   UpdateComplianceStatusRequest,
   ComplianceQueryParams,
-  ComplianceStats,
-  ComplianceSummary,
-  ComplianceGap,
-} from '../models/entities/compliance/compliance.entity'
+} from './../models/entities/compliance/compliance.entity'
 import {
   ComplianceStatus,
   getComplianceStatusColor,
   getComplianceStatusLabel,
+  getComplianceStandardLabel,
+  getComplianceStandardColor,
+  isAuditOverdue,
+  isAuditDueSoon,
+  calculateComplianceRate,
 } from '../models/entities/compliance/compliance.entity'
 
 export interface UseComplianceOptions {
@@ -34,7 +34,7 @@ export function useCompliance(options: UseComplianceOptions = {}) {
   const { autoLoad = true, organisationId: defaultOrgId, refreshInterval } = options
 
   const complianceStore = useComplianceStore()
-  const { organisationId: authOrgId, isAuthenticated } = useAuth()
+  const { userOrganisationId, isAuthenticated } = useAuth()
 
   // Store refs for reactivity
   const {
@@ -94,7 +94,9 @@ export function useCompliance(options: UseComplianceOptions = {}) {
   // Local state
   const refreshTimer = ref<number | null>(null)
   const isInitialLoad = ref(true)
-  const currentOrganisationId = computed(() => defaultOrgId || authOrgId.value)
+  const isReady = ref(false)
+
+  const currentOrganisationId = computed(() => defaultOrgId || userOrganisationId.value)
 
   // ============================================
   // Computed Getters - Derived Metrics
@@ -102,7 +104,9 @@ export function useCompliance(options: UseComplianceOptions = {}) {
 
   const totalRecords = computed(() => records.value?.length || 0)
   const compliantCount = computed(() => compliantRecords.value?.length || 0)
+  const partiallyCompliantCount = computed(() => partiallyCompliantRecords.value?.length || 0)
   const nonCompliantCount = computed(() => nonCompliantRecords.value?.length || 0)
+  const notAssessedCount = computed(() => notAssessedRecords.value?.length || 0)
   const overdueCount = computed(() => overdueAudits.value?.length || 0)
   const upcomingCount = computed(() => upcomingAudits.value?.length || 0)
 
@@ -110,7 +114,7 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     const total = totalRecords.value
     if (total === 0) return 0
     const compliant = compliantCount.value
-    const partially = partiallyCompliantRecords.value?.length || 0
+    const partially = partiallyCompliantCount.value
     // Weight: compliant = 1, partially = 0.5, non-compliant = 0
     const weightedScore = compliant + (partially * 0.5)
     return Math.round((weightedScore / total) * 100)
@@ -126,10 +130,24 @@ export function useCompliance(options: UseComplianceOptions = {}) {
 
   const statusSummary = computed(() => ({
     compliant: compliantCount.value,
-    partiallyCompliant: partiallyCompliantRecords.value?.length || 0,
+    partiallyCompliant: partiallyCompliantCount.value,
     nonCompliant: nonCompliantCount.value,
-    notAssessed: notAssessedRecords.value?.length || 0,
+    notAssessed: notAssessedCount.value,
   }))
+
+  const standardSummary = computed(() => {
+    const summary: Record<string, { total: number; compliant: number; rate: number }> = {}
+    for (const [standard, records] of Object.entries(recordsByStandard.value)) {
+      const total = records.length
+      const compliant = records.filter((r) => r.complianceStatus === ComplianceStatus.COMPLIANT).length
+      summary[standard] = {
+        total,
+        compliant,
+        rate: total > 0 ? Math.round((compliant / total) * 100) : 0,
+      }
+    }
+    return summary
+  })
 
   // ============================================
   // Actions
@@ -156,7 +174,7 @@ export function useCompliance(options: UseComplianceOptions = {}) {
   /**
    * Load compliance records with filters
    */
-  async function load(params?: ComplianceQueryParams): Promise<void> {
+  async function loadBy(params?: ComplianceQueryParams): Promise<void> {
     await loadRecords({
       ...params,
       organisationId: params?.organisationId || currentOrganisationId.value,
@@ -164,10 +182,158 @@ export function useCompliance(options: UseComplianceOptions = {}) {
   }
 
   /**
+   * Get a single compliance record by ID
+   */
+  async function getRecord(id: string): Promise<ComplianceRecord | null> {
+    await loadRecord(id)
+    return selectedRecord.value
+  }
+
+  /**
+   * Create a new compliance record
+   */
+  async function create(data: CreateComplianceRecordRequest): Promise<ComplianceRecord> {
+    return await createRecord(data)
+  }
+
+  /**
+   * Update an existing compliance record
+   */
+  async function update(id: string, data: UpdateComplianceRecordRequest): Promise<ComplianceRecord> {
+    return await updateRecord(id, data)
+  }
+
+  /**
+   * Delete a compliance record
+   */
+  async function remove(id: string): Promise<void> {
+    await deleteRecord(id)
+  }
+
+  /**
+   * Update compliance status
+   */
+  async function updateComplianceStatus(id: string, data: UpdateComplianceStatusRequest): Promise<ComplianceRecord> {
+    return await updateStatus(id, data)
+  }
+
+  /**
+   * Bulk update compliance status
+   */
+  async function bulkUpdateComplianceStatus(ids: string[], status: ComplianceStatus): Promise<{ updated: number }> {
+    return await bulkUpdateStatus(ids, status)
+  }
+
+  /**
+   * Schedule an audit
+   */
+  async function scheduleComplianceAudit(id: string, nextAuditDate: string | Date): Promise<ComplianceRecord> {
+    return await scheduleAudit(id, nextAuditDate)
+  }
+
+  /**
+   * Add evidence to a compliance record
+   */
+  async function addComplianceEvidence(id: string, links: string[]): Promise<ComplianceRecord> {
+    return await addEvidence(id, links)
+  }
+
+  /**
+   * Remove evidence from a compliance record
+   */
+  async function removeComplianceEvidence(id: string, index: number): Promise<ComplianceRecord> {
+    return await removeEvidence(id, index)
+  }
+
+  /**
+   * Load records by organisation
+   */
+  async function loadByOrganisation(organisationId: string, params?: ComplianceQueryParams): Promise<void> {
+    await loadRecordsByOrganisation(organisationId, params)
+  }
+
+  /**
+   * Load records by standard
+   */
+  async function loadByStandard(standard: string, params?: ComplianceQueryParams): Promise<void> {
+    await loadRecordsByStandard(standard, params)
+  }
+
+  /**
+   * Load overdue audits
+   */
+  async function loadOverdue(_params?: ComplianceQueryParams): Promise<void> {
+    await loadOverdueAudits()
+  }
+
+  /**
+   * Load upcoming audits
+   */
+  async function loadUpcoming(days: number = 30, _params?: ComplianceQueryParams): Promise<void> {
+    await loadUpcomingAudits(days)
+  }
+
+  /**
    * Refresh all compliance data
    */
   async function refresh(): Promise<void> {
     await loadAll()
+  }
+
+  /**
+   * Export compliance records
+   */
+  async function exportData(params?: { standard?: string; status?: string; format?: 'csv' | 'json' }): Promise<void> {
+    await exportRecords(params as any)
+  }
+
+  /**
+   * Get status color helper
+   */
+  function getStatusColor(status: string): string {
+    return getComplianceStatusColor(status)
+  }
+
+  /**
+   * Get status label helper
+   */
+  function getStatusLabel(status: string): string {
+    return getComplianceStatusLabel(status)
+  }
+
+  /**
+   * Get standard label helper
+   */
+  function getStandardLabel(standard: string): string {
+    return getComplianceStandardLabel(standard)
+  }
+
+  /**
+   * Get standard color helper
+   */
+  function getStandardColor(standard: string): string {
+    return getComplianceStandardColor(standard)
+  }
+
+  /**
+   * Check if audit is overdue
+   */
+  function isOverdue(date: string | Date): boolean {
+    return isAuditOverdue(date)
+  }
+
+  /**
+   * Check if audit is due soon
+   */
+  function isDueSoon(date: string | Date, days: number = 30): boolean {
+    return isAuditDueSoon(date, days)
+  }
+
+  /**
+   * Calculate compliance rate
+   */
+  function calculateRate(compliant: number, total: number): number {
+    return calculateComplianceRate(compliant, total)
   }
 
   /**
@@ -201,25 +367,17 @@ export function useCompliance(options: UseComplianceOptions = {}) {
   }
 
   /**
-   * Get status color helper
+   * Clear selection
    */
-  function getStatusColor(status: string): string {
-    return getComplianceStatusColor(status)
+  function clearSelected(): void {
+    clearSelection()
   }
 
   /**
-   * Get status label helper
+   * Clear error
    */
-  function getStatusLabel(status: string): string {
-    return getComplianceStatusLabel(status)
-  }
-
-  /**
-   * Check if audit is overdue
-   */
-  function isOverdue(date: string | Date): boolean {
-    if (!date) return false
-    return new Date(date) < new Date()
+  function clearError(): void {
+    resetError()
   }
 
   // ============================================
@@ -230,6 +388,7 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     if (autoLoad && isAuthenticated.value && currentOrganisationId.value) {
       await loadAll()
       isInitialLoad.value = false
+      isReady.value = true
 
       if (refreshInterval) {
         startAutoRefresh(refreshInterval)
@@ -275,6 +434,8 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     totalPages,
     totalItems,
     itemsPerPage,
+    isReady,
+    isInitialLoad,
 
     // Getters
     compliantRecords,
@@ -291,32 +452,43 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     needsAttention,
     totalRecords,
     compliantCount,
+    partiallyCompliantCount,
     nonCompliantCount,
+    notAssessedCount,
     overdueCount,
     upcomingCount,
     overallHealth,
     healthStatus,
     statusSummary,
+    standardSummary,
 
     // Actions - Load
     loadAll,
-    load,
-    refresh,
-    loadRecord,
-    loadRecordsByOrganisation,
-    loadRecordsByStandard,
-    loadOverdueAudits,
-    loadUpcomingAudits,
+    loadBy,
+    getRecord,
+    loadByOrganisation,
+    loadByStandard,
+    loadOverdue,
+    loadUpcoming,
     loadStats,
     loadSummary,
     loadGaps,
+    refresh,
 
     // Actions - CRUD
+    create,
+    update,
+    remove,
     createRecord,
     updateRecord,
     deleteRecord,
 
     // Actions - Status & Audit
+    updateComplianceStatus,
+    bulkUpdateComplianceStatus,
+    scheduleComplianceAudit,
+    addComplianceEvidence,
+    removeComplianceEvidence,
     updateStatus,
     bulkUpdateStatus,
     scheduleAudit,
@@ -324,6 +496,7 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     removeEvidence,
 
     // Actions - Export
+    exportData,
     exportRecords,
 
     // Actions - Pagination
@@ -332,7 +505,9 @@ export function useCompliance(options: UseComplianceOptions = {}) {
 
     // Actions - Utilities
     clear,
+    clearSelected,
     clearSelection,
+    clearError,
     resetError,
     startAutoRefresh,
     stopAutoRefresh,
@@ -340,10 +515,13 @@ export function useCompliance(options: UseComplianceOptions = {}) {
     // Helpers
     getStatusColor,
     getStatusLabel,
+    getStandardLabel,
+    getStandardColor,
     isOverdue,
+    isDueSoon,
+    calculateRate,
 
     // Lifecycle
-    isInitialLoad,
     currentOrganisationId,
   }
 }

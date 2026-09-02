@@ -1,6 +1,4 @@
-// src/composables/useForm.ts
-
-import { ref, reactive, type Ref, type UnwrapNestedRefs } from 'vue';
+import { ref, reactive, type UnwrapNestedRefs } from 'vue';
 
 /**
  * Form error type

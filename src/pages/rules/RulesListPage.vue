@@ -147,7 +147,7 @@
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useRulesStore } from '../../stores/rules/rules.store'
+import { useRuleStore } from '../../stores/rules/rule.store.ts'
 import PageHeader from '../../components/.common/PageHeader.vue'
 import SearchBar from '../../components/.common/SearchBar.vue'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
@@ -158,7 +158,7 @@ import RuleBuilder from '../../components/rules/RuleBuilder.vue'
 import RuleTestPanel from '../../components/rules/RuleTestPanel.vue'
 
 const $q = useQuasar()
-const rulesStore = useRulesStore()
+const rulesStore = useRuleStore()
 
 // State
 const rules = computed(() => rulesStore.rules || [])

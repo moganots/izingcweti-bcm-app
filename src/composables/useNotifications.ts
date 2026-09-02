@@ -1,19 +1,13 @@
 import { computed, ref, watch, onMounted } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useNotificationStore } from '@/stores/notification/notification.store';
-import { useAuth } from '@/composables/auth/useAuth';
+import { useNotificationStore } from './../stores/notification/notification.store';
+import { useAuth } from './useAuth';
 import type {
-  Notification,
-  NotificationPreference,
-  NotificationTemplate,
-  CreateNotificationDto,
-  NotificationPreferenceDto,
-  NotificationTemplateDto,
-  NotificationQueryDto,
-} from '@/types/notification';
-import { NotificationStatus } from '@/types/notification/enums';
+  CreateNotificationRequest,
+  NotificationQueryParams,
+} from './../models/entities/notification/notification.entity';
 
-export function useNotification() {
+export function useNotifications() {
   const store = useNotificationStore();
   const auth = useAuth();
 
@@ -28,7 +22,6 @@ export function useNotification() {
     templates,
     selectedTemplate,
     counts,
-    stats,
     templateStats,
     isLoading,
     isSaving,
@@ -46,10 +39,10 @@ export function useNotification() {
   } = storeToRefs(store);
 
   // ============================================
-  // Composable: useNotifications
+  // Composable: useNotificationsList
   // ============================================
-  function useNotifications(initialParams?: NotificationQueryDto) {
-    const params = ref<NotificationQueryDto>(initialParams || {});
+  function useNotificationsList(initialParams?: NotificationQueryParams) {
+    const params = ref<NotificationQueryParams>(initialParams || {});
     const page = ref(1);
     const limit = ref(20);
 
@@ -60,11 +53,17 @@ export function useNotification() {
         console.warn('Cannot fetch notifications: User not authenticated');
         return null;
       }
-      return store.fetchNotifications({
+
+      const payload = {
         ...params.value,
         page: page.value,
         limit: limit.value,
-      });
+      } as NotificationQueryParams & {
+        page: number;
+        limit: number;
+      };
+
+      return store.fetchNotifications(payload);
     };
 
     const loadMore = () => {
@@ -106,7 +105,7 @@ export function useNotification() {
       return store.deleteNotification(uuid);
     };
 
-    const create = async (data: CreateNotificationDto) => {
+    const create = async (data: CreateNotificationRequest) => {
       if (!canFetch.value) {
         console.warn('Cannot create: User not authenticated');
         return null;
@@ -173,7 +172,13 @@ export function useNotification() {
       return store.fetchPreferences();
     };
 
-    const updatePreference = async (data: NotificationPreferenceDto) => {
+    const updatePreference = async (data: {
+      notificationType: string;
+      emailEnabled?: boolean;
+      smsEnabled?: boolean;
+      pushEnabled?: boolean;
+      inAppEnabled?: boolean;
+    }) => {
       if (!canFetch.value) {
         console.warn('Cannot update preference: User not authenticated');
         return null;
@@ -234,7 +239,12 @@ export function useNotification() {
       });
     };
 
-    const create = async (data: NotificationTemplateDto) => {
+    const create = async (data: {
+      notificationType: string;
+      titleTemplate: string;
+      messageTemplate: string;
+      isActive?: boolean;
+    }) => {
       if (!canManageTemplates.value) {
         console.warn('Cannot create template: Insufficient permissions');
         return null;
@@ -242,7 +252,14 @@ export function useNotification() {
       return store.createTemplate(data);
     };
 
-    const update = async (uuid: string, data: Partial<NotificationTemplateDto>) => {
+    const update = async (
+      uuid: string,
+      data: Partial<{
+        titleTemplate: string;
+        messageTemplate: string;
+        isActive: boolean;
+      }>
+    ) => {
       if (!canManageTemplates.value) {
         console.warn('Cannot update template: Insufficient permissions');
         return null;
@@ -444,7 +461,7 @@ export function useNotification() {
     isBCMManager,
 
     // Specialized composables
-    useNotifications,
+    useNotificationsList,
     useNotificationPreferences,
     useNotificationTemplates,
     useNotificationCounts,
@@ -456,4 +473,4 @@ export function useNotification() {
   };
 }
 
-export default useNotification;
+export default useNotifications;

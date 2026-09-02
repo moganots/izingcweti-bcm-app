@@ -1,5 +1,3 @@
-// src/boot/permissions.ts
-
 import { boot } from 'quasar/wrappers'
 import { UserRole } from './../models/entities'
 import { useAuthStore } from './../stores'
@@ -8,7 +6,7 @@ import { useAuthStore } from './../stores'
  * Permissions Boot File
  * Provides permission checking utilities
  */
-export default boot(({ app, router }) => {
+export default boot(({ app }) => {
   const authStore = useAuthStore()
 
   // Permission checking utilities

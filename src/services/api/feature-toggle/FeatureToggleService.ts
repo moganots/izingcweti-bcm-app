@@ -1,10 +1,6 @@
 import { BaseService } from './../../BaseService'
 import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
-    FeatureToggleType,
-    FeatureToggleStatus,
-    ToggleEnvironment,
-    TargetingType,
     type FeatureToggle,
     type FeatureToggleOverride,
     type FeatureToggleAuditLog,
@@ -19,10 +15,8 @@ import {
     type FeatureToggleQueryParams,
     type FeatureToggleStats,
     type FeatureToggleAuditQueryParams,
-    type FeatureToggleSchedule,
-    type FeatureToggleRollout,
-    type PaginatedResponse,
-} from '../../../models/entities/feature-toggle/feature-toggle.entity'
+} from './../../../models/entities/feature-toggle/feature-toggle.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * Feature Toggle Service - Aligned with Backend DTOs (camelCase)
@@ -87,7 +81,7 @@ export class FeatureToggleService extends BaseService {
     async getFeatureToggleStats(organisationId: string): Promise<FeatureToggleStats> {
         const response = await this.get<FeatureToggleStats>(
             API_ENDPOINTS.FEATURE_TOGGLES.STATS,
-            { organisationId }
+            { organisationId } as Record<string, any>
         )
         return this.extractData(response)
     }

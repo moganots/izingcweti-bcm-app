@@ -1,35 +1,34 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { bcmService } from './../../services/api/bcm/BcmService'
-import type {
-  CriticalFunction,
-  BusinessImpactAssessment,
-  BusinessContinuityPlan,
-  RecoveryStrategy,
-  ExerciseTest,
-  BCPTemplate,
-  CriticalFunctionQueryParams,
-  BIAQueryParams,
-  BCPQueryParams,
-  RecoveryStrategyQueryParams,
-  ExerciseTestQueryParams,
-  CreateCriticalFunctionRequest,
-  UpdateCriticalFunctionRequest,
-  CreateBIARequest,
-  UpdateBIARequest,
-  CreateBCPRequest,
-  UpdateBCPRequest,
-  CreateRecoveryStrategyRequest,
-  UpdateRecoveryStrategyRequest,
-  CreateExerciseTestRequest,
-  UpdateExerciseTestRequest,
-  RecordTestResultRequest,
-  CreateBCPTemplateRequest,
-  UpdateBCPTemplateRequest,
-  ApplyTemplateRequest,
-  BCMMetrics,
-  BCMDashboardData,
-  TestStatistics,
+import {
+  BCPTemplateCategory,
+  type CriticalFunction,
+  type BusinessImpactAssessment,
+  type BusinessContinuityPlan,
+  type RecoveryStrategy,
+  type ExerciseTest,
+  type BCPTemplate,
+  type CriticalFunctionQueryParams,
+  type BIAQueryParams,
+  type BCPQueryParams,
+  type RecoveryStrategyQueryParams,
+  type ExerciseTestQueryParams,
+  type CreateCriticalFunctionRequest,
+  type UpdateCriticalFunctionRequest,
+  type CreateBIARequest,
+  type UpdateBIARequest,
+  type CreateBCPRequest,
+  type UpdateBCPRequest,
+  type CreateRecoveryStrategyRequest,
+  type UpdateRecoveryStrategyRequest,
+  type CreateExerciseTestRequest,
+  type UpdateExerciseTestRequest,
+  type RecordTestResultRequest,
+  type CreateBCPTemplateRequest,
+  type UpdateBCPTemplateRequest,
+  type ApplyTemplateRequest,
+  type BCMMetrics,
 } from './../../models/entities/bcm/bcm.entity'
 
 export const useBcmStore = defineStore('bcm', () => {
@@ -473,7 +472,7 @@ export const useBcmStore = defineStore('bcm', () => {
   // Actions - BCP Templates
   // ============================================
 
-  async function loadBCPTemplates(params?: { category?: string; tags?: string[] }): Promise<void> {
+  async function loadBCPTemplates(params?: { category?: BCPTemplateCategory; tags?: string[] }): Promise<void> {
     isLoadingTemplates.value = true
     templatesError.value = null
 

@@ -4,11 +4,7 @@
       <!-- Header -->
       <div class="row items-center justify-between q-mb-sm">
         <div class="row items-center q-gutter-sm">
-          <q-badge
-            :color="getTypeColor(rule.rule_type)"
-            :label="formatType(rule.rule_type)"
-            class="q-px-sm q-py-xs"
-          />
+          <q-badge :color="getTypeColor(rule.rule_type)" :label="formatType(rule.rule_type)" class="q-px-sm q-py-xs" />
           <q-badge :color="getStatusColor(rule.status)" :label="rule.status" outline />
         </div>
         <q-btn flat round size="sm" icon="more_vert" @click.stop>
@@ -22,21 +18,11 @@
                 <q-item-section avatar><q-icon name="play_arrow" /></q-item-section>
                 <q-item-section>Test Rule</q-item-section>
               </q-item>
-              <q-item
-                v-if="rule.status === 'ACTIVE'"
-                clickable
-                v-close-popup
-                @click="$emit('deactivate', rule)"
-              >
+              <q-item v-if="rule.status === 'ACTIVE'" clickable v-close-popup @click="$emit('deactivate', rule)">
                 <q-item-section avatar><q-icon name="pause" /></q-item-section>
                 <q-item-section>Deactivate</q-item-section>
               </q-item>
-              <q-item
-                v-if="rule.status !== 'ACTIVE'"
-                clickable
-                v-close-popup
-                @click="$emit('activate', rule)"
-              >
+              <q-item v-if="rule.status !== 'ACTIVE'" clickable v-close-popup @click="$emit('activate', rule)">
                 <q-item-section avatar><q-icon name="play_arrow" color="green" /></q-item-section>
                 <q-item-section>Activate</q-item-section>
               </q-item>
@@ -81,24 +67,14 @@
 
       <!-- Conditions & Actions Count -->
       <div class="q-mt-sm row q-gutter-sm">
-        <q-badge
-          outline
-          color="blue"
-          :label="conditionCount + ' condition' + (conditionCount !== 1 ? 's' : '')"
-        />
-        <q-badge
-          outline
-          color="green"
-          :label="actionCount + ' action' + (actionCount !== 1 ? 's' : '')"
-        />
+        <q-badge outline color="blue" :label="conditionCount + ' condition' + (conditionCount !== 1 ? 's' : '')" />
+        <q-badge outline color="green" :label="actionCount + ' action' + (actionCount !== 1 ? 's' : '')" />
       </div>
 
       <!-- Execution Stats -->
       <div class="q-mt-sm row items-center justify-between text-caption text-grey-6">
         <span>Executions: {{ rule.execution_count || 0 }}</span>
-        <span v-if="rule.failure_count > 0" class="text-negative"
-          >Failures: {{ rule.failure_count }}</span
-        >
+        <span v-if="rule.failure_count > 0" class="text-negative">Failures: {{ rule.failure_count }}</span>
         <span v-if="rule.last_executed_at">Last: {{ formatTimeAgo(rule.last_executed_at) }}</span>
       </div>
     </q-card-section>
@@ -196,6 +172,7 @@ function getPriorityColor(priority: number): string {
 <style lang="scss" scoped>
 .rule-card {
   transition: transform 0.2s, box-shadow 0.2s;
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);

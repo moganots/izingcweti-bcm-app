@@ -100,7 +100,6 @@ export class SettingsRepository extends BaseRepository<Settings> {
         value: T
     ): Promise<Settings | undefined> {
         let settings = await this.findByUserId(userId)
-        const now = new Date().toISOString()
 
         if (!settings) {
             // Create new settings if doesn't exist

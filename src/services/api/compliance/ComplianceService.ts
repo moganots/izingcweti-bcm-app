@@ -18,8 +18,8 @@ import {
   type ComplianceExportRequest,
   type ComplianceVerificationResult,
   type ComplianceReport,
-  type PaginatedResponse,
-} from '../../../models/entities/compliance/compliance.entity'
+} from './../../../models/entities/compliance/compliance.entity';
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * Compliance Service - Aligned with Backend DTOs (camelCase)

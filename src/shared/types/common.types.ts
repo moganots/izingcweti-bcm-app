@@ -15,24 +15,24 @@ export interface ApiResponse<T = any> {
   errors?: ApiError[]
   success?: boolean
   status?:
-    | 'healthy'
-    | 'unhealthy'
-    | 'degraded'
-    | 'ok'
-    | 'not ok'
-    | 'failed'
-    | 'active'
-    | 'inactive'
-    | 'idle'
-    | 'online'
-    | 'offline'
-    | 'live'
-    | 'dead'
-    | 'offline'
-    | 'running'
-    | 'stopped'
-    | 'halted'
-    | string
+  | 'healthy'
+  | 'unhealthy'
+  | 'degraded'
+  | 'ok'
+  | 'not ok'
+  | 'failed'
+  | 'active'
+  | 'inactive'
+  | 'idle'
+  | 'online'
+  | 'offline'
+  | 'live'
+  | 'dead'
+  | 'offline'
+  | 'running'
+  | 'stopped'
+  | 'halted'
+  | string
   statusCode?: number
   statusText?: string
   timestamp?: string | null
@@ -75,16 +75,6 @@ export interface ApiRequestOptions {
   retry?: number
 }
 
-export interface QueryParams {
-  page?: number
-  limit?: number
-  search?: string
-  sortBy?: string
-  sortOrder?: 'ASC' | 'DESC'
-  startDate?: string
-  endDate?: string
-}
-
 // ============================================
 // Pagination Types
 // ============================================
@@ -92,7 +82,7 @@ export interface QueryParams {
 /**
  * Pagination Parameters
  */
-export interface PaginationParams extends QueryParams {}
+export interface PaginationParams extends QueryParams { }
 
 /**
  * Pagination State
@@ -113,6 +103,7 @@ export interface PaginationState {
  * Common query parameters
  */
 export interface QueryParams {
+  organisationId?: string
   search?: string
   page?: number
   limit?: number
@@ -227,15 +218,15 @@ export interface FormField {
   name: string
   label: string
   type:
-    | 'text'
-    | 'email'
-    | 'password'
-    | 'number'
-    | 'select'
-    | 'date'
-    | 'textarea'
-    | 'toggle'
-    | 'file'
+  | 'text'
+  | 'email'
+  | 'password'
+  | 'number'
+  | 'select'
+  | 'date'
+  | 'textarea'
+  | 'toggle'
+  | 'file'
   required?: boolean
   disabled?: boolean
   placeholder?: string
@@ -321,10 +312,10 @@ export type Nullable<T> = T | null | undefined
  */
 export type RecursivePartial<T> = {
   [P in keyof T]?: T[P] extends (infer U)[]
-    ? RecursivePartial<U>[]
-    : T[P] extends object
-    ? RecursivePartial<T[P]>
-    : T[P]
+  ? RecursivePartial<U>[]
+  : T[P] extends object
+  ? RecursivePartial<T[P]>
+  : T[P]
 }
 
 /**

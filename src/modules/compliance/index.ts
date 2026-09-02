@@ -22,7 +22,7 @@ export enum ComplianceStatus {
 // Compliance Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface ComplianceRecord extends BaseEntity {
   organisation_id: string

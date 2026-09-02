@@ -33,7 +33,7 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Incident Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface EscalationHistoryEntry {
   escalated_at: string

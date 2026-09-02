@@ -1,4 +1,3 @@
-<!-- src/components/ui/SearchBar.vue -->
 <template>
   <q-input
     v-model="searchValue"
@@ -38,6 +37,7 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
   search: [value: string]
   clear: []
+  'toggle-filter': []
 }>()
 const searchValue = ref(props.modelValue)
 watch(

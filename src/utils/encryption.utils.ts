@@ -1,5 +1,3 @@
-// src/utils/encryption.utils.ts
-
 import CryptoJS from 'crypto-js'
 
 /**
@@ -100,23 +98,21 @@ export function md5(data: string): string {
 export function generateToken(length: number = 32): string {
   const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
   let result = ''
-  const randomValues = new Uint8Array(length)
 
   // Check if crypto.getRandomValues is available
-  if (!crypto || !crypto.getRandomValues) {
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const randomValues = new Uint8Array(length)
+    crypto.getRandomValues(randomValues)
+    for (let i = 0; i < length; i++) {
+      result += chars.charAt(randomValues[i]! % chars.length)
+    }
+  } else {
     // Fallback to a less secure but deterministic method for environments without crypto
     // Note: This is not cryptographically secure and should only be used as a fallback
     for (let i = 0; i < length; i++) {
       const randomValue = Math.floor(Math.random() * 256)
       result += chars.charAt(randomValue % chars.length)
     }
-    return result
-  }
-
-  crypto.getRandomValues(randomValues)
-
-  for (let i = 0; i < length; i++) {
-    result += chars.charAt(randomValues[i] % chars.length)
   }
 
   return result
@@ -128,11 +124,18 @@ export function generateToken(length: number = 32): string {
 export function generateCode(length: number = 6): string {
   const digits = '0123456789'
   let result = ''
-  const randomValues = new Uint8Array(length)
-  crypto.getRandomValues(randomValues)
 
-  for (let i = 0; i < length; i++) {
-    result += digits.charAt(randomValues?.[i] % 10)
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    const randomValues = new Uint8Array(length)
+    crypto.getRandomValues(randomValues)
+    for (let i = 0; i < length; i++) {
+      result += digits.charAt(randomValues[i]! % 10)
+    }
+  } else {
+    // Fallback for environments without crypto
+    for (let i = 0; i < length; i++) {
+      result += digits.charAt(Math.floor(Math.random() * 10))
+    }
   }
 
   return result
@@ -182,4 +185,41 @@ export function createChecksum(data: string): string {
  */
 export function verifyChecksum(data: string, checksum: string): boolean {
   return createChecksum(data) === checksum
+}
+
+/**
+ * Generate a secure random UUID v4
+ */
+export function generateUUID(): string {
+  if (typeof crypto !== 'undefined' && crypto.randomUUID) {
+    return crypto.randomUUID()
+  }
+
+  // Fallback UUID v4 generation
+  const chars = '0123456789abcdef'
+  let result = ''
+  const randomValues = new Uint8Array(36)
+  
+  if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+    crypto.getRandomValues(randomValues)
+  } else {
+    // Fallback for environments without crypto
+    for (let i = 0; i < 36; i++) {
+      randomValues[i] = Math.floor(Math.random() * 256)
+    }
+  }
+
+  for (let i = 0; i < 36; i++) {
+    if (i === 8 || i === 13 || i === 18 || i === 23) {
+      result += '-'
+    } else if (i === 14) {
+      result += '4' // UUID version 4
+    } else if (i === 19) {
+      result += chars.charAt((randomValues[i]! & 0x3f) | 0x80) // UUID variant
+    } else {
+      result += chars.charAt(randomValues[i]! % 16)
+    }
+  }
+
+  return result
 }

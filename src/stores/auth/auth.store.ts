@@ -52,6 +52,12 @@ export const useAuthStore = defineStore('auth', () => {
   })
 
   // Role-based computed properties
+  const isGlobalAdmin = computed(() => { return UserRole.SUPER_ADMIN === userRole.value as UserRole || UserRole.SYSTEM_ADMINISTRATOR === userRole.value as UserRole })
+  
+  const isSuperAdmin = computed(() => { return UserRole.SUPER_ADMIN === userRole.value as UserRole })
+  
+  const isSystemAdmin = computed(() => { return UserRole.SYSTEM_ADMINISTRATOR === userRole.value as UserRole })
+
   const isAdmin = computed(() => {
     const adminRoles = [
       UserRole.SYSTEM_ADMINISTRATOR,
@@ -339,7 +345,7 @@ export const useAuthStore = defineStore('auth', () => {
    */
   async function logout(): Promise<void> {
     try {
-      await authService.logout().catch(() => {})
+      await authService.logout().catch(() => { })
     } finally {
       user.value = null
       tokens.value = null
@@ -529,6 +535,9 @@ export const useAuthStore = defineStore('auth', () => {
     isActive,
     isEmailVerified,
     fullName,
+    isGlobalAdmin,
+    isSuperAdmin,
+    isSystemAdmin,
     isAdmin,
     isBCMManager,
     isRiskOwner,

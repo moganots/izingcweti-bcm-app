@@ -37,6 +37,9 @@ export function useAuth(options: UseAuthOptions = {}) {
     isActive,
     isEmailVerified,
     fullName,
+    isGlobalAdmin,
+    isSuperAdmin,
+    isSystemAdmin,
     isAdmin,
     isBCMManager,
     isRiskOwner,
@@ -162,14 +165,6 @@ export function useAuth(options: UseAuthOptions = {}) {
       UserRole.SYSTEM_ADMINISTRATOR,
       UserRole.SUPER_ADMIN,
     ])
-  }
-
-  function isSuperAdmin(): boolean {
-    return userRole.value === UserRole.SUPER_ADMIN
-  }
-
-  function isSystemAdmin(): boolean {
-    return userRole.value === UserRole.SYSTEM_ADMINISTRATOR
   }
 
   // ============================================
@@ -360,6 +355,9 @@ export function useAuth(options: UseAuthOptions = {}) {
     isActive,
     isEmailVerified,
     fullName,
+    isGlobalAdmin,
+    isSuperAdmin,
+    isSystemAdmin,
     isAdmin,
     isBCMManager,
     isRiskOwner,
@@ -385,8 +383,6 @@ export function useAuth(options: UseAuthOptions = {}) {
     canManageUsers,
     canViewAuditLogs,
     canManageDashboard,
-    isSuperAdmin,
-    isSystemAdmin,
 
     // Actions
     initialize,

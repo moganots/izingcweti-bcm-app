@@ -2,10 +2,7 @@ import { BaseService } from './../../BaseService'
 import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   IncidentSeverity,
-  IncidentStatus,
-  EscalationLevel,
   type Incident,
-  type IncidentUpdate,
   type IncidentResponsePlan,
   type ResponseAction,
   type IncidentRecoveryMetrics,
@@ -21,8 +18,8 @@ import {
   type IncidentQueryParams,
   type IncidentDashboardStats,
   type IncidentStats,
-  type PaginatedResponse,
-} from '../../../models/entities/incident/incident.entity'
+} from './../../../models/entities/incident/incident.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * Incident Service - Aligned with Backend DTOs (camelCase)

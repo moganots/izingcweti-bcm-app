@@ -3,75 +3,26 @@
     <q-card-section>
       <div class="text-h6 q-mb-md">{{ editing ? 'Edit Workflow' : 'Create Workflow' }}</div>
       <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
-        <q-select
-          v-model="form.workflow_type"
-          :options="typeOptions"
-          label="Workflow Type *"
-          outlined
-          dense
-          :rules="[requiredRule]"
-          emit-value
-          map-options
-        />
-        <q-input
-          v-model="form.title"
-          label="Title *"
-          outlined
-          dense
-          :rules="[requiredRule]"
-          autocomplete="off"
-        />
-        <q-input
-          v-model="form.description"
-          label="Description"
-          outlined
-          dense
-          type="textarea"
-          rows="2"
-        />
+        <q-select v-model="form.workflow_type" :options="typeOptions" label="Workflow Type *" outlined dense
+          :rules="[requiredRule]" emit-value map-options />
+        <q-input v-model="form.title" label="Title *" outlined dense :rules="[requiredRule]" autocomplete="off" />
+        <q-input v-model="form.description" label="Description" outlined dense type="textarea" rows="2" />
 
         <div class="row q-col-gutter-md">
           <div class="col-6">
-            <q-select
-              v-model="form.priority"
-              :options="priorityOptions"
-              label="Priority"
-              outlined
-              dense
-              emit-value
-              map-options
-            />
+            <q-select v-model="form.priority" :options="priorityOptions" label="Priority" outlined dense emit-value
+              map-options />
           </div>
           <div class="col-6">
             <q-input v-model="form.due_date" label="Due Date" type="date" outlined dense />
           </div>
         </div>
 
-        <q-select
-          v-model="form.assigned_to"
-          :options="userOptions"
-          label="Assign To"
-          outlined
-          dense
-          clearable
-          emit-value
-          map-options
-        />
-        <q-select
-          v-model="form.entity_type"
-          :options="entityOptions"
-          label="Related Entity Type"
-          outlined
-          dense
-          clearable
-        />
-        <q-input
-          v-model="form.entity_id"
-          label="Related Entity ID"
-          outlined
-          dense
-          v-if="form.entity_type"
-        />
+        <q-select v-model="form.assigned_to" :options="userOptions" label="Assign To" outlined dense clearable
+          emit-value map-options />
+        <q-select v-model="form.entity_type" :options="entityOptions" label="Related Entity Type" outlined dense
+          clearable />
+        <q-input v-model="form.entity_id" label="Related Entity ID" outlined dense v-if="form.entity_type" />
 
         <q-banner v-if="errorMessage" class="bg-red-1 text-red-8 rounded-borders" rounded>{{
           errorMessage
@@ -82,14 +33,8 @@
             <q-btn flat color="grey" label="Cancel" class="full-width" @click="$emit('cancel')" />
           </div>
           <div class="col-6">
-            <q-btn
-              type="submit"
-              color="primary"
-              :label="editing ? 'Update' : 'Create'"
-              :loading="submitting"
-              class="full-width"
-              unelevated
-            />
+            <q-btn type="submit" color="primary" :label="editing ? 'Update' : 'Create'" :loading="submitting"
+              class="full-width" unelevated />
           </div>
         </div>
       </q-form>

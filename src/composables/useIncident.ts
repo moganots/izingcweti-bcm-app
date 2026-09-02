@@ -4,18 +4,7 @@ import { useIncidentStore } from '../stores/incident/incident.store'
 import { useAuth } from './useAuth'
 import type {
     Incident,
-    IncidentStats,
-    CreateIncidentRequest,
-    UpdateIncidentRequest,
-    CloseIncidentRequest,
-    EscalateIncidentRequest,
-    AssignIncidentRequest,
-    AcknowledgeIncidentRequest,
-    AddIncidentUpdateRequest,
     IncidentQueryParams,
-    IncidentDashboardStats,
-    IncidentTimeline,
-    IncidentRecoveryMetrics,
 } from '../models/entities/incident/incident.entity'
 import {
     IncidentSeverity,
@@ -54,7 +43,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
     } = options
 
     const incidentStore = useIncidentStore()
-    const { organisationId: authOrgId, isAuthenticated } = useAuth()
+    const { userOrganisationId, isAuthenticated } = useAuth()
 
     // Store refs for reactivity
     const {
@@ -121,7 +110,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
     const refreshTimer = ref<number | null>(null)
     const isInitialLoad = ref(true)
     const isReady = ref(false)
-    const currentOrganisationId = computed(() => defaultOrgId || authOrgId.value)
+    const currentOrganisationId = computed(() => defaultOrgId || userOrganisationId.value)
 
     // ============================================
     // Computed Getters - Derived Metrics
@@ -224,7 +213,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
     /**
      * Load all incident data
      */
-    async function load(): Promise<void> {
+    async function loadAllIncidents(): Promise<void> {
         const orgId = currentOrganisationId.value
         if (!orgId) {
             console.warn('No organisation ID available for incident data')
@@ -248,7 +237,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
     /**
      * Load incidents with filters
      */
-    async function load(params?: IncidentQueryParams): Promise<void> {
+    async function loadIncidentsWithFilters(params?: IncidentQueryParams): Promise<void> {
         await loadIncidents({
             ...params,
             organisationId: params?.organisationId || currentOrganisationId.value,
@@ -259,7 +248,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
      * Refresh all incident data
      */
     async function refresh(): Promise<void> {
-        await load()
+        await loadAllIncidents()
     }
 
     /**
@@ -298,7 +287,7 @@ export function useIncident(options: UseIncidentOptions = {}) {
 
     onMounted(async () => {
         if (autoLoad && isAuthenticated.value && currentOrganisationId.value) {
-            await load()
+            await loadAllIncidents()
             isInitialLoad.value = false
             isReady.value = true
 
@@ -311,14 +300,14 @@ export function useIncident(options: UseIncidentOptions = {}) {
     // Watch for organisation changes
     watch(currentOrganisationId, async (newOrgId, oldOrgId) => {
         if (newOrgId && newOrgId !== oldOrgId && isAuthenticated.value) {
-            await load()
+            await loadAllIncidents()
         }
     })
 
     // Watch for authentication changes
     watch(isAuthenticated, async (auth) => {
         if (auth && currentOrganisationId.value) {
-            await load()
+            await loadAllIncidents()
             if (refreshInterval) {
                 startAutoRefresh(refreshInterval)
             }
@@ -377,7 +366,8 @@ export function useIncident(options: UseIncidentOptions = {}) {
         escalatedCount,
 
         // Actions - Load
-        load,
+        loadAllIncidents,
+        loadIncidentsWithFilters,
         loadIncidents,
         loadIncident,
         loadIncidentTimeline,

@@ -1,11 +1,7 @@
 <template>
   <div class="network-status">
     <div class="row items-center q-gutter-sm">
-      <q-icon
-        :name="isOnline ? connectionIcon : 'wifi_off'"
-        :color="isOnline ? connectionColor : 'grey'"
-        size="18px"
-      />
+      <q-icon :name="isOnline ? connectionIcon : 'wifi_off'" :color="isOnline ? connectionColor : 'grey'" size="18px" />
       <div>
         <div class="text-body2">{{ isOnline ? connectionLabel : 'Offline' }}</div>
         <div v-if="isOnline && signalStrength > 0" class="text-caption text-grey-7">

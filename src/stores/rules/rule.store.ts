@@ -1,7 +1,5 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { rulesService } from '@/services/rules/rules.service';
-import { useAuth } from '@/composables/auth/useAuth';
 import type {
   Rule,
   RuleExecutionLog,
@@ -13,16 +11,18 @@ import type {
   RuleStatsDto,
   RuleExecutionStatsDto,
   RuleExecutionSummaryDto,
-  PaginatedResult,
-} from '@/types/rules';
-import { RuleStatus, RulePriority } from '@/types/rules/enums';
+  ExecutionLogQueryDto,
+} from './../../models/entities/rules/rule.entity';
+import { RuleStatus, RulePriority } from './../../models/entities/rules/rule.entity';
+import { ruleService } from './../../services/api/rules/RuleService';
+import { useAuthStore } from './../../stores/auth/auth.store';
 
-export const useRulesStore = defineStore('rules', () => {
+export const useRuleStore = defineStore('rules', () => {
   // ============================================
   // Dependencies - Auth Integration
   // ============================================
-  const auth = useAuth();
-  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+  const auth = useAuthStore();
+  const { isAuthenticated, isAdmin, isSuperAdmin, userOrganisationId } = auth;
 
   // ============================================
   // State - Rules
@@ -81,6 +81,10 @@ export const useRulesStore = defineStore('rules', () => {
 
   const archivedRules = computed(() =>
     rules.value.filter((r) => r.status === RuleStatus.ARCHIVED)
+  );
+
+  const testingRules = computed(() =>
+    rules.value.filter((r) => r.status === RuleStatus.TESTING)
   );
 
   // ============================================
@@ -142,8 +146,9 @@ export const useRulesStore = defineStore('rules', () => {
   // ============================================
   // Auth Check Helpers
   // ============================================
+  
   const requireAuth = (): boolean => {
-    if (!isAuthenticated.value) {
+    if (!isAuthenticated) {
       error.value = 'User not authenticated';
       return false;
     }
@@ -152,7 +157,7 @@ export const useRulesStore = defineStore('rules', () => {
 
   const requireAdmin = (): boolean => {
     if (!requireAuth()) return false;
-    if (!isAdmin.value && !isGlobalAdmin.value) {
+    if (!isAdmin && !isSuperAdmin) {
       error.value = 'Insufficient permissions: Administrator access required';
       return false;
     }
@@ -174,9 +179,9 @@ export const useRulesStore = defineStore('rules', () => {
         ...params,
         page: pagination.value.currentPage,
         limit: pagination.value.itemsPerPage,
-        organisationId: params?.organisationId || userOrgId.value,
+        organisationId: params?.organisationId || userOrganisationId,
       };
-      const response = await rulesService.getRules(queryParams);
+      const response = await ruleService.getRules(queryParams);
       rules.value = response.data || [];
       pagination.value = {
         currentPage: response.page || 1,
@@ -200,7 +205,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.getRule(uuid);
+      const rule = await ruleService.getRule(uuid);
       selectedRule.value = rule;
       return rule;
     } catch (err: any) {
@@ -215,13 +220,13 @@ export const useRulesStore = defineStore('rules', () => {
     if (!requireAdmin()) return null;
 
     if (!data.organisationId) {
-      data.organisationId = userOrgId.value || '';
+      data.organisationId = userOrganisationId || '';
     }
 
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.createRule(data);
+      const rule = await ruleService.createRule(data);
       rules.value.unshift(rule);
       return rule;
     } catch (err: any) {
@@ -238,7 +243,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.updateRule(uuid, data);
+      const rule = await ruleService.updateRule(uuid, data);
       const index = rules.value.findIndex((r) => r.uuid === uuid);
       if (index !== -1) {
         rules.value[index] = rule;
@@ -261,7 +266,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      await rulesService.deleteRule(uuid);
+      await ruleService.deleteRule(uuid);
       rules.value = rules.value.filter((r) => r.uuid !== uuid);
       if (selectedRule.value?.uuid === uuid) {
         selectedRule.value = null;
@@ -284,7 +289,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.activateRule(uuid);
+      const rule = await ruleService.activateRule(uuid);
       updateLocalRule(uuid, rule);
       return rule;
     } catch (err: any) {
@@ -301,7 +306,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.deactivateRule(uuid);
+      const rule = await ruleService.deactivateRule(uuid);
       updateLocalRule(uuid, rule);
       return rule;
     } catch (err: any) {
@@ -318,7 +323,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.archiveRule(uuid);
+      const rule = await ruleService.archiveRule(uuid);
       updateLocalRule(uuid, rule);
       return rule;
     } catch (err: any) {
@@ -329,13 +334,13 @@ export const useRulesStore = defineStore('rules', () => {
     }
   }
 
-  async function duplicateRule(uuid: string, name: string) {
+  async function duplicateRule(uuid: string) {
     if (!requireAdmin()) return null;
 
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.duplicateRule(uuid, name);
+      const rule = await ruleService.duplicateRule(uuid);
       rules.value.unshift(rule);
       return rule;
     } catch (err: any) {
@@ -352,7 +357,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const rule = await rulesService.restoreRuleVersion(uuid, versionNumber);
+      const rule = await ruleService.restoreRuleVersion(uuid, versionNumber);
       updateLocalRule(uuid, rule);
       return rule;
     } catch (err: any) {
@@ -373,7 +378,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const result = await rulesService.executeRule(uuid, data);
+      const result = await ruleService.executeRule(uuid, data);
       if (selectedRule.value?.uuid === uuid) {
         await fetchRuleById(uuid);
       }
@@ -392,7 +397,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      return await rulesService.testRule(uuid, data);
+      return await ruleService.testRule(uuid, data);
     } catch (err: any) {
       error.value = err.message || 'Failed to test rule';
       throw err;
@@ -411,7 +416,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      return await rulesService.testRuleDefinition(data);
+      return await ruleService.testRuleDefinition(data);
     } catch (err: any) {
       error.value = err.message || 'Failed to test rule definition';
       throw err;
@@ -420,13 +425,13 @@ export const useRulesStore = defineStore('rules', () => {
     }
   }
 
-  async function validateRule(data: Partial<Rule>) {
+  async function validateRule(data: CreateRuleDto) {
     if (!requireAdmin()) return null;
 
     isLoading.value = true;
     error.value = null;
     try {
-      return await rulesService.validateRule(data);
+      return await ruleService.validateRule({ rule: data });
     } catch (err: any) {
       error.value = err.message || 'Failed to validate rule';
       throw err;
@@ -443,7 +448,7 @@ export const useRulesStore = defineStore('rules', () => {
     if (!requireAdmin()) return null;
 
     try {
-      const statsData = await rulesService.getStats(organisationId || userOrgId.value);
+      const statsData = await ruleService.getStats(organisationId || userOrganisationId);
       stats.value = statsData;
       return statsData;
     } catch (err: any) {
@@ -458,7 +463,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const statsData = await rulesService.getExecutionStats(ruleId, days);
+      const statsData = await ruleService.getExecutionStats(ruleId, days);
       executionStats.value = statsData;
       return statsData;
     } catch (err: any) {
@@ -475,7 +480,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const summary = await rulesService.getExecutionSummary(ruleId, days);
+      const summary = await ruleService.getExecutionSummary(ruleId, days);
       executionSummary.value = summary;
       return summary;
     } catch (err: any) {
@@ -501,7 +506,7 @@ export const useRulesStore = defineStore('rules', () => {
         page: logsPagination.value.currentPage,
         limit: logsPagination.value.itemsPerPage,
       };
-      const response = await rulesService.getExecutionLogs(ruleId, queryParams);
+      const response = await ruleService.getExecutionLogs(ruleId, queryParams);
       executionLogs.value = response.data || [];
       logsPagination.value = {
         currentPage: response.page || 1,
@@ -524,7 +529,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoadingLogs.value = true;
     error.value = null;
     try {
-      const log = await rulesService.getExecutionLog(uuid);
+      const log = await ruleService.getExecutionLog(uuid);
       selectedLog.value = log;
       return log;
     } catch (err: any) {
@@ -541,7 +546,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      const result = await rulesService.cleanupExecutionLogs(days);
+      const result = await ruleService.cleanupExecutionLogs(days);
       return result;
     } catch (err: any) {
       error.value = err.message || 'Failed to cleanup execution logs';
@@ -557,7 +562,7 @@ export const useRulesStore = defineStore('rules', () => {
     isSaving.value = true;
     error.value = null;
     try {
-      await rulesService.deleteExecutionLog(uuid);
+      await ruleService.deleteExecutionLog(uuid);
       executionLogs.value = executionLogs.value.filter((l) => l.uuid !== uuid);
       if (selectedLog.value?.uuid === uuid) {
         selectedLog.value = null;
@@ -580,7 +585,7 @@ export const useRulesStore = defineStore('rules', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const active = await rulesService.getActiveRules(organisationId || userOrgId.value);
+      const active = await ruleService.getActiveRules(organisationId || userOrganisationId);
       return active;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch active rules';
@@ -662,6 +667,7 @@ export const useRulesStore = defineStore('rules', () => {
     inactiveRules,
     draftRules,
     archivedRules,
+    testingRules,
     rulesByType,
     rulesByStatus,
     rulesByPriority,

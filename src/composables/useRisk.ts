@@ -1,9 +1,8 @@
 import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useRiskStore } from '@/stores/risk/risk.store';
-import { useAuth } from '@/composables/auth/useAuth';
+import { useRiskStore } from './../stores/risk/risk.store';
+import { useAuth } from './useAuth';
 import type {
-    Risk,
     CreateRiskDto,
     UpdateRiskDto,
     AssessRiskDto,
@@ -11,15 +10,15 @@ import type {
     AssignRiskDto,
     AddControlDto,
     RiskQueryDto,
-} from '@/types/risk';
-import { getRiskScoreLevel, getRiskColor } from '@/types/risk/enums';
+} from './../models/entities/risk/risk.entity';
+import { getRiskScoreLevel, getRiskColor } from './../models/entities/risk/risk.entity';
 
 export function useRisk() {
     const store = useRiskStore();
     const auth = useAuth();
 
     // Auth state
-    const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+    const { isAuthenticated, isAdmin, isGlobalAdmin, userId, userOrganisationId } = auth;
 
     // Store refs
     const {
@@ -30,10 +29,8 @@ export function useRisk() {
         riskMatrix,
         riskTrends,
         isLoading,
-        isSaving,
         error,
         pagination,
-        filters,
         criticalRisks,
         highRisks,
         mediumRisks,
@@ -221,7 +218,7 @@ export function useRisk() {
     // Composable: useRiskStats
     // ============================================
     function useRiskStats(organisationId?: string) {
-        const targetOrgId = computed(() => organisationId || userOrgId.value);
+        const targetOrgId = computed(() => organisationId || userOrganisationId.value);
         const canFetch = computed(() => isAuthenticated.value);
 
         const fetchStats = async () => {
@@ -275,7 +272,7 @@ export function useRisk() {
     // Composable: useRiskMatrix
     // ============================================
     function useRiskMatrix(organisationId?: string) {
-        const targetOrgId = computed(() => organisationId || userOrgId.value);
+        const targetOrgId = computed(() => organisationId || userOrganisationId.value);
         const canFetch = computed(() => isAuthenticated.value);
 
         const fetchMatrix = async () => {
@@ -318,7 +315,7 @@ export function useRisk() {
     // Composable: useRiskTrends
     // ============================================
     function useRiskTrends(organisationId?: string) {
-        const targetOrgId = computed(() => organisationId || userOrgId.value);
+        const targetOrgId = computed(() => organisationId || userOrganisationId.value);
         const from = ref<Date>();
         const to = ref<Date>();
         const canFetch = computed(() => isAuthenticated.value);
@@ -430,7 +427,7 @@ export function useRisk() {
         isAuthenticated,
         isAdmin,
         isGlobalAdmin,
-        organisationId: userOrgId,
+        organisationId: userOrganisationId,
         userId,
 
         // Specialized composables

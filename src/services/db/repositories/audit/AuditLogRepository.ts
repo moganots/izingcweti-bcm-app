@@ -1,6 +1,6 @@
 import { Table } from "dexie"
 import { BaseRepository } from "../BaseRepository"
-import { AuditLog } from "./../../../../models/entities"
+import { AuditLog } from "../../../../models/entities"
 
 /**
  * Audit Log Repository

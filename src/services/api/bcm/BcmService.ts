@@ -3,8 +3,6 @@ import { API_ENDPOINTS } from '../../../core/constants/api.constants'
 import {
   BCMPlanStatus,
   RecoveryPriority,
-  RecoveryStrategyType,
-  ExerciseTestType,
   BCPTemplateCategory,
   type CriticalFunction,
   type BusinessImpactAssessment,
@@ -12,8 +10,6 @@ import {
   type RecoveryStrategy,
   type ExerciseTest,
   type BCPTemplate,
-  type BCMLifecycleStatus,
-  type LifecycleTask,
   type BCMMetrics,
   type BCMDashboardData,
   type CreateCriticalFunctionRequest,
@@ -31,17 +27,15 @@ import {
   type UpdateBCPTemplateRequest,
   type ApplyTemplateRequest,
   type BIASummary,
-  type BCPProgress,
   type TestStatistics,
-  type StrategyComparison,
   type MaturityAssessment,
   type CriticalFunctionQueryParams,
   type BIAQueryParams,
   type BCPQueryParams,
   type RecoveryStrategyQueryParams,
   type ExerciseTestQueryParams,
-  type PaginatedResponse,
-} from '../../../models/entities/bcm/bcm.entity'
+} from './../../../models/entities/bcm/bcm.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * BCM Service - Aligned with Backend DTOs (camelCase)

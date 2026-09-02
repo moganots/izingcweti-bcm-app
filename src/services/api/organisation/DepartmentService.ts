@@ -1,23 +1,21 @@
-// src/services/organisation/department.service.ts
-import { BaseService } from '@/services/BaseService';
-import { API_ENDPOINTS } from '@/core/constants/api.constants';
+import { BaseService } from '../../BaseService';
+import { API_ENDPOINTS } from '../../../core/constants/api.constants';
 import type {
   Department,
   CreateDepartmentDto,
   UpdateDepartmentDto,
-  ReorderDepartmentsDto,
   DepartmentQueryParams,
   DepartmentStatsDto,
   DepartmentTreeNode,
-} from '@/types/organisation';
-import type { PaginatedResult } from '@/types/common';
+} from '../../../models/entities/organisation/organisation.entity';
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 export class DepartmentService extends BaseService {
   constructor() {
     super();
   }
 
-  async getDepartments(params?: DepartmentQueryParams): Promise<PaginatedResult<Department>> {
+  async getDepartments(params?: DepartmentQueryParams): Promise<PaginatedResponse<Department>> {
     return this.getPaginated<Department>(
       API_ENDPOINTS.DEPARTMENTS.BASE,
       params as Record<string, any>
@@ -32,7 +30,7 @@ export class DepartmentService extends BaseService {
   async getDepartmentsByBusinessUnit(
     businessUnitId: string,
     params?: DepartmentQueryParams
-  ): Promise<PaginatedResult<Department>> {
+  ): Promise<PaginatedResponse<Department>> {
     return this.getPaginated<Department>(
       API_ENDPOINTS.DEPARTMENTS.BY_BUSINESS_UNIT(businessUnitId),
       params as Record<string, any>
@@ -42,7 +40,7 @@ export class DepartmentService extends BaseService {
   async getSubDepartments(
     parentDepartmentId: string,
     params?: DepartmentQueryParams
-  ): Promise<PaginatedResult<Department>> {
+  ): Promise<PaginatedResponse<Department>> {
     return this.getPaginated<Department>(
       API_ENDPOINTS.DEPARTMENTS.SUB_DEPARTMENTS(parentDepartmentId),
       params as Record<string, any>
@@ -83,7 +81,7 @@ export class DepartmentService extends BaseService {
     await this.post(API_ENDPOINTS.DEPARTMENTS.REORDER, { departmentIds });
   }
 
-  async searchDepartments(query: string, businessUnitId?: string): Promise<PaginatedResult<Department>> {
+  async searchDepartments(query: string, businessUnitId?: string): Promise<PaginatedResponse<Department>> {
     const params: DepartmentQueryParams = { search: query };
     if (businessUnitId) params.businessUnitId = businessUnitId;
     return this.getDepartments(params);

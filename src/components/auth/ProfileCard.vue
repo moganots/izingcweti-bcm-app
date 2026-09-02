@@ -90,7 +90,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { formatDate } from '../../utils/date.utils'
-import { getInitials } from '../../utils/formatters'
 
 const props = defineProps<{ user?: any; organisationName?: string }>()
 defineEmits<{ 'change-password': []; logout: [] }>()

@@ -22,23 +22,13 @@
       </div>
 
       <!-- PDF Preview -->
-      <iframe
-        v-else-if="isPDF"
-        :src="previewUrl"
-        width="100%"
-        :height="fullscreen ? '100vh' : '500px'"
-        frameborder="0"
-        class="preview-iframe"
-      />
+      <iframe v-else-if="isPDF" :src="previewUrl" width="100%" :height="fullscreen ? '100vh' : '500px'" frameborder="0"
+        class="preview-iframe" />
 
       <!-- Image Preview -->
       <div v-else-if="isImage" class="flex flex-center">
-        <img
-          :src="previewUrl"
-          :alt="document?.file_name"
-          class="preview-image"
-          :class="{ 'preview-image-fullscreen': fullscreen }"
-        />
+        <img :src="previewUrl" :alt="document?.file_name" class="preview-image"
+          :class="{ 'preview-image-fullscreen': fullscreen }" />
       </div>
 
       <!-- Text Preview -->
@@ -50,13 +40,8 @@
           <q-icon name="description" size="80px" color="grey-4" class="q-mb-md" />
           <div class="text-h6 text-grey-7">Preview Not Available</div>
           <p class="text-grey-6">This file type cannot be previewed.</p>
-          <q-btn
-            color="primary"
-            icon="download"
-            label="Download to View"
-            unelevated
-            @click="$emit('download', document)"
-          />
+          <q-btn color="primary" icon="download" label="Download to View" unelevated
+            @click="$emit('download', document)" />
         </div>
       </div>
     </q-card-section>
@@ -76,7 +61,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch } from 'vue'
+import { ref, computed } from 'vue'
 import { formatFileSize } from '../../utils/formatters'
 
 const props = defineProps<{

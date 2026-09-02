@@ -11,9 +11,7 @@
             Current State: {{ formatState(workflow.workflow_state) }}
           </div>
           <div class="text-caption text-grey-7">
-            <span v-if="workflow.assigned_to"
-              >Assigned to: {{ workflow.assignee_name || workflow.assigned_to }}</span
-            >
+            <span v-if="workflow.assigned_to">Assigned to: {{ workflow.assignee_name || workflow.assigned_to }}</span>
             <span v-else>Unassigned</span>
           </div>
         </div>
@@ -32,86 +30,40 @@
             This workflow is in draft. Submit it for review when ready.
           </q-banner>
 
-          <q-btn
-            color="primary"
-            icon="send"
-            label="Submit for Review"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="showSubmitDialog = true"
-          />
-          <q-btn
-            outline
-            color="grey"
-            icon="edit"
-            label="Edit Workflow"
-            class="full-width q-mt-sm"
-            @click="$emit('edit')"
-          />
+          <q-btn color="primary" icon="send" label="Submit for Review" class="full-width" size="lg" unelevated
+            @click="showSubmitDialog = true" />
+          <q-btn outline color="grey" icon="edit" label="Edit Workflow" class="full-width q-mt-sm"
+            @click="$emit('edit')" />
         </template>
 
         <!-- ========================================== -->
         <!-- SUBMITTED / IN REVIEW Actions -->
         <!-- ========================================== -->
-        <template
-          v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'"
-        >
+        <template v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'">
           <q-banner class="bg-blue-1 rounded-borders q-mb-md">
             <template v-slot:avatar><q-icon name="info" color="blue" /></template>
             This workflow requires your approval. Review and take action.
           </q-banner>
 
           <!-- Approve Button -->
-          <q-btn
-            color="green"
-            icon="check_circle"
-            label="Approve"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="showApproveDialog = true"
-          />
+          <q-btn color="green" icon="check_circle" label="Approve" class="full-width" size="lg" unelevated
+            @click="showApproveDialog = true" />
 
           <!-- Reject Button -->
-          <q-btn
-            color="red"
-            icon="cancel"
-            label="Reject"
-            class="full-width q-mt-sm"
-            outline
-            @click="showRejectDialog = true"
-          />
+          <q-btn color="red" icon="cancel" label="Reject" class="full-width q-mt-sm" outline
+            @click="showRejectDialog = true" />
 
           <!-- Escalate Button -->
-          <q-btn
-            color="orange"
-            icon="arrow_upward"
-            label="Escalate"
-            class="full-width q-mt-sm"
-            outline
-            @click="showEscalateDialog = true"
-          />
+          <q-btn color="orange" icon="arrow_upward" label="Escalate" class="full-width q-mt-sm" outline
+            @click="showEscalateDialog = true" />
 
           <!-- Reassign Button -->
-          <q-btn
-            color="purple"
-            icon="person_swap"
-            label="Reassign"
-            class="full-width q-mt-sm"
-            outline
-            @click="showReassignDialog = true"
-          />
+          <q-btn color="purple" icon="person_swap" label="Reassign" class="full-width q-mt-sm" outline
+            @click="showReassignDialog = true" />
 
           <!-- Request Info Button -->
-          <q-btn
-            color="info"
-            icon="help_outline"
-            label="Request More Information"
-            class="full-width q-mt-sm"
-            flat
-            @click="showRequestInfoDialog = true"
-          />
+          <q-btn color="info" icon="help_outline" label="Request More Information" class="full-width q-mt-sm" flat
+            @click="showRequestInfoDialog = true" />
         </template>
 
         <!-- ========================================== -->
@@ -123,15 +75,8 @@
             This workflow has been approved. Mark it as completed when done.
           </q-banner>
 
-          <q-btn
-            color="green"
-            icon="done_all"
-            label="Mark as Completed"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="showCompleteDialog = true"
-          />
+          <q-btn color="green" icon="done_all" label="Mark as Completed" class="full-width" size="lg" unelevated
+            @click="showCompleteDialog = true" />
         </template>
 
         <!-- ========================================== -->
@@ -146,15 +91,8 @@
             </div>
           </q-banner>
 
-          <q-btn
-            color="primary"
-            icon="refresh"
-            label="Revise and Resubmit"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="$emit('edit')"
-          />
+          <q-btn color="primary" icon="refresh" label="Revise and Resubmit" class="full-width" size="lg" unelevated
+            @click="$emit('edit')" />
         </template>
 
         <!-- ========================================== -->
@@ -166,14 +104,8 @@
             This workflow has been completed on {{ formatDate(workflow.completed_at) }}.
           </q-banner>
 
-          <q-btn
-            color="brown"
-            icon="archive"
-            label="Archive Workflow"
-            class="full-width"
-            outline
-            @click="$emit('archive')"
-          />
+          <q-btn color="brown" icon="archive" label="Archive Workflow" class="full-width" outline
+            @click="$emit('archive')" />
         </template>
 
         <!-- ========================================== -->
@@ -181,24 +113,10 @@
         <!-- ========================================== -->
         <q-separator class="q-my-md" />
 
-        <q-btn
-          color="grey"
-          icon="chat"
-          label="Add Comment"
-          class="full-width"
-          flat
-          @click="showCommentDialog = true"
-        />
+        <q-btn color="grey" icon="chat" label="Add Comment" class="full-width" flat @click="showCommentDialog = true" />
 
-        <q-btn
-          v-if="canCancel"
-          color="negative"
-          icon="block"
-          label="Cancel Workflow"
-          class="full-width q-mt-sm"
-          flat
-          @click="showCancelDialog = true"
-        />
+        <q-btn v-if="canCancel" color="negative" icon="block" label="Cancel Workflow" class="full-width q-mt-sm" flat
+          @click="showCancelDialog = true" />
       </div>
     </q-card-section>
 
@@ -211,15 +129,8 @@
           <div class="text-h6">Submit for Review</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="submitComment"
-            label="Comments (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            placeholder="Add any notes for the reviewer..."
-          />
+          <q-input v-model="submitComment" label="Comments (optional)" outlined dense type="textarea" rows="3"
+            placeholder="Add any notes for the reviewer..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -237,16 +148,8 @@
           <div class="text-h6 text-green">Approve Workflow</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="approveComment"
-            label="Comments *"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            :rules="[requiredRule]"
-            placeholder="Add your approval comments..."
-          />
+          <q-input v-model="approveComment" label="Comments *" outlined dense type="textarea" rows="3"
+            :rules="[requiredRule]" placeholder="Add your approval comments..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -264,25 +167,10 @@
           <div class="text-h6 text-red">Reject Workflow</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="rejectReason"
-            label="Rejection Reason *"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            :rules="[requiredRule]"
-            placeholder="Explain why this workflow is being rejected..."
-          />
-          <q-input
-            v-model="rejectComment"
-            label="Additional Comments (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            class="q-mt-md"
-          />
+          <q-input v-model="rejectReason" label="Rejection Reason *" outlined dense type="textarea" rows="3"
+            :rules="[requiredRule]" placeholder="Explain why this workflow is being rejected..." />
+          <q-input v-model="rejectComment" label="Additional Comments (optional)" outlined dense type="textarea"
+            rows="2" class="q-mt-md" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -300,27 +188,10 @@
           <div class="text-h6 text-orange">Escalate Workflow</div>
         </q-card-section>
         <q-card-section>
-          <q-select
-            v-model="escalationLevel"
-            :options="escalationLevelOptions"
-            label="Escalation Level *"
-            outlined
-            dense
-            :rules="[requiredRule]"
-            emit-value
-            map-options
-          />
-          <q-input
-            v-model="escalationReason"
-            label="Reason for Escalation *"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            :rules="[requiredRule]"
-            class="q-mt-md"
-            placeholder="Explain why this needs escalation..."
-          />
+          <q-select v-model="escalationLevel" :options="escalationLevelOptions" label="Escalation Level *" outlined
+            dense :rules="[requiredRule]" emit-value map-options />
+          <q-input v-model="escalationReason" label="Reason for Escalation *" outlined dense type="textarea" rows="2"
+            :rules="[requiredRule]" class="q-mt-md" placeholder="Explain why this needs escalation..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -338,26 +209,10 @@
           <div class="text-h6 text-purple">Reassign Workflow</div>
         </q-card-section>
         <q-card-section>
-          <q-select
-            v-model="reassignTo"
-            :options="userOptions"
-            label="Reassign To *"
-            outlined
-            dense
-            :rules="[requiredRule]"
-            emit-value
-            map-options
-          />
-          <q-input
-            v-model="reassignReason"
-            label="Reason (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            class="q-mt-md"
-            placeholder="Why are you reassigning?"
-          />
+          <q-select v-model="reassignTo" :options="userOptions" label="Reassign To *" outlined dense
+            :rules="[requiredRule]" emit-value map-options />
+          <q-input v-model="reassignReason" label="Reason (optional)" outlined dense type="textarea" rows="2"
+            class="q-mt-md" placeholder="Why are you reassigning?" />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -375,25 +230,12 @@
           <div class="text-h6 text-info">Request Information</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="requestInfoMessage"
-            label="What information is needed? *"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            :rules="[requiredRule]"
-            placeholder="Describe the information you need..."
-          />
+          <q-input v-model="requestInfoMessage" label="What information is needed? *" outlined dense type="textarea"
+            rows="3" :rules="[requiredRule]" placeholder="Describe the information you need..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
-          <q-btn
-            color="info"
-            label="Request Info"
-            :loading="submitting"
-            @click="handleRequestInfo"
-          />
+          <q-btn color="info" label="Request Info" :loading="submitting" @click="handleRequestInfo" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -407,15 +249,8 @@
           <div class="text-h6 text-green">Complete Workflow</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="completeComment"
-            label="Completion Notes (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            placeholder="Add any completion notes..."
-          />
+          <q-input v-model="completeComment" label="Completion Notes (optional)" outlined dense type="textarea" rows="3"
+            placeholder="Add any completion notes..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -436,24 +271,12 @@
           <p class="text-body1">
             Are you sure you want to cancel this workflow? This action cannot be undone.
           </p>
-          <q-input
-            v-model="cancelReason"
-            label="Reason for Cancellation (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            placeholder="Explain why you're cancelling..."
-          />
+          <q-input v-model="cancelReason" label="Reason for Cancellation (optional)" outlined dense type="textarea"
+            rows="2" placeholder="Explain why you're cancelling..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Keep" color="grey" v-close-popup />
-          <q-btn
-            color="negative"
-            label="Cancel Workflow"
-            :loading="submitting"
-            @click="handleCancel"
-          />
+          <q-btn color="negative" label="Cancel Workflow" :loading="submitting" @click="handleCancel" />
         </q-card-actions>
       </q-card>
     </q-dialog>
@@ -467,16 +290,8 @@
           <div class="text-h6">Add Comment</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="commentText"
-            label="Comment *"
-            outlined
-            dense
-            type="textarea"
-            rows="3"
-            :rules="[requiredRule]"
-            placeholder="Add your comment..."
-          />
+          <q-input v-model="commentText" label="Comment *" outlined dense type="textarea" rows="3"
+            :rules="[requiredRule]" placeholder="Add your comment..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />

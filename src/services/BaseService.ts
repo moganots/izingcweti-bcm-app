@@ -1,4 +1,4 @@
-import { ApiResponse, PaginatedResponse, QueryParams } from 'src/shared/types/common.types'
+import { ApiResponse, PaginatedResponse, PaginationParams, QueryParams } from 'src/shared/types/common.types'
 import { API_BASE_URL, API_TIMEOUT } from '../core/constants/api.constants'
 
 export interface RequestOptions extends RequestInit {
@@ -75,9 +75,10 @@ export class BaseService {
 
   protected async get<T = any>(
     endpoint: string,
-    params?: Record<string, any>
+    params?: Record<string, any>,
+    options?: { timeout?: number }
   ): Promise<ApiResponse<T>> {
-    const requestOptions: RequestOptions = { method: 'GET' }
+    const requestOptions: RequestOptions = { method: 'GET', timeout: options?.timeout || this.defaultTimeout }
     if (params !== undefined) {
       requestOptions.params = params
     }
@@ -224,7 +225,7 @@ export class BaseService {
 
   protected async getPaginated<T = any>(
     endpoint: string,
-    params?: QueryParams
+    params?: PaginationParams | QueryParams
   ): Promise<PaginatedResponse<T>> {
     const response = await this.get<{ data: T[]; total: number; page: number; limit: number }>(
       endpoint,

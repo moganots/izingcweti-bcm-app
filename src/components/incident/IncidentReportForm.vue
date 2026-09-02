@@ -84,7 +84,7 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, computed } from 'vue'
+import { reactive, computed } from 'vue'
 
 const props = withDefaults(
   defineProps<{

@@ -1,5 +1,3 @@
-// src/utils/validators.ts
-
 /**
  * Validation Utility Functions
  * Reusable validation rules for forms and data validation

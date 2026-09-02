@@ -31,7 +31,7 @@ export class DashboardService extends BaseService {
    */
   async getCompleteDashboard(organisationId: string): Promise<DashboardData> {
     const response = await this.get<DashboardData>(
-      API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId)
+      API_ENDPOINTS.DASHBOARD.COMPLETE(organisationId), undefined, { timeout: 60000 }
     )
     return this.extractData(response)
   }

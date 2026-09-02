@@ -57,8 +57,8 @@ export enum TenantAuditAction {
 // Tenant Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
-import { Organisation } from '../organisation'
+import type { BaseEntity } from './../../../core/base/base.entity';
+import type { Organisation } from './../organisation/organisation.entity'
 
 export interface AwsResources {
   cognito_user_pool_id?: string

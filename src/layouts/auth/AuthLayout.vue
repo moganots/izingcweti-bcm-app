@@ -1,4 +1,3 @@
-<!-- src/layouts/auth/AuthLayout.vue - Simplified version -->
 <template>
   <div class="auth-layout">
     <div class="auth-container row items-center justify-center">
@@ -10,8 +9,8 @@
               :src="logoSrc"
               alt="Logo"
               class="logo-img"
-              width="80"
-              height="80"
+              width="60"
+              height="60"
               @error="handleLogoError"
             />
             <div v-else class="logo-placeholder">

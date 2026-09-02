@@ -6,8 +6,6 @@ import type {
   CreateComplianceRecordRequest,
   UpdateComplianceRecordRequest,
   UpdateComplianceStatusRequest,
-  AddEvidenceRequest,
-  ScheduleAuditRequest,
   ComplianceQueryParams,
   ComplianceStats,
   ComplianceSummary,
@@ -15,8 +13,6 @@ import type {
 } from './../../models/entities/compliance/compliance.entity'
 import {
   ComplianceStatus,
-  getComplianceStatusColor,
-  getComplianceStatusLabel,
   isAuditOverdue,
   isAuditDueSoon,
 } from './../../models/entities/compliance/compliance.entity'

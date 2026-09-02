@@ -1,16 +1,17 @@
-<!-- src/pages/user/ProfilePage.vue -->
 <template>
   <div class="profile-page">
     <div class="row q-col-gutter-md">
+      <!-- Profile Card -->
       <div class="col-12 col-md-4">
         <ProfileCard
-          :user="authStore.user"
+          :user="user"
           :organisation-name="organisationName"
           @change-password="showChangePassword = true"
           @logout="handleLogout"
         />
       </div>
-      
+
+      <!-- Edit Profile Form -->
       <div class="col-12 col-md-8">
         <q-card flat bordered>
           <q-card-section>
@@ -22,7 +23,7 @@
               <div class="row q-col-gutter-md">
                 <div class="col-6">
                   <q-input
-                    v-model="profileForm.first_name"
+                    v-model="profileForm.firstName"
                     label="First Name"
                     outlined
                     dense
@@ -31,7 +32,7 @@
                 </div>
                 <div class="col-6">
                   <q-input
-                    v-model="profileForm.last_name"
+                    v-model="profileForm.lastName"
                     label="Last Name"
                     outlined
                     dense
@@ -39,7 +40,7 @@
                   />
                 </div>
               </div>
-              
+
               <q-input
                 v-model="profileForm.email"
                 label="Email Address"
@@ -48,47 +49,53 @@
                 dense
                 :rules="[emailRule]"
               />
-              
+
               <q-input
-                v-model="profileForm.phone"
+                v-model="profileForm.phoneNumber"
                 label="Phone Number"
                 outlined
                 dense
               />
-              
-              <q-select
-                v-model="profileForm.preferences.theme"
-                :options="themeOptions"
-                label="Theme"
-                outlined
-                dense
-              />
-              
-              <q-select
-                v-model="profileForm.preferences.language"
-                :options="languageOptions"
-                label="Language"
-                outlined
-                dense
-              />
-              
-              <div class="text-h6 q-mt-md">Notification Preferences</div>
-              <q-separator class="q-mb-md" />
-              
+
               <div class="row q-col-gutter-md">
-                <div class="col-12 col-md-6">
-                  <q-toggle v-model="profileForm.preferences.notifications.email" label="Email Notifications" />
-                  <q-toggle v-model="profileForm.preferences.notifications.push" label="Push Notifications" />
-                  <q-toggle v-model="profileForm.preferences.notifications.sms" label="SMS Notifications" />
+                <div class="col-6">
+                  <q-select
+                    v-model="profileForm.theme"
+                    :options="themeOptions"
+                    label="Theme"
+                    outlined
+                    dense
+                  />
                 </div>
-                <div class="col-12 col-md-6">
-                  <q-toggle v-model="profileForm.preferences.notifications.workflow_updates" label="Workflow Updates" />
-                  <q-toggle v-model="profileForm.preferences.notifications.risk_alerts" label="Risk Alerts" />
-                  <q-toggle v-model="profileForm.preferences.notifications.incident_alerts" label="Incident Alerts" />
+                <div class="col-6">
+                  <q-select
+                    v-model="profileForm.language"
+                    :options="languageOptions"
+                    label="Language"
+                    outlined
+                    dense
+                  />
                 </div>
               </div>
-              
-              <div class="row justify-end q-gutter-md">
+
+              <!-- Notification Preferences -->
+              <div class="text-h6 q-mt-md">Notification Preferences</div>
+              <q-separator class="q-mb-md" />
+
+              <div class="row q-col-gutter-md">
+                <div class="col-12 col-md-6">
+                  <q-toggle v-model="profileForm.notifications.email" label="Email Notifications" />
+                  <q-toggle v-model="profileForm.notifications.push" label="Push Notifications" />
+                  <q-toggle v-model="profileForm.notifications.sms" label="SMS Notifications" />
+                </div>
+                <div class="col-12 col-md-6">
+                  <q-toggle v-model="profileForm.notifications.workflowUpdates" label="Workflow Updates" />
+                  <q-toggle v-model="profileForm.notifications.riskAlerts" label="Risk Alerts" />
+                  <q-toggle v-model="profileForm.notifications.incidentAlerts" label="Incident Alerts" />
+                </div>
+              </div>
+
+              <div class="row justify-end q-gutter-md q-mt-md">
                 <q-btn label="Cancel" flat color="grey" @click="resetForm" />
                 <q-btn
                   type="submit"
@@ -103,7 +110,7 @@
         </q-card>
       </div>
     </div>
-    
+
     <!-- Change Password Dialog -->
     <q-dialog v-model="showChangePassword">
       <q-card style="min-width: 400px">
@@ -126,23 +133,56 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuthStore } from 'src/stores/auth/auth.store'
-import { ProfileCard, ChangePasswordForm } from 'src/components/auth'
+import { useAuth } from '../../composables/useAuth'
+import { ProfileCard, ChangePasswordForm } from '../../components/auth'
 
 const router = useRouter()
 const $q = useQuasar()
-const authStore = useAuthStore()
 
-const organisationName = ref('')
+// ============================================
+// Auth Composable
+// ============================================
+const auth = useAuth()
+
+// State
 const showChangePassword = ref(false)
 const saving = ref(false)
 const passwordLoading = ref(false)
 const passwordError = ref('')
 const passwordSuccess = ref('')
+const organisationName = ref('')
 
+// ============================================
+// User Data
+// ============================================
+const user = computed(() => auth.user.value)
+
+// ============================================
+// Profile Form
+// ============================================
+const profileForm = reactive({
+  firstName: '',
+  lastName: '',
+  email: '',
+  phoneNumber: '',
+  theme: 'light',
+  language: 'en',
+  notifications: {
+    email: true,
+    push: true,
+    sms: false,
+    workflowUpdates: true,
+    riskAlerts: true,
+    incidentAlerts: true,
+  },
+})
+
+// ============================================
+// Options
+// ============================================
 const themeOptions = [
   { label: 'Light', value: 'light' },
   { label: 'Dark', value: 'dark' },
@@ -156,58 +196,76 @@ const languageOptions = [
   { label: 'Xhosa', value: 'xh' },
 ]
 
-const profileForm = reactive({
-  first_name: '',
-  last_name: '',
-  email: '',
-  phone: '',
-  preferences: {
-    theme: 'light',
-    language: 'en',
-    notifications: {
-      email: true,
-      push: true,
-      sms: false,
-      workflow_updates: true,
-      risk_alerts: true,
-      incident_alerts: true,
-    },
-  },
-})
+// ============================================
+// Validation Rules
+// ============================================
+const requiredRule = (val: string) => !!val || 'This field is required'
 
-const requiredRule = (val: string) => !!val || 'Required'
 const emailRule = (val: string) => {
   if (!val) return 'Email is required'
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Invalid email'
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val) || 'Please enter a valid email address'
 }
 
-onMounted(() => {
-  if (authStore.user) {
-    profileForm.first_name = authStore.user.first_name || ''
-    profileForm.last_name = authStore.user.last_name || ''
-    profileForm.email = authStore.user.email || ''
-    organisationName.value = 'Demo Organisation'
-  }
-})
+// ============================================
+// Methods
+// ============================================
 
-function resetForm() {
-  if (authStore.user) {
-    profileForm.first_name = authStore.user.first_name || ''
-    profileForm.last_name = authStore.user.last_name || ''
-    profileForm.email = authStore.user.email || ''
+/**
+ * Load user data into form
+ */
+function loadUserData(): void {
+  if (user.value) {
+    profileForm.firstName = user.value.firstName || ''
+    profileForm.lastName = user.value.lastName || ''
+    profileForm.email = user.value.email || ''
+    profileForm.phoneNumber = user.value.phoneNumber || ''
+
+    // Load preferences if they exist
+    if (user.value.preferences) {
+      const prefs = user.value.preferences
+      profileForm.theme = prefs.theme || 'light'
+      profileForm.language = prefs.language || 'en'
+
+      if (prefs.notifications) {
+        profileForm.notifications = {
+          ...profileForm.notifications,
+          ...prefs.notifications,
+        }
+      }
+    }
+
+    // Load organisation name
+    organisationName.value = user.value.organisation?.name || 'N/A'
   }
 }
 
-async function handleUpdateProfile() {
+/**
+ * Reset form to current user data
+ */
+function resetForm(): void {
+  loadUserData()
+}
+
+/**
+ * Update user profile
+ */
+async function handleUpdateProfile(): Promise<void> {
   saving.value = true
-  
+
   try {
-    await authStore.updateProfile({
-      first_name: profileForm.first_name,
-      last_name: profileForm.last_name,
-      email: profileForm.email,
-    })
-    
+    const updateData = {
+      firstName: profileForm.firstName,
+      lastName: profileForm.lastName,
+      phoneNumber: profileForm.phoneNumber,
+      preferences: {
+        theme: profileForm.theme,
+        language: profileForm.language,
+        notifications: profileForm.notifications,
+      },
+    }
+
+    await auth.updateProfile(updateData)
+
     $q.notify({
       type: 'positive',
       message: 'Profile updated successfully',
@@ -224,34 +282,74 @@ async function handleUpdateProfile() {
   }
 }
 
-async function handleChangePassword(data: { currentPassword: string; newPassword: string }) {
+/**
+ * Handle password change
+ */
+async function handleChangePassword(data: { currentPassword: string; newPassword: string }): Promise<void> {
   passwordLoading.value = true
   passwordError.value = ''
   passwordSuccess.value = ''
-  
+
   try {
-    await authStore.changePassword(data.currentPassword, data.newPassword)
+    await auth.changePassword(data.currentPassword, data.newPassword)
+
     passwordSuccess.value = 'Password changed successfully!'
+
+    // Auto-close dialog after success
     setTimeout(() => {
       showChangePassword.value = false
       passwordSuccess.value = ''
     }, 2000)
   } catch (err: any) {
-    passwordError.value = err.message || 'Failed to change password'
+    passwordError.value = err.message || 'Failed to change password. Please check your current password.'
   } finally {
     passwordLoading.value = false
   }
 }
 
-async function handleLogout() {
+/**
+ * Handle logout
+ */
+async function handleLogout(): Promise<void> {
   $q.dialog({
-    title: 'Confirm',
+    title: 'Confirm Logout',
     message: 'Are you sure you want to logout?',
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await authStore.logout()
+    await auth.logout()
     router.push({ name: 'Login' })
   })
 }
+
+// ============================================
+// Lifecycle
+// ============================================
+
+onMounted(() => {
+  if (auth.isAuthenticated.value) {
+    loadUserData()
+  }
+})
+
+// Watch for user changes
+watch(
+  () => auth.user.value,
+  (newUser) => {
+    if (newUser) {
+      loadUserData()
+    }
+  },
+  { deep: true }
+)
 </script>
+
+<style lang="scss" scoped>
+.profile-page {
+  padding: 16px 0;
+
+  @media (max-width: 600px) {
+    padding: 8px 0;
+  }
+}
+</style>

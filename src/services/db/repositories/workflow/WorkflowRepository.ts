@@ -1,8 +1,6 @@
-// src/services/db/repositories/WorkflowRepository.ts
-
 import type { Table } from 'dexie'
 import { BaseRepository } from '../BaseRepository'
-import { Workflow } from './../../../../models/entities'
+import { Workflow, WorkflowPriority, WorkflowState } from './../../../../models/entities'
 
 /**
  * Workflow Repository
@@ -35,8 +33,8 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   async findPending(): Promise<Workflow[]> {
     return this.table
       .filter((w) => {
-        const state = w.workflow_state
-        return state === 'Draft' || state === 'Submitted' || state === 'InReview'
+        const state = w.workflowState
+        return state === WorkflowState.DRAFT || state === WorkflowState.SUBMITTED || state === WorkflowState.IN_REVIEW
       })
       .toArray()
   }
@@ -45,8 +43,8 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
     return this.table
       .filter((w) => {
         return (
-          w.assigned_to === userId &&
-          (w.workflow_state === 'Submitted' || w.workflow_state === 'InReview')
+          w.assignedTo === userId &&
+          (w.workflowState === WorkflowState.SUBMITTED || w.workflowState === WorkflowState.IN_REVIEW)
         )
       })
       .toArray()
@@ -57,31 +55,31 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
 
     return this.table
       .filter((w) => {
-        const dueDate = w.due_date
-        const completedAt = w.completed_at
-        const state = w.workflow_state
+        const dueDate = (w as any)?.dueDate as string | null | undefined
+        const completedAt = w.completedAt
+        const state = w.workflowState
 
-        if (typeof dueDate !== 'string' || dueDate.length === 0) {
+        if (!dueDate || typeof dueDate !== 'string' || dueDate.length === 0) {
           return false
         }
 
         const isPastDue = dueDate < now
         const isNotCompleted = completedAt === null || completedAt === undefined
-        const isNotTerminal = state !== 'Completed' && state !== 'Archived' && state !== 'Cancelled'
+        const isNotTerminal = state !== WorkflowState.COMPLETED && state !== WorkflowState.ARCHIVED && state !== WorkflowState.CANCELLED
 
         return isPastDue && isNotCompleted && isNotTerminal
       })
       .toArray()
   }
 
-  async findByPriority(priority: number): Promise<Workflow[]> {
+  async findByPriority(priority: WorkflowPriority): Promise<Workflow[]> {
     return this.findMany({ priority } as Partial<Workflow>)
   }
 
   async findByEntity(entityType: string, entityId: string): Promise<Workflow[]> {
     return this.table
       .filter((w) => {
-        return w.entity_type === entityType && w.entity_id === entityId
+        return w.entityType === entityType && w.entityId === entityId
       })
       .toArray()
   }
@@ -89,8 +87,8 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   async findDueInDateRange(startDate: string, endDate: string): Promise<Workflow[]> {
     return this.table
       .filter((w) => {
-        const dueDate = w.due_date
-        if (typeof dueDate !== 'string' || dueDate.length === 0) {
+        const dueDate = (w as any)?.dueDate as string | undefined
+        if (!dueDate || typeof dueDate !== 'string' || dueDate.length === 0) {
           return false
         }
         return dueDate >= startDate && dueDate <= endDate
@@ -101,7 +99,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   async findEscalated(): Promise<Workflow[]> {
     return this.table
       .filter((w) => {
-        const level = w.escalation_level
+        const level = w.escalationLevel
         return typeof level === 'number' && level > 0
       })
       .toArray()
@@ -110,7 +108,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   async findByEscalationLevel(level: number): Promise<Workflow[]> {
     return this.table
       .filter((w) => {
-        return typeof w.escalation_level === 'number' && w.escalation_level === level
+        return typeof w.escalationLevel === 'number' && w.escalationLevel === level
       })
       .toArray()
   }
@@ -123,7 +121,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   /**
    * Update workflow state
    */
-  async updateState(uuid: string, newState: string): Promise<void> {
+  async updateState(uuid: string, newState: WorkflowState): Promise<void> {
     const updateData: Record<string, unknown> = {
       workflow_state: newState,
       updated_at: new Date().toISOString(),
@@ -135,7 +133,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    * Submit workflow for review
    */
   async submitWorkflow(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'Submitted')
+    await this.updateState(uuid, WorkflowState.SUBMITTED)
   }
 
   /**
@@ -143,7 +141,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    */
   async startReview(uuid: string, userId: string): Promise<void> {
     const updateData: Record<string, unknown> = {
-      workflow_state: 'InReview',
+      workflow_state: WorkflowState.IN_REVIEW,
       assigned_to: userId,
       updated_at: new Date().toISOString(),
     }
@@ -154,7 +152,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    * Approve a workflow
    */
   async approveWorkflow(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'Approved')
+    await this.updateState(uuid, WorkflowState.APPROVED)
   }
 
   /**
@@ -162,7 +160,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    */
   async rejectWorkflow(uuid: string, reason: string): Promise<void> {
     const updateData: Record<string, unknown> = {
-      workflow_state: 'Rejected',
+      workflow_state: WorkflowState.REJECTED,
       rejection_reason: reason,
       updated_at: new Date().toISOString(),
     }
@@ -174,7 +172,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    */
   async completeWorkflow(uuid: string): Promise<void> {
     const updateData: Record<string, unknown> = {
-      workflow_state: 'Completed',
+      workflow_state: WorkflowState.COMPLETED,
       completed_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
@@ -185,14 +183,14 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    * Archive a workflow
    */
   async archiveWorkflow(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'Archived')
+    await this.updateState(uuid, WorkflowState.ARCHIVED)
   }
 
   /**
    * Cancel a workflow
    */
   async cancelWorkflow(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'Cancelled')
+    await this.updateState(uuid, WorkflowState.CANCELLED)
   }
 
   /**
@@ -200,7 +198,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    */
   async escalateWorkflow(uuid: string, level: number): Promise<void> {
     const updateData: Record<string, unknown> = {
-      workflow_state: 'Escalated',
+      workflow_state: WorkflowState.ESCALATED,
       escalation_level: level,
       updated_at: new Date().toISOString(),
     }
@@ -213,7 +211,7 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   async reassignWorkflow(uuid: string, newAssigneeId: string): Promise<void> {
     const updateData: Record<string, unknown> = {
       assigned_to: newAssigneeId,
-      workflow_state: 'AwaitingInput',
+      workflow_state: WorkflowState.AWAITING_INPUT,
       updated_at: new Date().toISOString(),
     }
     await this.table.update(uuid, updateData as any)
@@ -262,14 +260,14 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
    * Set workflow as expired
    */
   async expireWorkflow(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'Expired')
+    await this.updateState(uuid, WorkflowState.EXPIRED)
   }
 
   /**
    * Set workflow as awaiting input
    */
   async setAwaitingInput(uuid: string): Promise<void> {
-    await this.updateState(uuid, 'AwaitingInput')
+    await this.updateState(uuid, WorkflowState.AWAITING_INPUT)
   }
 
   /**
@@ -318,11 +316,11 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
     const byPriority: Record<string, number> = {}
 
     all.forEach((w) => {
-      if (w.workflow_type) {
-        byType[w.workflow_type] = (byType[w.workflow_type] || 0) + 1
+      if (w.workflowType) {
+        byType[w.workflowType] = (byType[w.workflowType] || 0) + 1
       }
-      if (w.workflow_state) {
-        byState[w.workflow_state] = (byState[w.workflow_state] || 0) + 1
+      if (w.workflowState) {
+        byState[w.workflowState] = (byState[w.workflowState] || 0) + 1
       }
       if (typeof w.priority === 'number') {
         const key = String(w.priority)
@@ -333,27 +331,27 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
     return {
       total: all.length,
       pending: all.filter((w) => {
-        const state = w.workflow_state
-        return state === 'Submitted' || state === 'InReview'
+        const state = w.workflowState
+        return state === WorkflowState.SUBMITTED || state === WorkflowState.IN_REVIEW
       }).length,
-      approved: all.filter((w) => w.workflow_state === 'Approved').length,
-      rejected: all.filter((w) => w.workflow_state === 'Rejected').length,
-      completed: all.filter((w) => w.workflow_state === 'Completed').length,
+      approved: all.filter((w) => w.workflowState === WorkflowState.APPROVED).length,
+      rejected: all.filter((w) => w.workflowState === WorkflowState.REJECTED).length,
+      completed: all.filter((w) => w.workflowState === WorkflowState.COMPLETED).length,
       overdue: all.filter((w) => {
-        const dueDate = w.due_date
+        const dueDate = (w as any)?.dueDate as string | null | undefined
         if (typeof dueDate !== 'string' || dueDate.length === 0) {
           return false
         }
         const isPastDue = dueDate < now
-        const isNotCompleted = w.completed_at === null || w.completed_at === undefined
+        const isNotCompleted = w.completedAt === null || w.completedAt === undefined
         const isNotTerminal =
-          w.workflow_state !== 'Completed' &&
-          w.workflow_state !== 'Archived' &&
-          w.workflow_state !== 'Cancelled'
+          w.workflowState !== WorkflowState.COMPLETED &&
+          w.workflowState !== WorkflowState.ARCHIVED &&
+          w.workflowState !== WorkflowState.CANCELLED
         return isPastDue && isNotCompleted && isNotTerminal
       }).length,
       escalated: all.filter((w) => {
-        return typeof w.escalation_level === 'number' && w.escalation_level > 0
+        return typeof w.escalationLevel === 'number' && w.escalationLevel > 0
       }).length,
       byType,
       byState,
@@ -374,18 +372,18 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
     return {
       total: workflows.length,
       pending: workflows.filter((w) => {
-        const state = w.workflow_state
-        return state === 'Submitted' || state === 'InReview'
+        const state = w.workflowState
+        return state === WorkflowState.SUBMITTED || state === WorkflowState.IN_REVIEW
       }).length,
-      approved: workflows.filter((w) => w.workflow_state === 'Approved').length,
-      rejected: workflows.filter((w) => w.workflow_state === 'Rejected').length,
+      approved: workflows.filter((w) => w.workflowState === WorkflowState.APPROVED).length,
+      rejected: workflows.filter((w) => w.workflowState === WorkflowState.REJECTED).length,
       overdue: workflows.filter((w) => {
-        const dueDate = w.due_date
+        const dueDate = (w as any)?.dueDate as string | null | undefined
         if (typeof dueDate !== 'string' || dueDate.length === 0) {
           return false
         }
         const isPastDue = dueDate < now
-        const isNotCompleted = w.completed_at === null || w.completed_at === undefined
+        const isNotCompleted = w.completedAt === null || w.completedAt === undefined
         return isPastDue && isNotCompleted
       }).length,
     }
@@ -395,8 +393,8 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   // Count Methods
   // ============================================
 
-  async getCountByState(state: string): Promise<number> {
-    const results = await this.table.filter((w) => w.workflow_state === state).toArray()
+  async getCountByState(state: WorkflowState): Promise<number> {
+    const results = await this.table.filter((w) => w.workflowState === state).toArray()
     return results.length
   }
 
@@ -411,11 +409,11 @@ export class WorkflowRepository extends BaseRepository<Workflow> {
   }
 
   async getCountByType(type: string): Promise<number> {
-    const results = await this.table.filter((w) => w.workflow_type === type).toArray()
+    const results = await this.table.filter((w) => w.workflowType === type).toArray()
     return results.length
   }
 
-  async getCountByPriority(priority: number): Promise<number> {
+  async getCountByPriority(priority: WorkflowPriority): Promise<number> {
     const results = await this.table.filter((w) => w.priority === priority).toArray()
     return results.length
   }

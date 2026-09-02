@@ -1,25 +1,13 @@
-// src/composables/useDocument.ts
-
 import { computed, watch, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useDocumentStore } from '../stores/document/document.store'
+import { useDocumentStore } from './../stores/documents/document.store'
 import { useAuth } from './useAuth'
 import type {
-    Document,
-    DocumentVersion,
-    DocumentStats,
-    CreateDocumentRequest,
-    UpdateDocumentRequest,
     DocumentQueryParams,
-    DocumentSearchParams,
-    DocumentVerificationResult,
-    DocumentBulkOperationRequest,
-    DocumentUploadProgress,
 } from '../models/entities/document/document.entity'
 import {
     DocumentStatus,
     DocumentType,
-    AccessLevel,
 } from '../models/entities/document/document.entity'
 
 export interface UseDocumentOptions {
@@ -44,7 +32,7 @@ export function useDocument(options: UseDocumentOptions = {}) {
     } = options
 
     const documentStore = useDocumentStore()
-    const { organisationId: authOrgId, isAuthenticated } = useAuth()
+    const { userOrganisationId, isAuthenticated } = useAuth()
 
     // Store refs for reactivity
     const {
@@ -115,7 +103,7 @@ export function useDocument(options: UseDocumentOptions = {}) {
     const refreshTimer = ref<number | null>(null)
     const isInitialLoad = ref(true)
     const isReady = ref(false)
-    const currentOrganisationId = computed(() => defaultOrgId || authOrgId.value)
+    const currentOrganisationId = computed(() => defaultOrgId || userOrganisationId.value)
 
     // ============================================
     // Computed Getters - Derived Metrics

@@ -20,15 +20,8 @@
           <q-banner class="bg-grey-1 rounded-borders q-mb-md">
             This document is in draft. Submit it for review when ready.
           </q-banner>
-          <q-btn
-            color="primary"
-            icon="send"
-            label="Submit for Review"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="$emit('submit-review')"
-          />
+          <q-btn color="primary" icon="send" label="Submit for Review" class="full-width" size="lg" unelevated
+            @click="$emit('submit-review')" />
         </template>
 
         <!-- Under Review Actions -->
@@ -36,23 +29,10 @@
           <q-banner class="bg-blue-1 rounded-borders q-mb-md">
             This document is under review. Approve or reject it.
           </q-banner>
-          <q-btn
-            color="green"
-            icon="check_circle"
-            label="Approve"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="showApproveDialog = true"
-          />
-          <q-btn
-            color="red"
-            icon="cancel"
-            label="Reject"
-            class="full-width q-mt-sm"
-            outline
-            @click="showRejectDialog = true"
-          />
+          <q-btn color="green" icon="check_circle" label="Approve" class="full-width" size="lg" unelevated
+            @click="showApproveDialog = true" />
+          <q-btn color="red" icon="cancel" label="Reject" class="full-width q-mt-sm" outline
+            @click="showRejectDialog = true" />
         </template>
 
         <!-- Approved Actions -->
@@ -60,15 +40,8 @@
           <q-banner class="bg-green-1 rounded-borders q-mb-md">
             This document has been approved.
           </q-banner>
-          <q-btn
-            color="primary"
-            icon="publish"
-            label="Publish"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="$emit('publish')"
-          />
+          <q-btn color="primary" icon="publish" label="Publish" class="full-width" size="lg" unelevated
+            @click="$emit('publish')" />
         </template>
 
         <!-- Published Actions -->
@@ -76,14 +49,7 @@
           <q-banner class="bg-green-1 rounded-borders q-mb-md">
             This document is published and available.
           </q-banner>
-          <q-btn
-            color="orange"
-            icon="archive"
-            label="Archive"
-            class="full-width"
-            outline
-            @click="$emit('archive')"
-          />
+          <q-btn color="orange" icon="archive" label="Archive" class="full-width" outline @click="$emit('archive')" />
         </template>
 
         <!-- Rejected Actions -->
@@ -94,15 +60,8 @@
               Reason: {{ document.rejection_reason }}
             </div>
           </q-banner>
-          <q-btn
-            color="primary"
-            icon="refresh"
-            label="Revise and Resubmit"
-            class="full-width"
-            size="lg"
-            unelevated
-            @click="$emit('edit')"
-          />
+          <q-btn color="primary" icon="refresh" label="Revise and Resubmit" class="full-width" size="lg" unelevated
+            @click="$emit('edit')" />
         </template>
       </div>
     </q-card-section>
@@ -114,15 +73,8 @@
           <div class="text-h6 text-green">Approve Document</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="approveComment"
-            label="Comments (optional)"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            placeholder="Add approval comments..."
-          />
+          <q-input v-model="approveComment" label="Comments (optional)" outlined dense type="textarea" rows="2"
+            placeholder="Add approval comments..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />
@@ -138,16 +90,8 @@
           <div class="text-h6 text-red">Reject Document</div>
         </q-card-section>
         <q-card-section>
-          <q-input
-            v-model="rejectReason"
-            label="Rejection Reason *"
-            outlined
-            dense
-            type="textarea"
-            rows="2"
-            :rules="[requiredRule]"
-            placeholder="Explain why this document is rejected..."
-          />
+          <q-input v-model="rejectReason" label="Rejection Reason *" outlined dense type="textarea" rows="2"
+            :rules="[requiredRule]" placeholder="Explain why this document is rejected..." />
         </q-card-section>
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="grey" v-close-popup />

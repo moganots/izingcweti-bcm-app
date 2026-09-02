@@ -12,10 +12,7 @@
       <div v-else class="approval-chain">
         <div v-for="(step, index) in steps" :key="index" class="chain-step">
           <div class="step-connector" v-if="index > 0">
-            <div
-              class="connector-line"
-              :class="step.status === 'approved' ? 'bg-green' : 'bg-grey-3'"
-            ></div>
+            <div class="connector-line" :class="step.status === 'approved' ? 'bg-green' : 'bg-grey-3'"></div>
           </div>
           <div class="step-content">
             <div class="step-indicator" :class="'step-' + step.status">
@@ -79,24 +76,29 @@ function formatStatus(status: string): string {
 .approval-chain {
   padding: 8px 0;
 }
+
 .chain-step {
   position: relative;
 }
+
 .step-connector {
   display: flex;
   justify-content: center;
   padding: 4px 0;
 }
+
 .connector-line {
   width: 2px;
   height: 20px;
 }
+
 .step-content {
   display: flex;
   align-items: flex-start;
   gap: 12px;
   padding: 8px;
 }
+
 .step-indicator {
   width: 36px;
   height: 36px;
@@ -106,25 +108,31 @@ function formatStatus(status: string): string {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .step-pending {
   background: #f5f5f5;
   color: #9e9e9e;
 }
+
 .step-approved {
   background: #e8f5e9;
   color: #4caf50;
 }
+
 .step-rejected {
   background: #ffebee;
   color: #f44336;
 }
+
 .step-skipped {
   background: #fff3e0;
   color: #ff9800;
 }
+
 .step-details {
   flex: 1;
 }
+
 .step-title {
   font-weight: 500;
 }

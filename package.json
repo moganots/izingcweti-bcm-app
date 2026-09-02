@@ -43,7 +43,7 @@
     "clean:build": "yarn clean && yarn && yarn build",
     "sync:run:android:app": "npx cap add android && npx cap sync android && npx cap run android",
     "dev:chrome": "cp -f .env_files/.env.local .env && quasar dev -m spa --open --browser chrome",
-    "clean:build:chrome": "cp -f .env_files/.env.local .env && yarn clean && yarn install && yarn build && yarn dev:chrome",
+    "clean:build:chrome": "cp -f .env_files/.env.local .env && yarn clean && yarn && yarn build && yarn dev:chrome",
     "build:serve": "cp -f .env_files/.env.local .env && yarn build && npx serve dist/spa"
   },
   "dependencies": {
@@ -68,6 +68,8 @@
     "@quasar/extras": "^1.18.0",
     "@vitejs/plugin-vue": "^6.0.7",
     "axios": "^1.16.1",
+    "chart.js": "^4.5.1",
+    "crypto-js": "^4.2.0",
     "date-fns": "^4.1.0",
     "dexie": "^4.4.2",
     "dexie-export-import": "^4.4.0",
@@ -86,6 +88,7 @@
   },
   "devDependencies": {
     "@quasar/app-vite": "^2.2.0",
+    "@types/crypto-js": "^4.2.2",
     "@types/node": "^12.20.21",
     "@typescript-eslint/eslint-plugin": "^5.10.0",
     "@typescript-eslint/parser": "^5.10.0",

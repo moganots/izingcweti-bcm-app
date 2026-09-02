@@ -1,387 +1,346 @@
-import type {
-  PendingChange,
-  OperationType,
-  ConflictType,
-  SyncPriority,
-} from '../models/entities/sync/sync.entity'
-
-/**
- * Sync Type Definitions
- */
-
 // ============================================
-// Sync Engine Types
+// Sync Module - Enums (Aligned with Backend)
 // ============================================
 
-/**
- * Sync configuration
- */
-export interface SyncConfig {
-  enabled: boolean
-  intervalMinutes: number
-  maxRetries: number
-  batchSize: number
-  conflictStrategy: ConflictResolutionStrategy
-  priorityEnabled: boolean
-  compressionEnabled: boolean
+export enum SyncStatus {
+  PENDING = 'PENDING',
+  SYNCED = 'SYNCED',
+  CONFLICT = 'CONFLICT',
+}
+
+export enum SyncPriority {
+  HIGHEST = 1,
+  HIGH = 2,
+  MEDIUM = 3,
+  LOW = 4,
+}
+
+export enum OperationType {
+  CREATE = 'CREATE',
+  UPDATE = 'UPDATE',
+  DELETE = 'DELETE',
+}
+
+export enum ConflictType {
+  UPDATE_UPDATE = 'UPDATE_UPDATE',
+  DELETE_UPDATE = 'DELETE_UPDATE',
+  UNIQUE_CONSTRAINT = 'UNIQUE_CONSTRAINT',
+  VERSION_SKEW = 'VERSION_SKEW',
 }
 
 export enum ConflictResolutionStrategy {
-  LAST_WRITE_WINS = 'last_write_wins',
-  CLIENT_WINS = 'client_wins',
-  SERVER_WINS = 'server_wins',
-  MANUAL = 'manual',
+  LAST_WRITE_WINS = 'LWW',
+  DELETE_WINS = 'DeleteWins',
+  USER_MEDIATED = 'UserMediated',
+  MERGE = 'Merge',
 }
 
-/**
- * Sync operation
- */
-export interface SyncOperation {
-  id: string
-  type: 'push' | 'pull' | 'full'
-  status: 'pending' | 'in_progress' | 'completed' | 'failed'
-  startedAt?: string
-  completedAt?: string
-  changesProcessed: number
-  conflictsResolved: number
-  errors: SyncError[]
+export enum PendingChangeStatus {
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  COMPLETED = 'COMPLETED',
+  FAILED = 'FAILED',
 }
 
-/**
- * Sync error
- */
-export interface SyncError {
-  code: string
-  message: string
-  entityType?: string
-  entityId?: string
-  timestamp: string
-  retryable: boolean
-}
-
-/**
- * Sync queue
- */
-export interface SyncQueue {
-  highPriority: PendingChange[]
-  mediumPriority: PendingChange[]
-  lowPriority: PendingChange[]
-}
-
-/**
- * Sync metrics
- */
-export interface SyncMetrics {
-  totalSyncs: number
-  successfulSyncs: number
-  failedSyncs: number
-  averageSyncTime: number
-  lastSyncDuration: number
-  totalChangesPushed: number
-  totalChangesPulled: number
-  conflictsEncountered: number
-  conflictsResolved: number
-  dataTransferred: number // bytes
+export enum NetworkStatus {
+  ONLINE = 'online',
+  OFFLINE = 'offline',
+  METERED = 'metered',
+  SLOW = 'slow',
 }
 
 // ============================================
-// Change Tracking Types
+// Connection Type Enum - For Network Monitoring
 // ============================================
 
-/**
- * Change set
- */
-export interface ChangeSet {
-  entityType: string
-  entityId: string
-  operation: OperationType
-  data: Record<string, any>
-  previousData?: Record<string, any>
-  timestamp: string
-  userId: string
-  version: number
-}
-
-/**
- * Change batch
- */
-export interface ChangeBatch {
-  changes: ChangeSet[]
-  batchId: string
-  createdAt: string
-  priority: SyncPriority
-  retryCount: number
-}
-
-// ============================================
-// Conflict Resolution Types
-// ============================================
-
-/**
- * Conflict details
- */
-export interface ConflictDetails {
-  conflictId: string
-  entityType: string
-  entityId: string
-  type: ConflictType
-  clientVersion: Record<string, any>
-  serverVersion: Record<string, any>
-  differences: FieldDifference[]
-  suggestedResolution?: any
-}
-
-/**
- * Field difference
- */
-export interface FieldDifference {
-  field: string
-  clientValue: any
-  serverValue: any
-  resolved?: boolean
-  resolution?: any
-}
-
-/**
- * Resolution options
- */
-export interface ResolutionOptions {
-  strategy: ConflictResolutionStrategy
-  resolvedData?: Record<string, any>
-  notes?: string
-}
-
-// src/types/sync.types.ts (or wherever your sync types are defined)
-
-/**
- * Connection Type Enum
- * Defines the types of network connections available
- */
 export enum ConnectionType {
-  /** WiFi connection */
-  WIFI = 'wifi',
-
-  /** Cellular/mobile data connection (3G, 4G, 5G, LTE) */
-  CELLULAR = 'cellular',
-
-  /** Wired ethernet connection */
-  ETHERNET = 'ethernet',
-
-  /** No network connection */
   NONE = 'none',
-
-  /** Unable to determine connection type */
   UNKNOWN = 'unknown',
+  WIFI = 'wifi',
+  CELLULAR = 'cellular',
+  ETHERNET = 'ethernet',
+  BLUETOOTH = 'bluetooth',
+  USB = 'usb',
 }
 
-/**
- * Connection type labels for display
- */
+// ============================================
+// Connection Type Constants
+// ============================================
+
 export const CONNECTION_TYPE_LABELS: Record<ConnectionType, string> = {
+  [ConnectionType.NONE]: 'Offline',
+  [ConnectionType.UNKNOWN]: 'Unknown',
   [ConnectionType.WIFI]: 'WiFi',
   [ConnectionType.CELLULAR]: 'Cellular',
   [ConnectionType.ETHERNET]: 'Ethernet',
-  [ConnectionType.NONE]: 'No Connection',
-  [ConnectionType.UNKNOWN]: 'Unknown',
-}
+  [ConnectionType.BLUETOOTH]: 'Bluetooth',
+  [ConnectionType.USB]: 'USB',
+};
 
-/**
- * Connection type icons for display
- */
 export const CONNECTION_TYPE_ICONS: Record<ConnectionType, string> = {
+  [ConnectionType.NONE]: 'wifi_off',
+  [ConnectionType.UNKNOWN]: 'help_outline',
   [ConnectionType.WIFI]: 'wifi',
   [ConnectionType.CELLULAR]: 'signal_cellular_alt',
   [ConnectionType.ETHERNET]: 'settings_ethernet',
-  [ConnectionType.NONE]: 'signal_wifi_off',
-  [ConnectionType.UNKNOWN]: 'help_outline',
-}
+  [ConnectionType.BLUETOOTH]: 'bluetooth',
+  [ConnectionType.USB]: 'usb',
+};
 
-/**
- * Connection type colors for display
- */
 export const CONNECTION_TYPE_COLORS: Record<ConnectionType, string> = {
-  [ConnectionType.WIFI]: 'green',
-  [ConnectionType.CELLULAR]: 'orange',
-  [ConnectionType.ETHERNET]: 'blue',
-  [ConnectionType.NONE]: 'red',
+  [ConnectionType.NONE]: 'grey',
   [ConnectionType.UNKNOWN]: 'grey',
-}
-
-/**
- * Check if a connection type requires a metered connection
- */
-export function isMeteredConnection(type: ConnectionType): boolean {
-  return type === ConnectionType.CELLULAR
-}
-
-/**
- * Check if a connection type is suitable for large data transfers
- */
-export function isHighBandwidthConnection(type: ConnectionType): boolean {
-  return type === ConnectionType.WIFI || type === ConnectionType.ETHERNET
-}
-
-/**
- * Get connection type from a string value
- */
-export function getConnectionType(value: string): ConnectionType {
-  const normalized = value?.toLowerCase() || 'unknown'
-
-  switch (normalized) {
-    case 'wifi':
-      return ConnectionType.WIFI
-    case 'cellular':
-    case 'mobile':
-    case '4g':
-    case '5g':
-    case 'lte':
-      return ConnectionType.CELLULAR
-    case 'ethernet':
-    case 'wired':
-    case 'lan':
-      return ConnectionType.ETHERNET
-    case 'none':
-    case 'offline':
-    case 'disconnected':
-      return ConnectionType.NONE
-    default:
-      return ConnectionType.UNKNOWN
-  }
-}
+  [ConnectionType.WIFI]: 'green',
+  [ConnectionType.CELLULAR]: 'blue',
+  [ConnectionType.ETHERNET]: 'primary',
+  [ConnectionType.BLUETOOTH]: 'info',
+  [ConnectionType.USB]: 'teal',
+};
 
 // ============================================
-// Network Types
+// Network Quality Types
 // ============================================
 
-/**
- * Network Status Interface
- */
-export interface NetworkStatus {
-  /** Whether the device is currently online */
-  isOnline: boolean
-
-  /** The type of network connection */
-  connectionType: ConnectionType
-
-  /** Signal strength (0-100) if available */
-  signalStrength?: number
-
-  /** Whether the connection is metered (costs data) */
-  isMetered?: boolean
-
-  /** Last time the status was checked */
-  lastChecked: string
-
-  /** Network latency in milliseconds */
-  latency?: number
-
-  /** Estimated bandwidth in kbps */
-  bandwidth?: number
-}
-
-/**
- * Connection Quality
- */
 export interface ConnectionQuality {
-  /** Connection type */
-  type: ConnectionType
-
-  /** Signal strength percentage (0-100) */
-  strength: number
-
-  /** Latency in milliseconds */
-  latency: number
-
-  /** Estimated bandwidth in kbps */
-  bandwidth: number
-
-  /** Whether the connection is reliable for sync */
-  reliable: boolean
-
-  /** Quality rating */
-  quality: 'excellent' | 'good' | 'fair' | 'poor' | 'none'
+  type: ConnectionType;
+  strength: number;
+  latency: number;
+  bandwidth: number;
+  reliable: boolean;
+  quality: 'excellent' | 'good' | 'fair' | 'poor' | 'none';
 }
 
-/**
- * Network event types
- */
-export enum NetworkEventType {
-  ONLINE = 'online',
-  OFFLINE = 'offline',
-  TYPE_CHANGED = 'type_changed',
-  SIGNAL_CHANGED = 'signal_changed',
-  QUALITY_CHANGED = 'quality_changed',
+export interface NetworkStatusInfo {
+  isOnline: boolean;
+  connectionType: ConnectionType;
+  connectionQuality: ConnectionQuality;
+  lastChecked: string | Date;
 }
 
 // ============================================
-// Offline Types
+// Sync Module - Types (camelCase - Aligned with Backend DTOs)
 // ============================================
 
 /**
- * Offline action
+ * Pending Change - Matches backend PendingChange entity
  */
-export interface OfflineAction {
-  id: string
-  type: 'create' | 'update' | 'delete'
-  entityType: string
-  entityId?: string
-  data?: Record<string, any>
-  createdAt: string
-  synced: boolean
-  error?: string
+export interface PendingChange {
+  uuid: string;
+  entityType: string;
+  entityId: string;
+  operationType: OperationType;
+  data: Record<string, any>;
+  priority: SyncPriority;
+  attempts: number;
+  status: PendingChangeStatus;
+  errorMessage?: string;
+  createdBy: string;
+  createdAt: string | Date;
+  updatedBy: string;
+  updatedAt: string | Date;
+  version: number;
+  deletedBy?: string | null;
+  deletedAt?: string | null;
+  syncStatus?: SyncStatus;
 }
 
 /**
- * Offline queue state
+ * Sync Conflict - Matches backend SyncConflict entity
  */
-export interface OfflineQueueState {
-  pending: number
-  processing: number
-  completed: number
-  failed: number
-  total: number
+export interface SyncConflict {
+  uuid: string;
+  entityId: string;
+  entityType: string;
+  sourceData: Record<string, any>;
+  clientVersion: Record<string, any>;
+  serverVersion: Record<string, any>;
+  conflictType: ConflictType;
+  detectedAt: string | Date;
+  resolved: boolean;
+  autoResolvable: boolean;
+  autoResolved: boolean;
+  resolutionStrategy?: ConflictResolutionStrategy;
+  resolutionData?: Record<string, any>;
+  resolvedAt?: string | Date;
+  resolvedBy?: string;
+  resolutionNotes?: string;
+  createdBy: string;
+  createdAt: string | Date;
+  updatedBy: string;
+  updatedAt: string | Date;
+  version: number;
+  deletedBy?: string | null;
+  deletedAt?: string | null;
+  syncStatus?: SyncStatus;
 }
 
 /**
- * Storage usage
+ * Sync Metadata - Matches backend SyncMetadata entity
  */
-export interface StorageUsage {
-  used: number // bytes
-  total: number // bytes
-  available: number // bytes
-  percentage: number
-  byType: Record<string, number>
+export interface SyncMetadata {
+  uuid: string;
+  key: string;
+  value: string;
+  createdBy: string;
+  createdAt: string | Date;
+  updatedBy: string;
+  updatedAt: string | Date;
+  version: number;
+  deletedBy?: string | null;
+  deletedAt?: string | null;
+  syncStatus?: SyncStatus;
+}
+
+/**
+ * Sync Progress - Matches backend SyncProgressDto
+ */
+export interface SyncProgress {
+  lastSyncToken: string | null;
+  lastSyncTime: string | Date | null;
+  totalProcessed: number;
+  pendingItems: number;
+  failedItems: number;
+}
+
+/**
+ * Sync Pull Response - Matches backend
+ */
+export interface SyncPullResponse {
+  changes: SyncChange[];
+  syncToken: string;
+  serverTimestamp: string;
+}
+
+/**
+ * Sync Change - Matches backend SyncChange
+ */
+export interface SyncChange {
+  entityType: string;
+  entityId: string;
+  operationType: OperationType;
+  data: Record<string, any>;
+  timestamp: string;
+  version: number;
+}
+
+/**
+ * Sync Push Request - Matches backend PushChangesRequest
+ */
+export interface SyncPushRequest {
+  changes: PendingChange[];
+  lastSyncToken?: string;
+}
+
+/**
+ * Sync Push Response - Matches backend PushChangesResponse
+ */
+export interface SyncPushResponse {
+  success: boolean;
+  appliedChanges: number;
+  conflicts: SyncConflict[];
+  syncToken: string;
+}
+
+/**
+ * Sync State - Frontend state
+ */
+export interface SyncState {
+  status: 'idle' | 'syncing' | 'error' | 'offline';
+  pendingChanges: PendingChange[];
+  conflicts: SyncConflict[];
+  lastSyncAt: string | null;
+  syncToken: string | null;
+  isOnline: boolean;
+  networkType: string;
+  progress: number;
+  error: string | null;
+}
+
+/**
+ * Sync Statistics - Frontend stats
+ */
+export interface SyncStatistics {
+  pendingChanges: number;
+  conflicts: number;
+  unresolvedConflicts: number;
+  lastSyncTime: string | null;
+  lastSyncToken: string | null;
+  isOnline: boolean;
+  syncInProgress: boolean;
 }
 
 // ============================================
-// Sync Event Types
+// Helper Functions
 // ============================================
 
-/**
- * Sync event types
- */
-export enum SyncEventType {
-  SYNC_STARTED = 'sync_started',
-  SYNC_PROGRESS = 'sync_progress',
-  SYNC_COMPLETED = 'sync_completed',
-  SYNC_FAILED = 'sync_failed',
-  CONFLICT_DETECTED = 'conflict_detected',
-  CONFLICT_RESOLVED = 'conflict_resolved',
-  OFFLINE_MODE_ENTERED = 'offline_mode_entered',
-  ONLINE_MODE_RESTORED = 'online_mode_restored',
-  QUEUE_UPDATED = 'queue_updated',
+export function getSyncPriorityLabel(priority: number): string {
+  const labels: Record<number, string> = {
+    1: 'Highest',
+    2: 'High',
+    3: 'Medium',
+    4: 'Low',
+  };
+  return labels[priority] || 'Unknown';
 }
 
-/**
- * Sync event
- */
-export interface SyncEvent {
-  type: SyncEventType
-  timestamp: string
-  data?: any
+export function getPendingChangeStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    PENDING: 'Pending',
+    PROCESSING: 'Processing',
+    COMPLETED: 'Completed',
+    FAILED: 'Failed',
+  };
+  return labels[status] || status;
 }
 
-/**
- * Sync event handler
- */
-export type SyncEventHandler = (event: SyncEvent) => void
+export function getPendingChangeStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    PENDING: 'grey',
+    PROCESSING: 'blue',
+    COMPLETED: 'green',
+    FAILED: 'red',
+  };
+  return colors[status] || 'grey';
+}
+
+export function getConflictTypeLabel(type: string): string {
+  const labels: Record<string, string> = {
+    UPDATE_UPDATE: 'Update-Update',
+    DELETE_UPDATE: 'Delete-Update',
+    UNIQUE_CONSTRAINT: 'Unique Constraint',
+    VERSION_SKEW: 'Version Skew',
+  };
+  return labels[type] || type;
+}
+
+export function getConflictResolutionStrategyLabel(strategy: string): string {
+  const labels: Record<string, string> = {
+    LWW: 'Last Write Wins',
+    DeleteWins: 'Delete Wins',
+    UserMediated: 'User Mediated',
+    Merge: 'Merge',
+  };
+  return labels[strategy] || strategy;
+}
+
+export function getConnectionTypeLabel(type: ConnectionType): string {
+  return CONNECTION_TYPE_LABELS[type] || 'Unknown';
+}
+
+export function getConnectionTypeIcon(type: ConnectionType): string {
+  return CONNECTION_TYPE_ICONS[type] || 'help_outline';
+}
+
+export function getConnectionTypeColor(type: ConnectionType): string {
+  return CONNECTION_TYPE_COLORS[type] || 'grey';
+}
+
+export function isConnectionOnline(type: ConnectionType): boolean {
+  return type !== ConnectionType.NONE && type !== ConnectionType.UNKNOWN;
+}
+
+export function isConnectionHighBandwidth(type: ConnectionType): boolean {
+  return type === ConnectionType.WIFI || 
+         type === ConnectionType.ETHERNET || 
+         type === ConnectionType.USB;
+}

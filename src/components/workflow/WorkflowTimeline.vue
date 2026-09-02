@@ -11,23 +11,11 @@
       </div>
 
       <q-timeline v-else color="primary">
-        <q-timeline-entry
-          v-for="(entry, index) in timelineEntries"
-          :key="index"
-          :icon="entry.icon"
-          :color="entry.color"
-          :title="entry.title"
-          :subtitle="entry.subtitle"
-          :side="index % 2 === 0 ? 'left' : 'right'"
-        >
+        <q-timeline-entry v-for="(entry, index) in timelineEntries" :key="index" :icon="entry.icon" :color="entry.color"
+          :title="entry.title" :subtitle="entry.subtitle" :side="index % 2 === 0 ? 'left' : 'right'">
           <div v-if="entry.description" class="text-body2">{{ entry.description }}</div>
           <div v-if="entry.user" class="text-caption text-grey-7">By: {{ entry.user }}</div>
-          <q-badge
-            v-if="entry.badge"
-            :color="entry.badgeColor"
-            :label="entry.badge"
-            class="q-mt-sm"
-          />
+          <q-badge v-if="entry.badge" :color="entry.badgeColor" :label="entry.badge" class="q-mt-sm" />
         </q-timeline-entry>
       </q-timeline>
     </q-card-section>

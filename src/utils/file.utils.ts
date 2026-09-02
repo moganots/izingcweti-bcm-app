@@ -1,5 +1,3 @@
-// src/utils/file.utils.ts
-
 import { Filesystem, Directory, Encoding } from '@capacitor/filesystem'
 
 /**

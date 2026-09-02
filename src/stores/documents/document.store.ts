@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import { documentService } from './../../services/api/document/DocumentService'
+import { documentService } from './../../services/api/documents/DocumentService'
 import type {
   Document,
   DocumentVersion,
@@ -14,11 +14,10 @@ import type {
   DocumentVerificationResult,
   DocumentUploadProgress,
   DocumentBulkOperationRequest,
+  DocumentBulkOperationResult,
 } from './../../models/entities/document/document.entity'
 import {
   DocumentStatus,
-  DocumentType,
-  AccessLevel,
 } from './../../models/entities/document/document.entity'
 
 export const useDocumentStore = defineStore('document', () => {
@@ -242,7 +241,13 @@ export const useDocumentStore = defineStore('document', () => {
       const updated = await documentService.uploadNewVersion(
         id,
         file,
-        data,
+        data
+          ? {
+              title: data.title!,
+              description: data.description!,
+              tags: data.tags ?? [],
+            }
+          : undefined,
         (progress: DocumentUploadProgress) => {
           uploadProgress.value = progress.percent
         }
@@ -440,7 +445,7 @@ export const useDocumentStore = defineStore('document', () => {
 
     try {
       const response = await documentService.searchByTags(tags, {
-        organisationId,
+        ...(organisationId !== undefined ? { organisationId } : {}),
         page: currentPage.value,
         limit: itemsPerPage.value,
       })

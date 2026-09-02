@@ -1,5 +1,3 @@
-// src/services/db/migrations.ts
-
 import type { Transaction } from 'dexie'
 
 /**

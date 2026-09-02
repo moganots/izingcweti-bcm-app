@@ -1,0 +1,1 @@
+export { DocumentService, documentService } from './DocumentService'

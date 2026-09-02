@@ -53,10 +53,21 @@ $info-dark: #0891b2 !default;
 $info-bg: rgba(17, 138, 178, 0.1) !default;
 
 // ==========================================
-// TYPOGRAPHY - SYSTEM FONT STACK
+// TYPOGRAPHY - OPTIMIZED SYSTEM FONT STACK
 // ==========================================
 
-// Font Families - Optimized System Font Stack
+/**
+ * Modern System Font Stack - Best for performance and readability
+ * 
+ * Why this stack:
+ * - -apple-system / BlinkMacSystemFont: San Francisco on Apple devices
+ * - "Segoe UI": Windows 10/11
+ * - Roboto: Android
+ * - "Helvetica Neue": Older Macs
+ * - Arial: Fallback
+ * - sans-serif: Ultimate fallback
+ * - Emoji fonts: For emoji support
+ */
 $font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
                    "Helvetica Neue", Arial, "Noto Sans", sans-serif,
                    "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
@@ -66,23 +77,78 @@ $font-family-heading: $font-family-base !default;
 $font-family-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono",
                    Consolas, "Courier New", monospace !default;
 
-// Font Sizes - Mobile-First Scale (1.125 ratio = Major Second)
-$font-size-xs: 0.75rem !default;   // 12px
-$font-size-sm: 0.875rem !default;  // 14px
-$font-size-base: 1rem !default;    // 16px - WCAG recommended minimum
-$font-size-md: 1.125rem !default;  // 18px
-$font-size-lg: 1.25rem !default;   // 20px
-$font-size-xl: 1.5rem !default;    // 24px
-$font-size-2xl: 1.875rem !default; // 30px
-$font-size-3xl: 2.25rem !default;  // 36px
-$font-size-4xl: 3rem !default;     // 48px
+// ==========================================
+// FONT SIZES - MOBILE-FIRST SCALE
+// ==========================================
 
-// Responsive Font Sizes (will be applied via media queries)
-$font-size-scale-mobile: 0.9375;   // 15px base on mobile
-$font-size-scale-tablet: 1;        // 16px base on tablet
-$font-size-scale-desktop: 1.0625;  // 17px base on desktop
+/**
+ * Mobile-First Font Scale (1.125 ratio = Major Second)
+ * 
+ * All sizes are in rem for accessibility (respects user's browser settings)
+ * Base: 16px (1rem) on desktop, scales down on mobile
+ */
 
-// Font Weights
+// Base font sizes (rem)
+$font-size-xs: 0.75rem !default;    // 12px
+$font-size-sm: 0.875rem !default;   // 14px
+$font-size-base: 1rem !default;     // 16px - WCAG recommended minimum
+$font-size-md: 1.125rem !default;   // 18px
+$font-size-lg: 1.25rem !default;    // 20px
+$font-size-xl: 1.5rem !default;     // 24px
+$font-size-2xl: 1.875rem !default;  // 30px
+$font-size-3xl: 2.25rem !default;   // 36px
+$font-size-4xl: 3rem !default;      // 48px
+
+// ==========================================
+// RESPONSIVE FONT SIZES
+// ==========================================
+
+/**
+ * Responsive font size maps for different breakpoints
+ * Allows for fine-tuned typography at each screen size
+ */
+
+// Mobile-first: define mobile sizes as base
+$font-sizes-mobile: (
+  'xs': 0.6875rem,   // 11px
+  'sm': 0.8125rem,   // 13px
+  'base': 0.9375rem, // 15px
+  'md': 1rem,        // 16px
+  'lg': 1.125rem,    // 18px
+  'xl': 1.25rem,     // 20px
+  '2xl': 1.5rem,     // 24px
+  '3xl': 1.75rem,    // 28px
+  '4xl': 2.25rem,    // 36px
+) !default;
+
+$font-sizes-tablet: (
+  'xs': 0.75rem,     // 12px
+  'sm': 0.875rem,    // 14px
+  'base': 1rem,      // 16px
+  'md': 1.125rem,    // 18px
+  'lg': 1.25rem,     // 20px
+  'xl': 1.5rem,      // 24px
+  '2xl': 1.75rem,    // 28px
+  '3xl': 2rem,       // 32px
+  '4xl': 2.5rem,     // 40px
+) !default;
+
+$font-sizes-desktop: (
+  'xs': 0.75rem,     // 12px
+  'sm': 0.875rem,    // 14px
+  'base': 1rem,      // 16px
+  'md': 1.125rem,    // 18px
+  'lg': 1.25rem,     // 20px
+  'xl': 1.5rem,      // 24px
+  '2xl': 1.875rem,   // 30px
+  '3xl': 2.25rem,    // 36px
+  '4xl': 3rem,       // 48px
+) !default;
+
+// ==========================================
+// FONT WEIGHTS
+// ==========================================
+
 $font-weight-light: 300 !default;
 $font-weight-normal: 400 !default;
 $font-weight-medium: 500 !default;
@@ -90,13 +156,34 @@ $font-weight-semibold: 600 !default;
 $font-weight-bold: 700 !default;
 $font-weight-extrabold: 800 !default;
 
-// Line Heights - WCAG recommended
+// ==========================================
+// LINE HEIGHTS - WCAG RECOMMENDED
+// ==========================================
+
+/**
+ * WCAG 2.1 Success Criterion 1.4.8:
+ * Line height should be at least 1.5 for body text
+ */
 $line-height-none: 1 !default;
 $line-height-tight: 1.25 !default;
 $line-height-snug: 1.375 !default;
 $line-height-normal: 1.5 !default;    // Minimum for body text
 $line-height-relaxed: 1.625 !default;
 $line-height-loose: 2 !default;
+
+// Responsive line heights (slightly looser on mobile for readability)
+$line-height-mobile: 1.6 !default;
+$line-height-tablet: 1.55 !default;
+$line-height-desktop: 1.5 !default;
+
+// ==========================================
+// LETTER SPACING
+// ==========================================
+
+$letter-spacing-tight: -0.025em !default;
+$letter-spacing-normal: 0 !default;
+$letter-spacing-wide: 0.025em !default;
+$letter-spacing-wider: 0.05em !default;
 
 // ==========================================
 // SPACING - Responsive Scale
@@ -105,7 +192,7 @@ $line-height-loose: 2 !default;
 $spacing-unit: 0.25rem !default; // 4px base
 
 $spacing-0: 0 !default;
-$spacing-1: $spacing-unit !default;   // 4px
+$spacing-1: $spacing-unit !default;     // 4px
 $spacing-2: $spacing-unit * 2 !default; // 8px
 $spacing-3: $spacing-unit * 3 !default; // 12px
 $spacing-4: $spacing-unit * 4 !default; // 16px
@@ -136,11 +223,11 @@ $breakpoints: (
 $border-width: 1px !default;
 $border-width-thick: 2px !default;
 
-$border-radius-sm: 0.25rem !default;   // 4px
-$border-radius-base: 0.375rem !default; // 6px
-$border-radius-md: 0.5rem !default;    // 8px
-$border-radius-lg: 0.75rem !default;   // 12px
-$border-radius-xl: 1rem !default;      // 16px
+$border-radius-sm: 0.25rem !default;    // 4px
+$border-radius-base: 0.375rem !default;  // 6px
+$border-radius-md: 0.5rem !default;     // 8px
+$border-radius-lg: 0.75rem !default;    // 12px
+$border-radius-xl: 1rem !default;       // 16px
 $border-radius-full: 9999px !default;
 
 $border-color: $gray-300 !default;

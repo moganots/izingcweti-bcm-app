@@ -1,7 +1,7 @@
 <template>
   <div class="login-page">
     <div class="text-center q-mb-md">
-      <q-icon name="lock" size="48px" color="primary" />
+      <q-icon name="lock" size="30px" color="primary" />
       <div class="text-h5 q-mt-sm">Welcome Back</div>
       <div class="text-subtitle2 text-grey-6">Sign in to your account</div>
     </div>

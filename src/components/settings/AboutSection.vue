@@ -16,13 +16,7 @@
     </q-card-actions>
     <q-card-actions align="center">
       <q-btn flat color="grey" icon="bug_report" label="Report Bug" @click="$emit('report-bug')" />
-      <q-btn
-        flat
-        color="grey"
-        icon="lightbulb"
-        label="Feature Request"
-        @click="$emit('feature-request')"
-      />
+      <q-btn flat color="grey" icon="lightbulb" label="Feature Request" @click="$emit('feature-request')" />
     </q-card-actions>
   </q-card>
 </template>

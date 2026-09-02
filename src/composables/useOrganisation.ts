@@ -1,11 +1,8 @@
 import { computed, ref, watch } from 'vue';
 import { storeToRefs } from 'pinia';
-import { useOrganisationStore } from '@/stores/organisation/organisation.store';
-import { useAuth } from '@/composables/auth/useAuth';
+import { useOrganisationStore } from './../stores/organisation/organisation.store';
+import { useAuth } from './useAuth';
 import type {
-    Organisation,
-    BusinessUnit,
-    Department,
     CreateOrganisationDto,
     UpdateOrganisationDto,
     CreateBusinessUnitDto,
@@ -15,14 +12,14 @@ import type {
     OrganisationQueryParams,
     BusinessUnitQueryParams,
     DepartmentQueryParams,
-} from '@/types/organisation';
+} from './../models/entities/organisation/organisation.entity';
 
 export function useOrganisation() {
     const store = useOrganisationStore();
     const auth = useAuth();
 
     // Auth state
-    const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+    const { isAuthenticated, isAdmin, isGlobalAdmin, userId, userOrganisationId } = auth;
 
     // Store refs
     const {
@@ -30,17 +27,13 @@ export function useOrganisation() {
         selectedOrganisation,
         organisationStats,
         organisationHierarchy,
-        businessUnitsCache,
         selectedBusinessUnit,
         businessUnitStats,
-        departmentsCache,
         selectedDepartment,
         departmentStats,
         isLoading,
-        isSaving,
         error,
         pagination,
-        filters,
         hasOrganisations,
         organisationsByIndustry,
         organisationsByMaturity,
@@ -162,7 +155,7 @@ export function useOrganisation() {
         const page = ref(1);
         const limit = ref(20);
 
-        const targetOrgId = computed(() => organisationId || userOrgId.value);
+        const targetOrgId = computed(() => organisationId || userOrganisationId.value);
 
         const canManage = computed(() => isAdmin.value || isGlobalAdmin.value);
         const canView = computed(() => isAuthenticated.value);
@@ -310,7 +303,7 @@ export function useOrganisation() {
         };
 
         const getTree = async (buId: string) => {
-            return departmentService.getDepartmentTree(buId);
+            return store.getDepartmentTree(buId);
         };
 
         const getStats = async (buId?: string) => {
@@ -369,7 +362,7 @@ export function useOrganisation() {
     // Composable: useOrganisationHierarchy
     // ============================================
     function useOrganisationHierarchy(organisationId?: string) {
-        const targetOrgId = computed(() => organisationId || userOrgId.value);
+        const targetOrgId = computed(() => organisationId || userOrganisationId.value);
 
         const canView = computed(() => isAuthenticated.value);
 
@@ -424,7 +417,7 @@ export function useOrganisation() {
         isAuthenticated,
         isAdmin,
         isGlobalAdmin,
-        organisationId: userOrgId,
+        organisationId: userOrganisationId,
         userId,
 
         // Specialized composables

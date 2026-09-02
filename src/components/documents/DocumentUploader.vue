@@ -4,15 +4,8 @@
       <div class="text-h6 q-mb-md">{{ editing ? 'Update Document' : 'Upload Document' }}</div>
       <q-form @submit.prevent="handleSubmit" class="q-gutter-md">
         <!-- File Selection -->
-        <FileUploader
-          v-if="!editing"
-          v-model="files"
-          :accept="allowedTypes"
-          :max-size="maxFileSize"
-          :max-files="5"
-          upload-text="Click or drag files to upload"
-          @upload="onFilesSelected"
-        />
+        <FileUploader v-if="!editing" v-model="files" :accept="allowedTypes" :max-size="maxFileSize" :max-files="5"
+          upload-text="Click or drag files to upload" @upload="onFilesSelected" />
 
         <!-- Current File Info (editing) -->
         <q-banner v-if="editing && document" class="bg-grey-1 rounded-borders">
@@ -25,74 +18,27 @@
           </div>
         </q-banner>
 
-        <q-input
-          v-model="form.title"
-          label="Document Title *"
-          outlined
-          dense
-          :rules="[requiredRule]"
-          autocomplete="off"
-        />
+        <q-input v-model="form.title" label="Document Title *" outlined dense :rules="[requiredRule]"
+          autocomplete="off" />
 
-        <q-input
-          v-model="form.description"
-          label="Description"
-          outlined
-          dense
-          type="textarea"
-          rows="2"
-        />
+        <q-input v-model="form.description" label="Description" outlined dense type="textarea" rows="2" />
 
         <div class="row q-col-gutter-md">
           <div class="col-6">
-            <q-select
-              v-model="form.document_type"
-              :options="documentTypeOptions"
-              label="Document Type *"
-              outlined
-              dense
-              :rules="[requiredRule]"
-            />
+            <q-select v-model="form.document_type" :options="documentTypeOptions" label="Document Type *" outlined dense
+              :rules="[requiredRule]" />
           </div>
           <div class="col-6">
-            <q-select
-              v-model="form.access_level"
-              :options="accessLevelOptions"
-              label="Access Level"
-              outlined
-              dense
-            />
+            <q-select v-model="form.access_level" :options="accessLevelOptions" label="Access Level" outlined dense />
           </div>
         </div>
 
-        <q-select
-          v-model="form.tags"
-          :options="tagOptions"
-          label="Tags"
-          outlined
-          dense
-          multiple
-          use-chips
-        />
+        <q-select v-model="form.tags" :options="tagOptions" label="Tags" outlined dense multiple use-chips />
 
-        <q-input
-          v-model="form.expires_at"
-          label="Expiry Date"
-          type="date"
-          outlined
-          dense
-          clearable
-        />
+        <q-input v-model="form.expires_at" label="Expiry Date" type="date" outlined dense clearable />
 
-        <q-input
-          v-model="form.metadata"
-          label="Custom Metadata (JSON)"
-          outlined
-          dense
-          type="textarea"
-          rows="2"
-          placeholder='{"key": "value"}'
-        />
+        <q-input v-model="form.metadata" label="Custom Metadata (JSON)" outlined dense type="textarea" rows="2"
+          placeholder='{"key": "value"}' />
 
         <q-banner v-if="errorMessage" class="bg-red-1 text-red-8 rounded-borders" rounded>
           {{ errorMessage }}
@@ -103,15 +49,8 @@
             <q-btn flat color="grey" label="Cancel" class="full-width" @click="$emit('cancel')" />
           </div>
           <div class="col-6">
-            <q-btn
-              type="submit"
-              color="primary"
-              :label="editing ? 'Update' : 'Upload'"
-              :loading="submitting"
-              class="full-width"
-              unelevated
-              :disable="!editing && files.length === 0"
-            />
+            <q-btn type="submit" color="primary" :label="editing ? 'Update' : 'Upload'" :loading="submitting"
+              class="full-width" unelevated :disable="!editing && files.length === 0" />
           </div>
         </div>
       </q-form>
@@ -120,7 +59,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, watch, computed } from 'vue'
+import { ref, reactive, watch } from 'vue'
 import { formatFileSize } from '../../utils/formatters'
 import FileUploader from '../.common/FileUploader.vue'
 

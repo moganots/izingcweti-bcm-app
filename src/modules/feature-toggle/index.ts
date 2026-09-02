@@ -39,7 +39,7 @@ export enum TargetingType {
 // Feature Toggle Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface TargetingCondition {
   operator: 'IN' | 'NOT_IN' | 'EQUALS' | 'NOT_EQUALS' | 'GREATER_THAN' | 'LESS_THAN' | 'CONTAINS'

@@ -3,33 +3,24 @@
 // To customize the look and feel of this app, you can override
 // the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
 
-// Check documentation for full list of Quasar variables
-
-// Your own variables (that are declared here) and Quasar's own
-// ones will be available out of the box in your .vue/.scss/.sass files
-
-// It's highly recommended to change the default colors
-// to match your app's branding.
-// Tip: Use the "Theme Builder" on Quasar's documentation website.
-
 // ============================================
 // BRAND COLORS - BCM Application Theme
 // ============================================
 
 // Primary - Professional Blue
-$primary   : #1a73e8;  // Google Blue - trustworthy, professional
-$secondary : #5c6bc0;  // Indigo - complementary
-$accent    : #ff6f00;  // Amber - highlights and CTAs
+$primary   : #1a73e8;
+$secondary : #5c6bc0;
+$accent    : #ff6f00;
 
 // Dark Theme Colors
-$dark      : #1a1f36;  // Dark navy for dark mode
-$dark-page : #121212;  // Very dark for dark backgrounds
+$dark      : #1a1f36;
+$dark-page : #121212;
 
 // Semantic Colors
-$positive  : #4caf50;  // Success green
-$negative  : #f44336;  // Error red
-$info      : #2196f3;  // Info blue
-$warning   : #ff9800;  // Warning orange
+$positive  : #4caf50;
+$negative  : #f44336;
+$info      : #2196f3;
+$warning   : #ff9800;
 
 // ============================================
 // TYPOGRAPHY - System Font Stack

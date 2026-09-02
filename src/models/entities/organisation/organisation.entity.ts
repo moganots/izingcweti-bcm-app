@@ -1,4 +1,4 @@
-import type { BaseEntity } from '@/types/common/base.entity';
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export enum IndustryType {
   FINANCE = 'FINANCE',

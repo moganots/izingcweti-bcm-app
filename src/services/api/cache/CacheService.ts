@@ -6,12 +6,10 @@ import {
   type CreateCacheRequest,
   type UpdateCacheRequest,
   type BulkCacheRequest,
-  type BulkCacheResponse,
-  type CacheCleanupResult,
   type CacheQueryParams,
   type CacheEntryMetadata,
-  type PaginatedResponse,
-} from '../../../models/entities/cache/cache.entity'
+} from './../../../models/entities/cache/cache.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * Cache Service - Aligned with Backend DTOs (camelCase)
@@ -240,7 +238,10 @@ export class CacheService extends BaseService {
     }
     // Fallback to query
     const result = await this.query({ limit: 1000 })
-    return result.data.map((entry) => entry.key)
+    const entries = result.data ?? []
+    return entries
+      .map((entry: any) => entry?.key)
+      .filter((key): key is string => typeof key === 'string' && key.length > 0)
   }
 
   /**
@@ -264,10 +265,10 @@ export class CacheService extends BaseService {
     return {
       key: entry.key,
       sizeBytes: entry.sizeBytes,
-      expiresAt: entry.expiresAt,
-      tags: entry.tags,
+      expiresAt: entry.expiresAt!,
+      tags: entry.tags!,
       hitCount: entry.hitCount,
-      lastAccessedAt: entry.lastAccessedAt,
+      lastAccessedAt: entry.lastAccessedAt!,
     }
   }
 }

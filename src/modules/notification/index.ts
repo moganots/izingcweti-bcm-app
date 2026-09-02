@@ -48,7 +48,7 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Notification Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface Notification extends BaseEntity {
   recipient_id: string

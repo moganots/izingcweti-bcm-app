@@ -1,5 +1,5 @@
-import { BaseService } from '@/services/BaseService';
-import { API_ENDPOINTS } from '@/core/constants/api.constants';
+import { BaseService } from './../../BaseService';
+import { API_ENDPOINTS } from './../../../core/constants/api.constants';
 import type {
   Risk,
   CreateRiskDto,
@@ -11,11 +11,10 @@ import type {
   RiskQueryDto,
   RiskStatsDto,
   RiskComprehensiveAnalytics,
-  RiskMatrixData,
   RiskTrendData,
   RiskHeatmapData,
-  PaginatedResult,
-} from '@/types/risk';
+} from './../../../models/entities/risk/risk.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 export class RiskService extends BaseService {
   constructor() {
@@ -26,7 +25,7 @@ export class RiskService extends BaseService {
   // CRUD Operations
   // ============================================
 
-  async getRisks(params?: RiskQueryDto): Promise<PaginatedResult<Risk>> {
+  async getRisks(params?: RiskQueryDto): Promise<PaginatedResponse<Risk>> {
     return this.getPaginated<Risk>(
       API_ENDPOINTS.RISKS.BASE,
       params as Record<string, any>

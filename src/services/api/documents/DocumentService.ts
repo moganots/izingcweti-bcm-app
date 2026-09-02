@@ -20,8 +20,8 @@ import {
   type DocumentQueryParams,
   type DocumentVerificationResult,
   type DocumentUploadProgress,
-  type PaginatedResponse,
-} from '../../../models/entities/document/document.entity'
+} from './../../../models/entities/document/document.entity'
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**
  * Document Service - Aligned with Backend DTOs (camelCase)
@@ -135,7 +135,7 @@ export class DocumentService extends BaseService {
    */
   async restoreVersion(id: string, versionNumber: number): Promise<Document> {
     const response = await this.post<Document>(
-      API_ENDPOINTS.DOCUMENTS.RESTORE_VERSION(id, versionNumber)
+      API_ENDPOINTS.DOCUMENTS.RESTORE(id, versionNumber)
     )
     return this.extractData(response)
   }

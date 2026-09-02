@@ -4,15 +4,14 @@ import type {
   Notification,
   NotificationPreference,
   NotificationTemplate,
-  CreateNotificationDto,
-  BulkCreateNotificationDto,
-  NotificationPreferenceDto,
-  NotificationTemplateDto,
-  NotificationQueryDto,
-  NotificationCountDto,
+  CreateNotificationRequest,
+  BulkCreateNotificationRequest,
+  NotificationQueryParams,
+  NotificationCountResponse,
   NotificationStats,
   TemplateStats,
 } from './../../../models/entities/notification/notification.entity';
+import { PaginatedResponse } from './../../../shared/types/common.types';
 
 export class NotificationService extends BaseService {
   constructor() {
@@ -23,7 +22,7 @@ export class NotificationService extends BaseService {
   // Notification Endpoints
   // ============================================
 
-  async getMyNotifications(params?: NotificationQueryDto): Promise<PaginatedResult<Notification>> {
+  async getMyNotifications(params?: NotificationQueryParams): Promise<PaginatedResponse<Notification>> {
     return this.getPaginated<Notification>(
       API_ENDPOINTS.NOTIFICATIONS.BASE,
       params as Record<string, any>
@@ -44,14 +43,14 @@ export class NotificationService extends BaseService {
     return this.extractData(response);
   }
 
-  async getNotificationCounts(): Promise<NotificationCountDto> {
-    const response = await this.get<NotificationCountDto>(
+  async getNotificationCounts(): Promise<NotificationCountResponse> {
+    const response = await this.get<NotificationCountResponse>(
       API_ENDPOINTS.NOTIFICATIONS.COUNTS
     );
     return this.extractData(response);
   }
 
-  async createNotification(data: CreateNotificationDto): Promise<Notification> {
+  async createNotification(data: CreateNotificationRequest): Promise<Notification> {
     const response = await this.post<Notification>(
       API_ENDPOINTS.NOTIFICATIONS.BASE,
       data
@@ -59,7 +58,7 @@ export class NotificationService extends BaseService {
     return this.extractData(response);
   }
 
-  async bulkCreateNotifications(data: BulkCreateNotificationDto): Promise<Notification[]> {
+  async bulkCreateNotifications(data: BulkCreateNotificationRequest): Promise<Notification[]> {
     const response = await this.post<Notification[]>(
       API_ENDPOINTS.NOTIFICATIONS.BULK,
       data
@@ -100,7 +99,13 @@ export class NotificationService extends BaseService {
     return this.extractData(response);
   }
 
-  async upsertPreference(data: NotificationPreferenceDto): Promise<NotificationPreference> {
+  async upsertPreference(data: {
+    notificationType: string;
+    emailEnabled?: boolean;
+    smsEnabled?: boolean;
+    pushEnabled?: boolean;
+    inAppEnabled?: boolean;
+  }): Promise<NotificationPreference> {
     const response = await this.put<NotificationPreference>(
       API_ENDPOINTS.NOTIFICATIONS.PREFERENCES,
       data
@@ -112,7 +117,7 @@ export class NotificationService extends BaseService {
   // Template Endpoints (Admin Only)
   // ============================================
 
-  async getTemplates(params?: { page?: number; limit?: number }): Promise<PaginatedResult<NotificationTemplate>> {
+  async getTemplates(params?: { page?: number; limit?: number }): Promise<PaginatedResponse<NotificationTemplate>> {
     return this.getPaginated<NotificationTemplate>(
       API_ENDPOINTS.NOTIFICATIONS.TEMPLATES,
       params as Record<string, any>
@@ -147,7 +152,12 @@ export class NotificationService extends BaseService {
     return this.extractData(response);
   }
 
-  async createTemplate(data: NotificationTemplateDto): Promise<NotificationTemplate> {
+  async createTemplate(data: {
+    notificationType: string;
+    titleTemplate: string;
+    messageTemplate: string;
+    isActive?: boolean;
+  }): Promise<NotificationTemplate> {
     const response = await this.post<NotificationTemplate>(
       API_ENDPOINTS.NOTIFICATIONS.TEMPLATES,
       data
@@ -155,7 +165,14 @@ export class NotificationService extends BaseService {
     return this.extractData(response);
   }
 
-  async updateTemplate(uuid: string, data: Partial<NotificationTemplateDto>): Promise<NotificationTemplate> {
+  async updateTemplate(
+    uuid: string,
+    data: Partial<{
+      titleTemplate: string;
+      messageTemplate: string;
+      isActive: boolean;
+    }>
+  ): Promise<NotificationTemplate> {
     const response = await this.put<NotificationTemplate>(
       API_ENDPOINTS.NOTIFICATIONS.TEMPLATE_BY_ID(uuid),
       data

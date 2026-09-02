@@ -1,9 +1,22 @@
 import type { Table } from 'dexie'
 import { BaseRepository } from '../BaseRepository'
-import { Notification, NotificationPreference } from './../../../../models/entities'
+import {
+  Notification,
+  NotificationPreference,
+  NotificationType,
+  NotificationPriority,
+  NotificationStatus,
+  NotificationChannel,
+  NotificationStats,
+} from './../../../../models/entities'
+
+const isDateValue = (value: unknown): value is Date =>
+  Object.prototype.toString.call(value) === '[object Date]'
 
 /**
  * Notification Repository
+ * Handles CRUD operations for Notification entities with camelCase field names
+ * Aligned with notification.entity.ts
  */
 export class NotificationRepository extends BaseRepository<Notification> {
   constructor(table: Table<Notification, string>) {
@@ -13,100 +26,271 @@ export class NotificationRepository extends BaseRepository<Notification> {
   /**
    * Find notifications by recipient
    */
-  async findByRecipient(userId: string): Promise<Notification[]> {
-    return this.findMany({ recipient_id: userId } as Partial<Notification>)
+  async findByRecipient(recipientId: string): Promise<Notification[]> {
+    return this.findMany({ recipientId } as Partial<Notification>)
   }
 
   /**
-   * Find unread notifications for a user
-   * Fixed: Use filter() on toCollection() for compound conditions
+   * Find notifications by organisation
    */
-  async findUnread(userId: string): Promise<Notification[]> {
-    return this.table
-      .filter((n) => {
-        return n.recipient_id === userId && n.is_read !== true
-      })
-      .toArray()
+  async findByOrganisation(organisationId: string): Promise<Notification[]> {
+    return this.findMany({ organisationId } as Partial<Notification>)
   }
 
   /**
    * Find notifications by type
    */
-  async findByType(type: string): Promise<Notification[]> {
-    return this.findMany({ notification_type: type } as Partial<Notification>)
+  async findByType(type: NotificationType): Promise<Notification[]> {
+    return this.findMany({ notificationType: type } as Partial<Notification>)
+  }
+
+  /**
+   * Find notifications by priority
+   */
+  async findByPriority(priority: NotificationPriority): Promise<Notification[]> {
+    return this.findMany({ priority } as Partial<Notification>)
+  }
+
+  /**
+   * Find notifications by status
+   */
+  async findByStatus(status: NotificationStatus): Promise<Notification[]> {
+    return this.findMany({ status } as Partial<Notification>)
+  }
+
+  /**
+   * Find unread notifications for a user
+   */
+  async findUnread(recipientId: string): Promise<Notification[]> {
+    return this.table
+      .filter((n) => {
+        return n.recipientId === recipientId &&
+          n.isRead !== true &&
+          n.status !== NotificationStatus.ARCHIVED &&
+          n.status !== NotificationStatus.DISMISSED
+      })
+      .toArray()
+  }
+
+  /**
+   * Find read notifications for a user
+   */
+  async findRead(recipientId: string): Promise<Notification[]> {
+    return this.table
+      .filter((n) => {
+        return n.recipientId === recipientId && n.isRead === true
+      })
+      .toArray()
+  }
+
+  /**
+   * Find archived notifications for a user
+   */
+  async findArchived(recipientId: string): Promise<Notification[]> {
+    return this.table
+      .filter((n) => {
+        return n.recipientId === recipientId &&
+          n.status === NotificationStatus.ARCHIVED
+      })
+      .toArray()
   }
 
   /**
    * Find notifications by entity type and ID
-   * Fixed: Use filter() for compound non-indexed conditions
    */
   async findByEntity(entityType: string, entityId: string): Promise<Notification[]> {
     return this.table
       .filter((n) => {
-        return n.entity_type === entityType && n.entity_id === entityId
+        return n.entityType === entityType && n.entityId === entityId
       })
       .toArray()
+  }
+
+  /**
+   * Find high priority unread notifications for a user
+   */
+  async findHighPriorityUnread(recipientId: string): Promise<Notification[]> {
+    return this.table
+      .filter((n) => {
+        return (
+          n.recipientId === recipientId &&
+          n.isRead !== true &&
+          (n.priority === NotificationPriority.HIGH || n.priority === NotificationPriority.URGENT)
+        )
+      })
+      .toArray()
+  }
+
+  /**
+   * Find urgent notifications for a user
+   */
+  async findUrgent(recipientId: string): Promise<Notification[]> {
+    return this.table
+      .filter((n) => {
+        return n.recipientId === recipientId &&
+          n.priority === NotificationPriority.URGENT &&
+          n.isRead !== true
+      })
+      .toArray()
+  }
+
+  /**
+   * Find scheduled notifications that are due
+   */
+  async findScheduledDue(): Promise<Notification[]> {
+    const now = new Date().toISOString()
+    return this.table
+      .filter((n) => {
+        const scheduledFor = n.scheduledFor
+        if (!scheduledFor) return false
+        const dateStr = Object.prototype.toString.call(scheduledFor) === '[object Date]'
+          ? (scheduledFor as Date).toISOString()
+          : String(scheduledFor)
+        return dateStr <= now &&
+          n.status !== NotificationStatus.ARCHIVED &&
+          n.status !== NotificationStatus.DISMISSED
+      })
+      .toArray()
+  }
+
+  /**
+   * Find expired notifications
+   */
+  async findExpired(): Promise<Notification[]> {
+    const now = new Date().toISOString()
+    return this.table
+      .filter((n) => {
+        const expiresAt = n.expiresAt
+        if (!expiresAt) return false
+        const dateStr = Object.prototype.toString.call(expiresAt) === '[object Date]'
+          ? (expiresAt as Date).toISOString()
+          : String(expiresAt)
+        return dateStr <= now && n.status !== NotificationStatus.ARCHIVED
+      })
+      .toArray()
+  }
+
+  /**
+   * Find notifications by date range
+   */
+  async findByDateRange(
+    recipientId: string,
+    startDate: string | Date,
+    endDate: string | Date
+  ): Promise<Notification[]> {
+    const start = startDate instanceof Date ? startDate.toISOString() : startDate
+    const end = endDate instanceof Date ? endDate.toISOString() : endDate
+
+    return this.table
+      .filter((n) => {
+        const createdAt = n.createdAt
+        if (!createdAt) return false
+        const dateStr = Object.prototype.toString.call(createdAt) === '[object Date]'
+          ? (createdAt as unknown as Date).toISOString()
+          : String(createdAt)
+        return n.recipientId === recipientId && dateStr >= start && dateStr <= end
+      })
+      .toArray()
+  }
+
+  /**
+   * Find notifications by channel
+   */
+  async findByChannel(channel: NotificationChannel): Promise<Notification[]> {
+    return this.findMany({ channel } as Partial<Notification>)
   }
 
   /**
    * Get unread count for a user
-   * Fixed: Use filter() and count manually since compound where may not be indexed
    */
-  async getUnreadCount(userId: string): Promise<number> {
-    // Use filter() to count since compound index may not exist
-    const unreadNotifications = await this.table
-      .filter((n) => {
-        return n.recipient_id === userId && n.is_read !== true
-      })
-      .toArray()
-
-    return unreadNotifications.length
-
-    // Alternative: If recipient_id is indexed, use where() with single field then filter
-    // const collection = await this.table
-    //   .where({ recipient_id: userId } as any)
-    //   .filter((n) => n.is_read !== true)
-    //   .toArray();
-    // return collection.length;
+  async getUnreadCount(recipientId: string): Promise<number> {
+    const unread = await this.findUnread(recipientId)
+    return unread.length
   }
 
   /**
    * Get recent notifications for a user
-   * Fixed: Use toCollection() with filter and manual sorting/limiting
    */
-  async getRecent(userId: string, limit: number = 20): Promise<Notification[]> {
+  async getRecent(recipientId: string, limit: number = 20): Promise<Notification[]> {
     const notifications = await this.table
       .filter((n) => {
-        return n.recipient_id === userId
+        return n.recipientId === recipientId
       })
       .toArray()
 
-    // Sort by created_at descending
+    // Sort by createdAt descending
     notifications.sort((a, b) => {
-      const dateA = a.created_at || ''
-      const dateB = b.created_at || ''
-      return dateB.localeCompare(dateA)
+      const dateA = a.createdAt
+      const dateB = b.createdAt
+      if (!dateA) return 1
+      if (!dateB) return -1
+
+      const timeA = (dateA as any) instanceof Date
+        ? (dateA as unknown as Date).getTime()
+        : new Date(String(dateA)).getTime()
+      const timeB = (dateB as any) instanceof Date
+        ? (dateB as unknown as Date).getTime()
+        : new Date(String(dateB)).getTime()
+
+      return timeB - timeA
     })
 
-    // Return limited results
     return notifications.slice(0, limit)
+  }
+
+  /**
+   * Get notification statistics for a user
+   * Returns stats matching NotificationStats interface
+   */
+  async getStats(recipientId: string): Promise<NotificationStats> {
+    const all = await this.table
+      .filter((n) => {
+        return n.recipientId === recipientId
+      })
+      .toArray()
+
+    const byType: Record<string, number> = {}
+    const byPriority: Record<string, number> = {}
+    const byStatus: Record<string, number> = {}
+
+    for (const n of all) {
+      // Count by type
+      const type = n.notificationType || 'UNKNOWN'
+      byType[type] = (byType[type] || 0) + 1
+
+      // Count by priority
+      const priority = n.priority || NotificationPriority.MEDIUM
+      byPriority[priority] = (byPriority[priority] || 0) + 1
+
+      // Count by status
+      const status = n.status || NotificationStatus.UNREAD
+      byStatus[status] = (byStatus[status] || 0) + 1
+    }
+
+    return {
+      total: all.length,
+      unread: all.filter((n) => n.isRead !== true && n.status !== NotificationStatus.ARCHIVED).length,
+      byType,
+      byPriority,
+      byStatus,
+    }
   }
 
   /**
    * Mark all notifications as read for a user
    */
-  async markAllAsRead(userId: string): Promise<number> {
-    const unread = await this.findUnread(userId)
+  async markAllAsRead(recipientId: string): Promise<number> {
+    const unread = await this.findUnread(recipientId)
     const now = new Date().toISOString()
 
-    // Use bulk update for better performance
     const updates = unread.map((notification) => ({
       uuid: notification.uuid,
       data: {
-        is_read: true,
-        status: 'READ' as const,
-        read_at: now,
-      } as Partial<Notification>,
+        isRead: true,
+        status: NotificationStatus.READ,
+        readAt: now,
+        updatedAt: now,
+      } as unknown as Partial<Notification>,
     }))
 
     if (updates.length > 0) {
@@ -119,29 +303,28 @@ export class NotificationRepository extends BaseRepository<Notification> {
   /**
    * Archive old notifications
    */
-  async archiveOld(daysOld: number = 30): Promise<number> {
+  async archiveOld(recipientId: string, daysOld: number = 30): Promise<number> {
     const cutoff = new Date()
     cutoff.setDate(cutoff.getDate() - daysOld)
-    const cutoffStr = cutoff.toISOString()
 
     const oldNotifications = await this.table
       .filter((n) => {
-        const createdAt = n.created_at
-        // Check if created_at exists and is before cutoff
-        if (typeof createdAt !== 'string') {
-          return false
-        }
-        return createdAt < cutoffStr && n.is_read === true && n.status !== 'ARCHIVED'
+        const createdAt = n.createdAt
+        if (!createdAt) return false
+        const date = typeof createdAt === 'string' || typeof createdAt === 'number' ? new Date(createdAt) : createdAt as Date
+        return date < cutoff &&
+          n.recipientId === recipientId &&
+          n.isRead === true &&
+          n.status !== NotificationStatus.ARCHIVED
       })
       .toArray()
 
-    // Bulk update for performance
     const updates = oldNotifications.map((notification) => ({
       uuid: notification.uuid,
       data: {
-        status: 'ARCHIVED' as const,
-        updated_at: cutoffStr,
-      } as Partial<Notification>,
+        status: NotificationStatus.ARCHIVED,
+        updatedAt: new Date().toISOString(),
+      } as unknown as Partial<Notification>,
     }))
 
     if (updates.length > 0) {
@@ -149,124 +332,6 @@ export class NotificationRepository extends BaseRepository<Notification> {
     }
 
     return oldNotifications.length
-  }
-
-  /**
-   * Get notifications by priority
-   */
-  async findByPriority(priority: string): Promise<Notification[]> {
-    return this.table
-      .filter((n) => {
-        return n.priority === priority
-      })
-      .toArray()
-  }
-
-  /**
-   * Get high priority unread notifications
-   */
-  async findHighPriorityUnread(userId: string): Promise<Notification[]> {
-    return this.table
-      .filter((n) => {
-        return (
-          n.recipient_id === userId &&
-          n.is_read !== true &&
-          (n.priority === 'HIGH' || n.priority === 'URGENT')
-        )
-      })
-      .toArray()
-  }
-
-  /**
-   * Get notification statistics for a user
-   */
-  async getStats(userId: string): Promise<{
-    total: number
-    unread: number
-    read: number
-    archived: number
-    byType: Record<string, number>
-    byPriority: Record<string, number>
-  }> {
-    const all = await this.table
-      .filter((n) => {
-        return n.recipient_id === userId
-      })
-      .toArray()
-
-    const byType: Record<string, number> = {}
-    const byPriority: Record<string, number> = {}
-
-    all.forEach((n) => {
-      // Count by type
-      if (n.notification_type) {
-        byType[n.notification_type] = (byType[n.notification_type] || 0) + 1
-      }
-      // Count by priority
-      if (n.priority) {
-        byPriority[n.priority] = (byPriority[n.priority] || 0) + 1
-      }
-    })
-
-    return {
-      total: all.length,
-      unread: all.filter((n) => n.is_read !== true && n.status !== 'ARCHIVED').length,
-      read: all.filter((n) => n.is_read === true).length,
-      archived: all.filter((n) => n.status === 'ARCHIVED').length,
-      byType,
-      byPriority,
-    }
-  }
-
-  /**
-   * Find notifications by date range
-   */
-  async findByDateRange(
-    userId: string,
-    startDate: string,
-    endDate: string
-  ): Promise<Notification[]> {
-    return this.table
-      .filter((n) => {
-        const createdAt = n.created_at
-        if (typeof createdAt !== 'string') {
-          return false
-        }
-        return n.recipient_id === userId && createdAt >= startDate && createdAt <= endDate
-      })
-      .toArray()
-  }
-
-  /**
-   * Find scheduled notifications that are due
-   */
-  async findScheduledDue(): Promise<Notification[]> {
-    const now = new Date().toISOString()
-    return this.table
-      .filter((n) => {
-        const scheduledFor = n.scheduled_for
-        if (typeof scheduledFor !== 'string') {
-          return false
-        }
-        return scheduledFor <= now && n.status !== 'ARCHIVED' && n.status !== 'DISMISSED'
-      })
-      .toArray()
-  }
-
-  /**
-   * Find expired notifications
-   */
-  async findExpired(): Promise<Notification[]> {
-    const now = new Date().toISOString()
-    return this.table
-      .filter((n) => {
-        const expiresAt = n.expires_at
-        if (typeof expiresAt !== 'string') {
-          return false
-        }
-        return expiresAt <= now && n.status !== 'ARCHIVED'
-      })
-      .toArray()
   }
 
   /**
@@ -282,10 +347,304 @@ export class NotificationRepository extends BaseRepository<Notification> {
 
     return expired.length
   }
+
+  /**
+   * Bulk create notifications
+   */
+  async bulkCreateNotifications(notifications: Partial<Notification>[]): Promise<Notification[]> {
+    const results: Notification[] = []
+
+    for (const notification of notifications) {
+      const created = await this.create(notification)
+      results.push(created)
+    }
+
+    return results
+  }
+
+  /**
+   * Get notifications by multiple recipients
+   */
+  async findByRecipients(recipientIds: string[]): Promise<Notification[]> {
+    const results: Notification[] = []
+    for (const id of recipientIds) {
+      const notifications = await this.findByRecipient(id)
+      results.push(...notifications)
+    }
+    return results
+  }
+
+  /**
+   * Get unread count for multiple recipients
+   */
+  async getUnreadCounts(recipientIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>()
+    for (const id of recipientIds) {
+      const count = await this.getUnreadCount(id)
+      counts.set(id, count)
+    }
+    return counts
+  }
+
+  /**
+   * Acknowledge a notification
+   */
+  async acknowledge(uuid: string, userId: string = 'system'): Promise<Notification | null> {
+    const result = await this.update(uuid, {
+      isAcknowledged: true,
+      acknowledgedAt: new Date().toISOString(),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    return result || null
+  }
+
+  /**
+   * Dismiss a notification
+   */
+  async dismiss(uuid: string, userId: string = 'system'): Promise<Notification | null> {
+    const result = await this.update(uuid, {
+      status: NotificationStatus.DISMISSED,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    return result || null
+  }
+
+  /**
+   * Archive a notification
+   */
+  async archive(uuid: string, userId: string = 'system'): Promise<Notification | null> {
+    const result = await this.update(uuid, {
+      status: NotificationStatus.ARCHIVED,
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    return result || null
+  }
+
+  /**
+   * Mark a notification as read
+   */
+  async markAsRead(uuid: string, userId: string = 'system'): Promise<Notification | null> {
+    const result = await this.update(uuid, {
+      isRead: true,
+      status: NotificationStatus.READ,
+      readAt: new Date().toISOString(),
+      updatedBy: userId,
+      updatedAt: new Date().toISOString(),
+    })
+    return result || null
+  }
+
+  /**
+   * Get delivery status for a notification
+   */
+  async getDeliveryStatus(uuid: string): Promise<{
+    emailDelivered: boolean
+    emailDeliveredAt?: Date
+    smsDelivered: boolean
+    smsDeliveredAt?: Date
+    pushDelivered: boolean
+    pushDeliveredAt?: Date
+    inAppDelivered: boolean
+    inAppDeliveredAt?: Date
+  } | null> {
+    const notification = await this.findById(uuid)
+    if (!notification) return null
+    return notification.deliveryStatus || null
+  }
+
+  /**
+   * Update delivery status
+   */
+  async updateDeliveryStatus(
+    uuid: string,
+    channel: 'email' | 'sms' | 'push' | 'inApp',
+    delivered: boolean,
+    deliveredAt?: Date
+  ): Promise<Notification | null> {
+    const notification = await this.findById(uuid)
+    if (!notification) return null
+
+    const channelKey = channel === 'inApp' ? 'inApp' : channel
+
+    const updates: any = {
+      [`deliveryStatus.${channelKey}Delivered`]: delivered,
+      [`deliveryStatus.${channelKey}DeliveredAt`]: deliveredAt || new Date(),
+    }
+
+    // Also update the channel sent flags
+    const sentField = `${channel}Sent` as keyof Notification
+    if (sentField in notification) {
+      updates[sentField] = true
+    }
+
+    const result = await this.update(uuid, {
+      ...updates,
+      updatedAt: new Date().toISOString(),
+    } as Partial<Notification>)
+
+    return result ?? null
+  }
+
+  /**
+   * Search notifications with filters
+   */
+  async searchWithFilters(params: {
+    recipientId?: string
+    organisationId?: string
+    notificationType?: NotificationType
+    priority?: NotificationPriority
+    status?: NotificationStatus
+    isRead?: boolean
+    startDate?: string | Date
+    endDate?: string | Date
+    search?: string
+  }): Promise<Notification[]> {
+    let results = await this.findAll()
+
+    // Filter by recipient
+    if (params.recipientId) {
+      results = results.filter((n) => n.recipientId === params.recipientId)
+    }
+
+    // Filter by organisation
+    if (params.organisationId) {
+      results = results.filter((n) => n.organisationId === params.organisationId)
+    }
+
+    // Filter by type
+    if (params.notificationType) {
+      results = results.filter((n) => n.notificationType === params.notificationType)
+    }
+
+    // Filter by priority
+    if (params.priority) {
+      results = results.filter((n) => n.priority === params.priority)
+    }
+
+    // Filter by status
+    if (params.status) {
+      results = results.filter((n) => n.status === params.status)
+    }
+
+    // Filter by read status
+    if (params.isRead !== undefined) {
+      results = results.filter((n) => n.isRead === params.isRead)
+    }
+
+    // Filter by date range
+    if (params.startDate) {
+      const start = isDateValue(params.startDate)
+        ? params.startDate
+        : new Date(params.startDate)
+      results = results.filter((n) => {
+        const createdAt = n.createdAt
+        if (!createdAt) return false
+        const date = isDateValue(createdAt)
+          ? createdAt
+          : new Date(createdAt)
+        return date >= start
+      })
+    }
+
+    if (params.endDate) {
+      const end = isDateValue(params.endDate)
+        ? params.endDate
+        : new Date(params.endDate)
+      results = results.filter((n) => {
+        const createdAt = n.createdAt
+        if (!createdAt) return false
+        const date = isDateValue(createdAt)
+          ? createdAt
+          : new Date(createdAt)
+        return date <= end
+      })
+    }
+
+    // Text search (title, message)
+    if (params.search) {
+      const lower = params.search.toLowerCase()
+      results = results.filter((n) =>
+        n.title?.toLowerCase().includes(lower) ||
+        n.message?.toLowerCase().includes(lower)
+      )
+    }
+
+    return results
+  }
+
+  /**
+   * Count notifications by status for a user
+   */
+  async countByStatus(recipientId: string): Promise<Record<NotificationStatus, number>> {
+    const all = await this.table
+      .filter((n) => n.recipientId === recipientId)
+      .toArray()
+
+    const counts: Record<NotificationStatus, number> = {
+      [NotificationStatus.UNREAD]: 0,
+      [NotificationStatus.READ]: 0,
+      [NotificationStatus.ARCHIVED]: 0,
+      [NotificationStatus.DISMISSED]: 0,
+    }
+
+    for (const n of all) {
+      const status = n.status || NotificationStatus.UNREAD
+      counts[status] = (counts[status] || 0) + 1
+    }
+
+    return counts
+  }
+
+  /**
+   * Get notification count by priority for a user
+   */
+  async countByPriority(recipientId: string): Promise<Record<NotificationPriority, number>> {
+    const all = await this.table
+      .filter((n) => n.recipientId === recipientId)
+      .toArray()
+
+    const counts: Record<NotificationPriority, number> = {
+      [NotificationPriority.LOW]: 0,
+      [NotificationPriority.MEDIUM]: 0,
+      [NotificationPriority.HIGH]: 0,
+      [NotificationPriority.URGENT]: 0,
+    }
+
+    for (const n of all) {
+      const priority = n.priority || NotificationPriority.MEDIUM
+      counts[priority] = (counts[priority] || 0) + 1
+    }
+
+    return counts
+  }
+
+  /**
+   * Get unread count by priority for a user
+   */
+  async getUnreadCountByPriority(recipientId: string): Promise<Record<NotificationPriority, number>> {
+    const unread = await this.findUnread(recipientId)
+    const counts: Record<NotificationPriority, number> = {
+      [NotificationPriority.LOW]: 0,
+      [NotificationPriority.MEDIUM]: 0,
+      [NotificationPriority.HIGH]: 0,
+      [NotificationPriority.URGENT]: 0,
+    }
+
+    for (const n of unread) {
+      const priority = n.priority || NotificationPriority.MEDIUM
+      counts[priority] = (counts[priority] || 0) + 1
+    }
+
+    return counts
+  }
 }
 
 /**
  * Notification Preference Repository
+ * Handles CRUD operations for NotificationPreference entities with camelCase field names
  */
 export class NotificationPreferenceRepository extends BaseRepository<NotificationPreference> {
   constructor(table: Table<NotificationPreference, string>) {
@@ -296,30 +655,23 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
    * Find preferences by user
    */
   async findByUser(userId: string): Promise<NotificationPreference[]> {
-    return this.findMany({ user_id: userId } as Partial<NotificationPreference>)
+    return this.findMany({ userId } as Partial<NotificationPreference>)
   }
 
   /**
    * Find preference by user and notification type
-   * Fixed: Use filter() for compound condition since compound index may not exist
    */
   async findByUserAndType(
     userId: string,
-    type: string
+    type: NotificationType
   ): Promise<NotificationPreference | undefined> {
-    // Use filter() to find matching preference
     const results = await this.table
       .filter((pref) => {
-        return pref.user_id === userId && pref.notification_type === type
+        return pref.userId === userId && pref.notificationType === type
       })
       .toArray()
 
-    // Return first match or undefined
     return results.length > 0 ? results[0] : undefined
-
-    // Alternative if both fields are indexed:
-    // const collection = this.table.where({ user_id: userId, notification_type: type } as any);
-    // return collection.first();
   }
 
   /**
@@ -327,7 +679,7 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
    */
   async upsertPreference(
     userId: string,
-    type: string,
+    type: NotificationType,
     data: Partial<NotificationPreference>
   ): Promise<NotificationPreference> {
     const existing = await this.findByUserAndType(userId, type)
@@ -335,19 +687,21 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
     if (existing) {
       await this.update(existing.uuid, {
         ...data,
-        updated_at: new Date().toISOString(),
-      } as Partial<NotificationPreference>)
+        updatedAt: new Date().toISOString(),
+      } as unknown as Partial<NotificationPreference>)
       return (await this.findById(existing.uuid))!
     } else {
       return this.create({
-        user_id: userId,
-        notification_type: type,
-        email_enabled: true,
-        sms_enabled: true,
-        push_enabled: true,
-        in_app_enabled: true,
+        userId,
+        notificationType: type,
+        emailEnabled: true,
+        smsEnabled: true,
+        pushEnabled: true,
+        inAppEnabled: true,
         ...data,
-      } as Partial<NotificationPreference>)
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      } as unknown as Partial<NotificationPreference>)
     }
   }
 
@@ -358,14 +712,21 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
     return this.table
       .filter((pref) => {
         return (
-          pref.user_id === userId &&
-          (pref.email_enabled === true ||
-            pref.sms_enabled === true ||
-            pref.push_enabled === true ||
-            pref.in_app_enabled === true)
+          pref.userId === userId &&
+          (pref.emailEnabled === true ||
+            pref.smsEnabled === true ||
+            pref.pushEnabled === true ||
+            pref.inAppEnabled === true)
         )
       })
       .toArray()
+  }
+
+  /**
+   * Get preferences by notification type
+   */
+  async findByType(type: NotificationType): Promise<NotificationPreference[]> {
+    return this.findMany({ notificationType: type } as Partial<NotificationPreference>)
   }
 
   /**
@@ -373,8 +734,8 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
    */
   async isChannelEnabled(
     userId: string,
-    type: string,
-    channel: 'email' | 'sms' | 'push' | 'in_app'
+    type: NotificationType,
+    channel: 'email' | 'sms' | 'push' | 'inApp'
   ): Promise<boolean> {
     const preference = await this.findByUserAndType(userId, type)
 
@@ -383,18 +744,14 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
       return true
     }
 
-    switch (channel) {
-      case 'email':
-        return preference.email_enabled === true
-      case 'sms':
-        return preference.sms_enabled === true
-      case 'push':
-        return preference.push_enabled === true
-      case 'in_app':
-        return preference.in_app_enabled === true
-      default:
-        return true
+    const channelMap = {
+      email: preference.emailEnabled,
+      sms: preference.smsEnabled,
+      push: preference.pushEnabled,
+      inApp: preference.inAppEnabled,
     }
+
+    return channelMap[channel] !== false
   }
 
   /**
@@ -402,11 +759,11 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
    */
   async setChannelEnabled(
     userId: string,
-    type: string,
-    channel: 'email' | 'sms' | 'push' | 'in_app',
+    type: NotificationType,
+    channel: 'email' | 'sms' | 'push' | 'inApp',
     enabled: boolean
   ): Promise<NotificationPreference> {
-    const channelField = `${channel}_enabled` as keyof NotificationPreference
+    const channelField = `${channel}Enabled` as keyof NotificationPreference
 
     return this.upsertPreference(userId, type, {
       [channelField]: enabled,
@@ -420,5 +777,57 @@ export class NotificationPreferenceRepository extends BaseRepository<Notificatio
     const preferences = await this.findByUser(userId)
     const ids = preferences.map((p) => p.uuid)
     await this.deleteMany(ids)
+  }
+
+  /**
+   * Bulk update preferences for a user
+   */
+  async bulkUpdatePreferences(
+    userId: string,
+    preferences: Array<{
+      notificationType: NotificationType
+      emailEnabled?: boolean
+      smsEnabled?: boolean
+      pushEnabled?: boolean
+      inAppEnabled?: boolean
+    }>
+  ): Promise<NotificationPreference[]> {
+    const results: NotificationPreference[] = []
+
+    for (const pref of preferences) {
+      const updated = await this.upsertPreference(userId, pref.notificationType, pref)
+      results.push(updated)
+    }
+
+    return results
+  }
+
+  /**
+   * Get default preferences for a notification type
+   */
+  getDefaultPreferences(type: NotificationType): Partial<NotificationPreference> {
+    return {
+      userId: '',
+      notificationType: type,
+      emailEnabled: true,
+      smsEnabled: true,
+      pushEnabled: true,
+      inAppEnabled: true,
+    }
+  }
+
+  /**
+   * Check if a user has any enabled channels for a type
+   */
+  async hasEnabledChannels(userId: string, type: NotificationType): Promise<boolean> {
+    const preference = await this.findByUserAndType(userId, type)
+    if (!preference) return true
+
+    return (
+      preference.emailEnabled === true ||
+      preference.smsEnabled === true ||
+      preference.pushEnabled === true ||
+      preference.inAppEnabled === true
+    )
   }
 }

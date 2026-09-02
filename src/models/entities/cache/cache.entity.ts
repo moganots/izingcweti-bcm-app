@@ -62,8 +62,9 @@ export interface CreateCacheRequest {
   key: string
   value: any
   ttl?: number // Time to live in seconds
-  tags?: string
-  compress?: boolean
+    | undefined // Time to live in seconds
+  tags?: string | undefined
+  compress?: boolean | undefined
 }
 
 /**

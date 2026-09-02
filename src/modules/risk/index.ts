@@ -68,7 +68,7 @@ export function getRiskColor(score: number): string {
 // ============================================
 
 import { QueryParams } from 'src/shared/types/common.types'
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface MitigatingControl {
   control_id: string

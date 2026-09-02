@@ -1,42 +1,79 @@
-// Base Service
-export { BaseService } from '../BaseService'
-
-// Core Services
+// ============================================
+// Core API Services
+// ============================================
 export { ApiService, apiService } from './ApiService'
-export { AuthService, authService } from './auth/AuthService'
-export { UserService, userService } from './user/UserService'
-export { SettingsService, settingsService } from './settings/SettingsService'
 
+// ============================================
+// Auth Services
+// ============================================
+export * from './auth'
+
+// ============================================
+// User Services
+// ============================================
+export * from './user'
+
+// ============================================
+// Settings Services
+// ============================================
+export * from './settings'
+
+// ============================================
 // Organisation Services
-export { OrganisationService, organisationService } from './organisation/OrganisationService'
-export { BusinessUnitService, businessUnitService } from './organisation/BusinessUnitService'
-export { DepartmentService, departmentService } from './organisation/DeparmentService'
+// ============================================
+export * from './organisation'
 
+// ============================================
 // BCM Services
-export { BcmService, bcmService } from './bcm/BcmService'
+// ============================================
+export * from './bcm'
 
-// Risk & Compliance
-export { RiskService, riskService } from './risk/RiskService'
-export { ComplianceService, complianceService } from './compliance/ComplianceService'
+// ============================================
+// Risk Services
+// ============================================
+export * from './risk'
 
-// Incident Management
-export { IncidentService, incidentService } from './incident/IncidentService'
+// ============================================
+// Compliance Services
+// ============================================
+export * from './compliance'
 
-// Workflow & Rules
-export { WorkflowService, workflowService } from './workflow/WorkflowService'
-export { RulesService, rulesService } from './rules/RulesService'
+// ============================================
+// Incident Services
+// ============================================
+export * from './incident'
 
-// Document Management
-export { DocumentService, documentService } from './documents/DocumentService'
+// ============================================
+// Workflow Services
+// ============================================
+export * from './workflow'
 
-// Notifications
-export { NotificationService, notificationService } from './notification/NotificationService'
+// ============================================
+// Rules Services
+// ============================================
+export * from './rules'
 
-// Audit
-export { AuditService, auditService } from './audit/AuditService'
+// ============================================
+// Document Services
+// ============================================
+export * from './documents'
 
-// Dashboard
-export { DashboardService, dashboardService } from './dashboard/DashboardService'
+// ============================================
+// Notification Services
+// ============================================
+export * from './notification'
 
-// Cache
-export { CacheService, cacheService } from './cache/CacheService'
+// ============================================
+// Audit Services
+// ============================================
+export * from './audit'
+
+// ============================================
+// Dashboard Services
+// ============================================
+export * from './dashboard'
+
+// ============================================
+// Cache Services
+// ============================================
+export * from './cache'

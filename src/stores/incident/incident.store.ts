@@ -20,11 +20,6 @@ import {
   IncidentSeverity,
   IncidentStatus,
   EscalationLevel,
-  getIncidentSeverityLabel,
-  getIncidentSeverityColor,
-  getIncidentStatusLabel,
-  getIncidentStatusColor,
-  getEscalationLevelLabel,
   calculateResolutionTime,
 } from './../../models/entities/incident/incident.entity'
 

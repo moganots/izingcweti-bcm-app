@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { organisationService, businessUnitService, departmentService } from '@/services/organisation';
-import { useAuth } from '@/composables/auth/useAuth';
+import { organisationService, businessUnitService, departmentService } from './../../services/api/organisation';
+import { useAuth } from './../../composables/useAuth';
 import type {
   Organisation,
   BusinessUnit,
@@ -17,14 +17,15 @@ import type {
   OrganisationHierarchy,
   BusinessUnitStatsDto,
   DepartmentStatsDto,
-} from '@/types/organisation';
+  DepartmentTreeNode,
+} from './../../models/entities/organisation/organisation.entity';
 
 export const useOrganisationStore = defineStore('organisation', () => {
   // ============================================
   // Dependencies - Auth Integration
   // ============================================
   const auth = useAuth();
-  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+  const { isAuthenticated, isAdmin, isGlobalAdmin } = auth;
 
   // ============================================
   // State - Organisations
@@ -47,6 +48,7 @@ export const useOrganisationStore = defineStore('organisation', () => {
   const departmentsCache = ref<Map<string, Department[]>>(new Map());
   const selectedDepartment = ref<Department | null>(null);
   const departmentStats = ref<DepartmentStatsDto | null>(null);
+  const departmentTree = ref<DepartmentTreeNode[] | null>(null);
 
   // ============================================
   // State - UI & Pagination
@@ -576,6 +578,19 @@ export const useOrganisationStore = defineStore('organisation', () => {
     }
   }
 
+  async function getDepartmentTree(businessUnitId: string) {
+    if (!requireAuth()) return null;
+
+    try {
+      const tree = await departmentService.getDepartmentTree(businessUnitId);
+      departmentTree.value = tree;
+      return tree;
+    } catch (err: any) {
+      console.error('Failed to fetch business unit deparmental tree:', err);
+      throw err;
+    }
+  }
+
   async function fetchDepartmentStats(businessUnitId?: string) {
     if (!requireAuth()) return null;
 
@@ -608,6 +623,7 @@ export const useOrganisationStore = defineStore('organisation', () => {
     departmentsCache.value.clear();
     selectedDepartment.value = null;
     departmentStats.value = null;
+    departmentTree.value = null;
     isLoading.value = false;
     isSaving.value = false;
     error.value = null;
@@ -632,6 +648,7 @@ export const useOrganisationStore = defineStore('organisation', () => {
     departmentsCache,
     selectedDepartment,
     departmentStats,
+    departmentTree,
     isLoading,
     isSaving,
     error,
@@ -683,6 +700,7 @@ export const useOrganisationStore = defineStore('organisation', () => {
     updateDepartment,
     deleteDepartment,
     reorderDepartments,
+    getDepartmentTree,
     fetchDepartmentStats,
 
     // Utility

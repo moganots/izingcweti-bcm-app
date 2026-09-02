@@ -220,7 +220,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useRulesStore } from '../../stores/rules/rules.store'
+import { useRuleStore } from '../../stores/rules/rule.store.ts'
 import { formatJSON } from '../../utils/formatters'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import RuleBuilder from '../../components/rules/RuleBuilder.vue'
@@ -230,7 +230,7 @@ import RuleExecutionLog from '../../components/rules/RuleExecutionLog.vue'
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-const rulesStore = useRulesStore()
+const rulesStore = useRuleStore()
 
 // State
 const rule = computed(() => rulesStore.selectedRule)

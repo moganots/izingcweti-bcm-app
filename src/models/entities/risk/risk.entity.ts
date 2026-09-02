@@ -1,4 +1,4 @@
-import type { BaseEntity } from '@/types/common/base.entity';
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export enum RiskCategory {
   FINANCIAL = 'FINANCIAL',
@@ -11,6 +11,7 @@ export enum RiskCategory {
   TECHNOLOGY_FAILURE = 'TECHNOLOGY_FAILURE',
   HUMAN_ERROR = 'HUMAN_ERROR',
   THIRD_PARTY = 'THIRD_PARTY',
+  OTHER = "OTHER",
 }
 
 export enum RiskStatus {
@@ -334,4 +335,156 @@ export interface RiskTrendAnalysis {
   closed: number[];
   averageScores: number[];
   projectedTrend: number[];
+}
+
+// ============================================
+// Helper Functions - Labels & Colors
+// ============================================
+
+export function getRiskCategoryLabel(category: string): string {
+  const labels: Record<string, string> = {
+    FINANCIAL: 'Financial',
+    OPERATIONAL: 'Operational',
+    COMPLIANCE: 'Compliance',
+    REPUTATIONAL: 'Reputational',
+    STRATEGIC: 'Strategic',
+    CYBERSECURITY: 'Cybersecurity',
+    NATURAL_DISASTER: 'Natural Disaster',
+    TECHNOLOGY_FAILURE: 'Technology Failure',
+    HUMAN_ERROR: 'Human Error',
+    THIRD_PARTY: 'Third Party',
+    OTHER: 'Other',
+  }
+  return labels[category] || category
+}
+
+export function getRiskCategoryColor(category: string): string {
+  const colors: Record<string, string> = {
+    FINANCIAL: 'blue',
+    OPERATIONAL: 'orange',
+    COMPLIANCE: 'purple',
+    REPUTATIONAL: 'red',
+    STRATEGIC: 'teal',
+    CYBERSECURITY: 'deep-orange',
+    NATURAL_DISASTER: 'brown',
+    TECHNOLOGY_FAILURE: 'grey',
+    HUMAN_ERROR: 'pink',
+    THIRD_PARTY: 'indigo',
+    OTHER: 'grey',
+  }
+  return colors[category] || 'grey'
+}
+
+export function getRiskStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    IDENTIFIED: 'Identified',
+    ASSESSING: 'Assessing',
+    APPROVED: 'Approved',
+    TREATING: 'Treating',
+    MONITORING: 'Monitoring',
+    CLOSED: 'Closed',
+    REJECTED: 'Rejected',
+  }
+  return labels[status] || status
+}
+
+export function getRiskStatusColor(status: string): string {
+  const colors: Record<string, string> = {
+    IDENTIFIED: 'grey',
+    ASSESSING: 'blue',
+    APPROVED: 'green',
+    TREATING: 'orange',
+    MONITORING: 'primary',
+    CLOSED: 'grey-7',
+    REJECTED: 'red',
+  }
+  return colors[status] || 'grey'
+}
+
+export function getRiskTreatmentLabel(treatment: string): string {
+  const labels: Record<string, string> = {
+    AVOID: 'Avoid',
+    MITIGATE: 'Mitigate',
+    TRANSFER: 'Transfer',
+    ACCEPT: 'Accept',
+    EXPLOIT: 'Exploit',
+  }
+  return labels[treatment] || treatment
+}
+
+export function getRiskTreatmentColor(treatment: string): string {
+  const colors: Record<string, string> = {
+    AVOID: 'red',
+    MITIGATE: 'green',
+    TRANSFER: 'orange',
+    ACCEPT: 'grey',
+    EXPLOIT: 'purple',
+  }
+  return colors[treatment] || 'grey'
+}
+
+export function getRiskImpactLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    INSIGNIFICANT: 'Insignificant',
+    MINOR: 'Minor',
+    MODERATE: 'Moderate',
+    MAJOR: 'Major',
+    SEVERE: 'Severe',
+    CATASTROPHIC: 'Catastrophic',
+  }
+  return labels[level] || level
+}
+
+export function getRiskImpactLevelColor(level: string): string {
+  const colors: Record<string, string> = {
+    INSIGNIFICANT: 'grey',
+    MINOR: 'blue',
+    MODERATE: 'yellow',
+    MAJOR: 'orange',
+    SEVERE: 'deep-orange',
+    CATASTROPHIC: 'red',
+  }
+  return colors[level] || 'grey'
+}
+
+export function getRiskLikelihoodLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    RARE: 'Rare',
+    UNLIKELY: 'Unlikely',
+    POSSIBLE: 'Possible',
+    LIKELY: 'Likely',
+    ALMOST_CERTAIN: 'Almost Certain',
+  }
+  return labels[level] || level
+}
+
+export function getRiskLikelihoodLevelColor(level: string): string {
+  const colors: Record<string, string> = {
+    RARE: 'grey',
+    UNLIKELY: 'blue',
+    POSSIBLE: 'yellow',
+    LIKELY: 'orange',
+    ALMOST_CERTAIN: 'red',
+  }
+  return colors[level] || 'grey'
+}
+
+export function getRiskScoreLevelLabel(level: string): string {
+  const labels: Record<string, string> = {
+    LOW: 'Low',
+    MEDIUM: 'Medium',
+    HIGH: 'High',
+    EXTREME: 'Extreme',
+  }
+  return labels[level] || level
+}
+
+export function getRiskScoreLevelColor(level: string): string {
+  const colors: Record<string, string> = {
+    LOW: 'green',
+    MEDIUM: 'yellow',
+    HIGH: 'orange',
+    EXTREME: 'red',
+  }
+  return colors[level] || 'grey'
 }

@@ -1,3 +1,8 @@
+import type { BaseEntity } from './../../../core/base/base.entity';
+import type { Organisation } from '../organisation/organisation.entity';
+import type { BusinessContinuityPlan } from '../bcm/bcm.entity';
+import { QueryParams } from 'src/shared/types/common.types'
+
 // ============================================
 // Incident Module - Enums (Aligned with Backend)
 // ============================================
@@ -35,11 +40,6 @@ export enum EscalationStatus {
   RESOLVED = 'RESOLVED',
   DECLINED = 'DECLINED',
 }
-
-import { QueryParams } from 'src/shared/types/common.types'
-import { BaseEntity } from '../../core/base/base.entity'
-import { Organisation } from '../organisation'
-import { BusinessContinuityPlan } from '../bcm'
 
 // ============================================
 // Incident Module - Types (camelCase - Aligned with Backend DTOs)

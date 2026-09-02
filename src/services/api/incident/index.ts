@@ -1,0 +1,1 @@
+export { IncidentService, incidentService } from './IncidentService'

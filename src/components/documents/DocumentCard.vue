@@ -3,11 +3,7 @@
     <q-card-section>
       <!-- Header -->
       <div class="row items-center q-mb-sm">
-        <q-icon
-          :name="getFileIcon(document.file_type)"
-          size="40px"
-          :color="getFileColor(document.document_type)"
-        />
+        <q-icon :name="getFileIcon(document.file_type)" size="40px" :color="getFileColor(document.document_type)" />
         <div class="q-ml-md col">
           <div class="text-h6 text-weight-medium ellipsis">{{ document.title }}</div>
           <div class="text-caption text-grey-7">
@@ -61,20 +57,9 @@
 
       <!-- Tags -->
       <div v-if="document.tags?.length" class="q-mt-sm">
-        <q-badge
-          v-for="tag in document.tags.slice(0, 3)"
-          :key="tag"
-          outline
-          color="primary"
-          :label="tag"
-          class="q-mr-xs"
-        />
-        <q-badge
-          v-if="document.tags.length > 3"
-          outline
-          color="grey"
-          :label="'+' + (document.tags.length - 3)"
-        />
+        <q-badge v-for="tag in document.tags.slice(0, 3)" :key="tag" outline color="primary" :label="tag"
+          class="q-mr-xs" />
+        <q-badge v-if="document.tags.length > 3" outline color="grey" :label="'+' + (document.tags.length - 3)" />
       </div>
 
       <!-- Upload Info -->
@@ -132,13 +117,16 @@ function getFileColor(docType: string): string {
 <style lang="scss" scoped>
 .document-card {
   transition: transform 0.2s, box-shadow 0.2s;
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 }
+
 .ellipsis-2-lines {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

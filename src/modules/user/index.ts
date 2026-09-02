@@ -18,7 +18,7 @@ export enum UserRole {
 // User Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 import { UserPreferences } from '../settings'
 
 export interface NotificationPreferences {

@@ -5,6 +5,7 @@ import { CacheEntry, CacheQueryParams, CacheStats } from './../../../../models/e
 /**
  * Cache Repository
  * Manages cache entries in IndexedDB with TTL support
+ * Field names aligned with cache.entity.ts (camelCase)
  */
 export class CacheRepository extends BaseRepository<CacheEntry> {
   constructor(table: Table<CacheEntry, string>) {
@@ -23,15 +24,15 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
     }
 
     // Check if expired
-    if (entry.expires_at && new Date(entry.expires_at) < new Date()) {
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
       await this.delete(key)
       return undefined
     }
 
     // Update hit count and last accessed time
     await this.update(key, {
-      hit_count: (entry.hit_count || 0) + 1,
-      last_accessed_at: new Date().toISOString(),
+      hitCount: (entry.hitCount || 0) + 1,
+      lastAccessedAt: new Date().toISOString(),
     } as Partial<CacheEntry>)
 
     return entry
@@ -58,11 +59,13 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
     if (existing) {
       const updated = await this.update(key, {
         value: serializedValue,
-        expires_at: expiresAt,
+        expiresAt: expiresAt,
         tags: tags || existing.tags,
-        size_bytes: sizeBytes,
-        is_compressed: compress,
-        updated_at: now,
+        sizeBytes: sizeBytes,
+        isCompressed: compress,
+        compressionAlgorithm: compress ? 'gzip' : null,
+        updatedAt: now,
+        updatedBy: 'system',
       } as Partial<CacheEntry>)
       return updated!
     }
@@ -70,15 +73,19 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
     return this.create({
       key,
       value: serializedValue,
-      expires_at: expiresAt,
+      expiresAt: expiresAt,
       tags: tags || null,
-      hit_count: 0,
-      last_accessed_at: null,
-      size_bytes: sizeBytes,
-      is_compressed: compress,
-      compression_algorithm: compress ? 'gzip' : null,
-      created_by: 'system',
-      updated_by: 'system',
+      hitCount: 0,
+      lastAccessedAt: null,
+      sizeBytes: sizeBytes,
+      isCompressed: compress,
+      compressionAlgorithm: compress ? 'gzip' : null,
+      createdBy: 'system',
+      updatedBy: 'system',
+      createdAt: now,
+      updatedAt: now,
+      version: 1,
+      syncStatus: 'SYNCED',
     } as Partial<CacheEntry>)
   }
 
@@ -124,7 +131,7 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
   async clearExpired(): Promise<number> {
     const all = await this.findAll()
     const now = new Date()
-    const expired = all.filter((entry) => entry.expires_at && new Date(entry.expires_at) < now)
+    const expired = all.filter((entry) => entry.expiresAt && new Date(entry.expiresAt) < now)
 
     if (expired.length > 0) {
       await this.deleteMany(expired.map((e) => e.key))
@@ -181,25 +188,32 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
 
   /**
    * Get cache statistics
+   * Returns stats matching CacheStats interface from cache.entity.ts
    */
   async getStats(): Promise<CacheStats> {
     const all = await this.findAll()
     const now = new Date()
+    
     const activeEntries = all.filter(
-      (entry) => !entry.expires_at || new Date(entry.expires_at) >= now
+      (entry) => !entry.expiresAt || new Date(entry.expiresAt) >= now
     )
     const expiredEntries = all.filter(
-      (entry) => entry.expires_at && new Date(entry.expires_at) < now
+      (entry) => entry.expiresAt && new Date(entry.expiresAt) < now
     )
-    const totalHits = all.reduce((sum, entry) => sum + (entry.hit_count || 0), 0)
+    const totalHits = all.reduce((sum, entry) => sum + (entry.hitCount || 0), 0)
+    const totalSize = all.reduce((sum, entry) => sum + (entry.sizeBytes || 0), 0)
+
+    // Calculate hit ratio
+    const totalRequests = totalHits + all.length
+    const hitRatio = totalRequests > 0 ? (totalHits / totalRequests) * 100 : 0
 
     return {
-      total_entries: all.length,
-      total_size_bytes: all.reduce((sum, entry) => sum + (entry.size_bytes || 0), 0),
-      active_entries: activeEntries.length,
-      expired_entries: expiredEntries.length,
-      total_hits: totalHits,
-      cache_hit_ratio: all.length > 0 ? totalHits / (totalHits + all.length) : 0,
+      totalEntries: all.length,
+      totalSizeBytes: totalSize,
+      activeEntries: activeEntries.length,
+      expiredEntries: expiredEntries.length,
+      totalHits: totalHits,
+      cacheHitRatio: Math.round(hitRatio * 100) / 100,
     }
   }
 
@@ -299,10 +313,12 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
    * Set multiple cache entries at once
    */
   async setMany(
-    entries: Array<{ key: string; value: any; ttl?: number; tags?: string }>
+    entries: Array<{ key: string; value: any; ttl?: number; tags?: string; compress?: boolean }>
   ): Promise<void> {
     await Promise.all(
-      entries.map((entry) => this.set(entry.key, entry.value, entry.ttl, entry.tags))
+      entries.map((entry) => 
+        this.set(entry.key, entry.value, entry.ttl, entry.tags, entry.compress)
+      )
     )
   }
 
@@ -311,16 +327,187 @@ export class CacheRepository extends BaseRepository<CacheEntry> {
    */
   async getSize(): Promise<number> {
     const stats = await this.getStats()
-    return stats.total_size_bytes
+    return stats.totalSizeBytes
   }
 
   /**
    * Check if cache needs cleanup
    */
-  async needsCleanup(thresholdPercent: number = 80): Promise<boolean> {
+  async needsCleanup(thresholdPercent: number = 80, maxSizeMB: number = 100): Promise<boolean> {
     const stats = await this.getStats()
-    const maxSize = 100 * 1024 * 1024 // 100MB default limit
-    const usagePercent = (stats.total_size_bytes / maxSize) * 100
+    const maxSizeBytes = maxSizeMB * 1024 * 1024
+    const usagePercent = stats.totalSizeBytes > 0 ? (stats.totalSizeBytes / maxSizeBytes) * 100 : 0
     return usagePercent >= thresholdPercent
+  }
+
+  /**
+   * Get cache entries by tag (returns entries, not just values)
+   */
+  async getByTag(tag: string): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    return all.filter((entry) => {
+      if (!entry.tags) return false
+      const entryTags = entry.tags.split(',')
+      return entryTags.includes(tag)
+    })
+  }
+
+  /**
+   * Get cache entries by multiple tags (AND logic)
+   */
+  async getByTagsAll(tags: string[]): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    return all.filter((entry) => {
+      if (!entry.tags) return false
+      const entryTags = entry.tags.split(',')
+      return tags.every((tag) => entryTags.includes(tag))
+    })
+  }
+
+  /**
+   * Get cache entries by multiple tags (OR logic)
+   */
+  async getByTagsAny(tags: string[]): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    return all.filter((entry) => {
+      if (!entry.tags) return false
+      const entryTags = entry.tags.split(',')
+      return tags.some((tag) => entryTags.includes(tag))
+    })
+  }
+
+  /**
+   * Update expiration time for a cache entry
+   */
+  async touch(key: string, ttl?: number): Promise<boolean> {
+    const entry = await this.findById(key)
+    if (!entry) return false
+
+    const expiresAt = ttl ? new Date(Date.now() + ttl * 1000).toISOString() : null
+    await this.update(key, {
+      expiresAt: expiresAt,
+      updatedAt: new Date().toISOString(),
+    } as Partial<CacheEntry>)
+    return true
+  }
+
+  /**
+   * Get cache entry metadata without modifying hit count
+   */
+  async getMetadata(key: string): Promise<{
+    key: string
+    sizeBytes: number
+    expiresAt?: string | Date
+    tags?: string
+    hitCount: number
+    lastAccessedAt?: string | Date
+  } | null> {
+    const entry = await this.findById(key)
+    if (!entry) return null
+
+    // Check if expired
+    if (entry.expiresAt && new Date(entry.expiresAt) < new Date()) {
+      await this.delete(key)
+      return null
+    }
+
+    return {
+      key: entry.key,
+      sizeBytes: entry.sizeBytes,
+      ...(entry.expiresAt != null ? { expiresAt: entry.expiresAt } : {}),
+      ...(entry.tags ? { tags: entry.tags } : {}),
+      hitCount: entry.hitCount,
+      ...(entry.lastAccessedAt != null ? { lastAccessedAt: entry.lastAccessedAt } : {}),
+    }
+  }
+
+  /**
+   * Get cache hit ratio
+   */
+  async getHitRatio(): Promise<number> {
+    const stats = await this.getStats()
+    return stats.cacheHitRatio
+  }
+
+  /**
+   * Get cache memory usage as percentage of max
+   */
+  async getMemoryUsagePercent(maxSizeMB: number = 100): Promise<number> {
+    const size = await this.getSize()
+    const maxSizeBytes = maxSizeMB * 1024 * 1024
+    return maxSizeBytes > 0 ? (size / maxSizeBytes) * 100 : 0
+  }
+
+  /**
+   * Find expired entries
+   */
+  async findExpired(): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    const now = new Date()
+    return all.filter((entry) => entry.expiresAt && new Date(entry.expiresAt) < now)
+  }
+
+  /**
+   * Find active entries (not expired)
+   */
+  async findActive(): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    const now = new Date()
+    return all.filter((entry) => !entry.expiresAt || new Date(entry.expiresAt) >= now)
+  }
+
+  /**
+   * Find entries by compression status
+   */
+  async findByCompression(compressed: boolean): Promise<CacheEntry[]> {
+    return this.findMany({ isCompressed: compressed } as Partial<CacheEntry>)
+  }
+
+  /**
+   * Get entries with hit count above threshold
+   */
+  async findFrequentEntries(minHits: number = 10): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    return all.filter((entry) => (entry.hitCount || 0) >= minHits)
+  }
+
+  /**
+   * Get entries with hit count below threshold (candidates for eviction)
+   */
+  async findRareEntries(maxHits: number = 5): Promise<CacheEntry[]> {
+    const all = await this.findAll()
+    return all.filter((entry) => (entry.hitCount || 0) <= maxHits)
+  }
+
+  /**
+   * Evict least recently used entries
+   */
+  async evictLRU(count: number): Promise<number> {
+    const all = await this.findAll()
+    const sorted = all.sort((a, b) => {
+      const aTime = a.lastAccessedAt ? new Date(a.lastAccessedAt).getTime() : 0
+      const bTime = b.lastAccessedAt ? new Date(b.lastAccessedAt).getTime() : 0
+      return aTime - bTime
+    })
+
+    const toEvict = sorted.slice(0, Math.min(count, sorted.length))
+    if (toEvict.length > 0) {
+      await this.deleteMany(toEvict.map((e) => e.key))
+    }
+    return toEvict.length
+  }
+
+  /**
+   * Evict least frequently used entries
+   */
+  async evictLFU(count: number): Promise<number> {
+    const all = await this.findAll()
+    const sorted = all.sort((a, b) => (a.hitCount || 0) - (b.hitCount || 0))
+
+    const toEvict = sorted.slice(0, Math.min(count, sorted.length))
+    if (toEvict.length > 0) {
+      await this.deleteMany(toEvict.map((e) => e.key))
+    }
+    return toEvict.length
   }
 }

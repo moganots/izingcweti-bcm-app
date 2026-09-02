@@ -1,6 +1,6 @@
+import type { BaseEntity } from './../../../core/base/base.entity';
+import type { Organisation, BusinessUnit, Department } from './../organisation/organisation.entity'
 import { QueryParams } from 'src/shared/types/common.types'
-import { BaseEntity } from '../../core/base/base.entity'
-import { Organisation, BusinessUnit, Department } from '../organisation'
 
 // ============================================
 // Document Module - Enums (Aligned with Backend)
@@ -173,12 +173,12 @@ export interface UpdateDocumentRequest {
 }
 
 export interface ApproveDocumentRequest {
-    comments?: string
+    comments?: string | undefined
 }
 
 export interface RejectDocumentRequest {
     rejectionReason: string
-    comments?: string
+    comments?: string | undefined
 }
 
 export interface DocumentVersionRequest {

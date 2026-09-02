@@ -44,7 +44,7 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Settings Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface NotificationSettings {
   email_enabled: boolean

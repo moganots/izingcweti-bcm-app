@@ -53,7 +53,7 @@ export enum ResolutionStrategy {
 // Sync Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface PendingChange extends BaseEntity {
   entity_type: string

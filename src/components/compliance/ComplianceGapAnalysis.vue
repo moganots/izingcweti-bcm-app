@@ -11,11 +11,7 @@
       <q-list v-else separator>
         <q-item v-for="(gap, index) in gaps" :key="index">
           <q-item-section avatar>
-            <q-icon
-              :name="getPriorityIcon(gap.priority)"
-              :color="getPriorityColor(gap.priority)"
-              size="24px"
-            />
+            <q-icon :name="getPriorityIcon(gap.priority)" :color="getPriorityColor(gap.priority)" size="24px" />
           </q-item-section>
           <q-item-section>
             <q-item-label>{{ gap.requirement }}</q-item-label>
@@ -23,11 +19,7 @@
               Current: {{ gap.currentStatus }} → Target: {{ gap.targetStatus }}
             </q-item-label>
             <div class="q-mt-sm">
-              <div
-                v-for="(action, ai) in gap.actionItems"
-                :key="ai"
-                class="text-caption text-grey-7"
-              >
+              <div v-for="(action, ai) in gap.actionItems" :key="ai" class="text-caption text-grey-7">
                 • {{ action }}
               </div>
             </div>

@@ -1,6 +1,5 @@
-// src/services/organisation/organisation.service.ts
-import { BaseService } from '@/services/BaseService';
-import { API_ENDPOINTS } from '@/core/constants/api.constants';
+import { BaseService } from './../../BaseService';
+import { API_ENDPOINTS } from './../../../core/constants/api.constants';
 import type {
   Organisation,
   CreateOrganisationDto,
@@ -8,15 +7,15 @@ import type {
   OrganisationStatsDto,
   OrganisationQueryParams,
   OrganisationHierarchy,
-} from '@/types/organisation';
-import type { PaginatedResult } from '@/types/common';
+} from './../../../models/entities/organisation/organisation.entity';
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 export class OrganisationService extends BaseService {
   constructor() {
     super();
   }
 
-  async getOrganisations(params?: OrganisationQueryParams): Promise<PaginatedResult<Organisation>> {
+  async getOrganisations(params?: OrganisationQueryParams): Promise<PaginatedResponse<Organisation>> {
     return this.getPaginated<Organisation>(
       API_ENDPOINTS.ORGANISATIONS.BASE,
       params as Record<string, any>
@@ -72,7 +71,7 @@ export class OrganisationService extends BaseService {
     return this.extractData(response);
   }
 
-  async searchOrganisations(query: string, params?: OrganisationQueryParams): Promise<PaginatedResult<Organisation>> {
+  async searchOrganisations(query: string, params?: OrganisationQueryParams): Promise<PaginatedResponse<Organisation>> {
     return this.getOrganisations({ ...params, search: query });
   }
 }

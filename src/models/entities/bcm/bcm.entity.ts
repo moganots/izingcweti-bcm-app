@@ -1,5 +1,7 @@
-import { BaseEntity } from '../../core/base/base.entity'
-import { Department, Organisation } from '../organisation'
+import type { BaseEntity } from './../../../core/base/base.entity';
+import type { Organisation, Department } from './../organisation/organisation.entity'
+import type { ComplianceGap } from '../compliance/compliance.entity';
+import type { RecentActivity } from 'src/modules/dashboard';
 
 // ============================================
 // BCM Module - Enums (Aligned with Backend)
@@ -727,12 +729,4 @@ export interface ExpiringPlan {
   planName: string
   expiryDate: string
   daysUntilExpiry: number
-}
-
-export interface ComplianceGap {
-  requirement: string
-  currentStatus: string
-  targetStatus: string
-  actionItems: string[]
-  priority: 'high' | 'medium' | 'low'
 }

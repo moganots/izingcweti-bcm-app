@@ -3,16 +3,9 @@
     <q-card-section>
       <!-- Header -->
       <div class="row items-center justify-between q-mb-sm">
-        <q-badge
-          :color="getStateColor(workflow.workflow_state)"
-          :label="formatState(workflow.workflow_state)"
-          class="q-px-sm q-py-xs"
-        />
-        <q-badge
-          :color="getPriorityColor(workflow.priority)"
-          :label="'P' + workflow.priority"
-          outline
-        />
+        <q-badge :color="getStateColor(workflow.workflow_state)" :label="formatState(workflow.workflow_state)"
+          class="q-px-sm q-py-xs" />
+        <q-badge :color="getPriorityColor(workflow.priority)" :label="'P' + workflow.priority" outline />
       </div>
 
       <div class="text-h6 q-mb-xs">{{ workflow.title }}</div>
@@ -30,23 +23,15 @@
         </div>
         <div class="col-6">
           <div class="text-caption text-grey-6">Due Date</div>
-          <div
-            class="text-body2"
-            :class="isOverdue(workflow.due_date) ? 'text-negative text-weight-bold' : ''"
-          >
+          <div class="text-body2" :class="isOverdue(workflow.due_date) ? 'text-negative text-weight-bold' : ''">
             {{ formatDate(workflow.due_date) || 'N/A' }}
           </div>
         </div>
       </div>
 
       <!-- Progress -->
-      <q-linear-progress
-        :value="getProgress(workflow)"
-        :color="getProgressColor(workflow)"
-        size="8px"
-        rounded
-        class="q-mb-xs"
-      />
+      <q-linear-progress :value="getProgress(workflow)" :color="getProgressColor(workflow)" size="8px" rounded
+        class="q-mb-xs" />
       <div class="row justify-between text-caption text-grey-6">
         <span>{{ workflow.workflow_state }}</span>
         <span v-if="workflow.completed_at">Completed: {{ formatDate(workflow.completed_at) }}</span>
@@ -55,27 +40,12 @@
 
     <!-- Actions -->
     <q-card-actions v-if="showActions" align="right">
-      <q-btn
-        v-if="workflow.workflow_state === 'Draft'"
-        flat
-        color="primary"
-        label="Submit"
-        @click.stop="$emit('submit', workflow)"
-      />
-      <q-btn
-        v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'"
-        flat
-        color="green"
-        label="Approve"
-        @click.stop="$emit('approve', workflow)"
-      />
-      <q-btn
-        v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'"
-        flat
-        color="red"
-        label="Reject"
-        @click.stop="$emit('reject', workflow)"
-      />
+      <q-btn v-if="workflow.workflow_state === 'Draft'" flat color="primary" label="Submit"
+        @click.stop="$emit('submit', workflow)" />
+      <q-btn v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'" flat color="green"
+        label="Approve" @click.stop="$emit('approve', workflow)" />
+      <q-btn v-if="workflow.workflow_state === 'Submitted' || workflow.workflow_state === 'InReview'" flat color="red"
+        label="Reject" @click.stop="$emit('reject', workflow)" />
     </q-card-actions>
   </q-card>
 </template>
@@ -178,13 +148,16 @@ function getProgressColor(w: any): string {
 <style lang="scss" scoped>
 .workflow-card {
   transition: transform 0.2s, box-shadow 0.2s;
+
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   }
 }
+
 .ellipsis-2-lines {
   display: -webkit-box;
+  line-clamp: 2;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;

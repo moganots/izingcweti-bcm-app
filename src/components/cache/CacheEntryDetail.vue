@@ -22,10 +22,7 @@
           <q-item>
             <q-item-section>
               <q-item-label caption>Status</q-item-label>
-              <q-badge
-                :color="isExpired ? 'orange' : 'green'"
-                :label="isExpired ? 'Expired' : 'Active'"
-              />
+              <q-badge :color="isExpired ? 'orange' : 'green'" :label="isExpired ? 'Expired' : 'Active'" />
             </q-item-section>
           </q-item>
 
@@ -92,24 +89,12 @@
         <!-- Actions -->
         <div class="row q-col-gutter-md q-mt-md">
           <div class="col-6">
-            <q-btn
-              color="primary"
-              icon="refresh"
-              label="Refresh TTL"
-              class="full-width"
-              outline
-              @click="$emit('refresh', entry)"
-            />
+            <q-btn color="primary" icon="refresh" label="Refresh TTL" class="full-width" outline
+              @click="$emit('refresh', entry)" />
           </div>
           <div class="col-6">
-            <q-btn
-              color="negative"
-              icon="delete"
-              label="Delete Entry"
-              class="full-width"
-              outline
-              @click="$emit('delete', entry)"
-            />
+            <q-btn color="negative" icon="delete" label="Delete Entry" class="full-width" outline
+              @click="$emit('delete', entry)" />
           </div>
         </div>
       </div>

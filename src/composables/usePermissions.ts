@@ -1,5 +1,3 @@
-// src/composables/usePermissions.ts
-
 import { computed } from 'vue';
 import { useAuthStore } from '../stores/auth/auth.store';
 import { UserRole } from '../models/entities/user/user.entity';

@@ -1,0 +1,1 @@
+export { IncidentRepository } from './IncidentRepository'

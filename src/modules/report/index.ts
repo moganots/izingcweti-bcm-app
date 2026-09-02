@@ -45,7 +45,7 @@ export enum ReportFrequency {
 // Report Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface Report extends BaseEntity {
   name: string

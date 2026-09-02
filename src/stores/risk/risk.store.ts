@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { riskService } from '@/services/risk/risk.service';
-import { useAuth } from '@/composables/auth/useAuth';
+import { riskService } from './../../services/api/risk/RiskService';
+import { useAuth } from './../../composables/useAuth';
 import type {
   Risk,
   CreateRiskDto,
@@ -13,15 +13,15 @@ import type {
   RiskQueryDto,
   RiskStatsDto,
   RiskComprehensiveAnalytics,
-} from '@/types/risk';
-import { RiskStatus, getRiskScoreLevel, getRiskColor } from '@/types/risk/enums';
+} from './../../models/entities/risk/risk.entity';
+import { RiskStatus } from './../../models/entities/risk/risk.entity';
 
 export const useRiskStore = defineStore('risk', () => {
   // ============================================
   // Dependencies - Auth Integration
   // ============================================
   const auth = useAuth();
-  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, organisationId: userOrgId } = auth;
+  const { isAuthenticated, isAdmin, isGlobalAdmin, userId, userOrganisationId } = auth;
 
   // ============================================
   // State
@@ -176,7 +176,7 @@ export const useRiskStore = defineStore('risk', () => {
         ...params,
         page: pagination.value.currentPage,
         limit: pagination.value.itemsPerPage,
-        organisationId: params?.organisationId || userOrgId.value,
+        organisationId: params?.organisationId || userOrganisationId.value,
       };
       const response = await riskService.getRisks(queryParams);
       risks.value = response.data || [];
@@ -218,7 +218,7 @@ export const useRiskStore = defineStore('risk', () => {
 
     // Ensure organisationId is set
     if (!data.organisationId) {
-      data.organisationId = userOrgId.value || '';
+      data.organisationId = userOrganisationId.value || '';
     }
 
     isSaving.value = true;
@@ -431,7 +431,7 @@ export const useRiskStore = defineStore('risk', () => {
     if (!requireAuth()) return null;
 
     try {
-      const statsData = await riskService.getStats(organisationId || userOrgId.value);
+      const statsData = await riskService.getStats(organisationId || userOrganisationId.value);
       stats.value = statsData;
       return statsData;
     } catch (err: any) {
@@ -444,7 +444,7 @@ export const useRiskStore = defineStore('risk', () => {
     if (!requireAuth()) return null;
 
     try {
-      const analytics = await riskService.getComprehensiveAnalytics(organisationId || userOrgId.value);
+      const analytics = await riskService.getComprehensiveAnalytics(organisationId || userOrganisationId.value);
       comprehensiveAnalytics.value = analytics;
       return analytics;
     } catch (err: any) {
@@ -463,7 +463,7 @@ export const useRiskStore = defineStore('risk', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const matrix = await riskService.getRiskMatrix(organisationId || userOrgId.value);
+      const matrix = await riskService.getRiskMatrix(organisationId || userOrganisationId.value);
       riskMatrix.value = matrix;
       return matrix;
     } catch (err: any) {
@@ -480,7 +480,7 @@ export const useRiskStore = defineStore('risk', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const trends = await riskService.getRiskTrends(organisationId || userOrgId.value, from, to);
+      const trends = await riskService.getRiskTrends(organisationId || userOrganisationId.value, from, to);
       riskTrends.value = trends;
       return trends;
     } catch (err: any) {
@@ -501,7 +501,7 @@ export const useRiskStore = defineStore('risk', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const highRisks = await riskService.getHighRisks(organisationId || userOrgId.value);
+      const highRisks = await riskService.getHighRisks(organisationId || userOrganisationId.value);
       return highRisks;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch high risks';
@@ -533,7 +533,7 @@ export const useRiskStore = defineStore('risk', () => {
     isLoading.value = true;
     error.value = null;
     try {
-      const overdue = await riskService.getOverdueReviews(organisationId || userOrgId.value);
+      const overdue = await riskService.getOverdueReviews(organisationId || userOrganisationId.value);
       return overdue;
     } catch (err: any) {
       error.value = err.message || 'Failed to fetch overdue reviews';

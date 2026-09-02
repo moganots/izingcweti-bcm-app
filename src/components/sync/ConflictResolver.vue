@@ -32,42 +32,20 @@
       </div>
 
       <!-- Resolution Strategy -->
-      <q-select
-        v-model="strategy"
-        :options="strategyOptions"
-        label="Resolution Strategy"
-        outlined
-        dense
-        class="q-mb-md"
-        emit-value
-        map-options
-      />
+      <q-select v-model="strategy" :options="strategyOptions" label="Resolution Strategy" outlined dense class="q-mb-md"
+        emit-value map-options />
 
       <!-- Custom Resolution Data (for merge/manual) -->
-      <q-input
-        v-if="strategy === 'manual'"
-        v-model="resolvedData"
-        label="Resolved Data (JSON)"
-        outlined
-        dense
-        type="textarea"
-        rows="5"
-        class="q-mb-md"
-      />
+      <q-input v-if="strategy === 'manual'" v-model="resolvedData" label="Resolved Data (JSON)" outlined dense
+        type="textarea" rows="5" class="q-mb-md" />
 
       <div class="row q-col-gutter-md">
         <div class="col-6">
           <q-btn flat color="grey" label="Cancel" class="full-width" @click="$emit('cancel')" />
         </div>
         <div class="col-6">
-          <q-btn
-            color="primary"
-            label="Resolve Conflict"
-            class="full-width"
-            :loading="submitting"
-            unelevated
-            @click="handleResolve"
-          />
+          <q-btn color="primary" label="Resolve Conflict" class="full-width" :loading="submitting" unelevated
+            @click="handleResolve" />
         </div>
       </div>
     </q-card-section>

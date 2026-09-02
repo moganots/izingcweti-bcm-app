@@ -2,11 +2,7 @@
   <q-header elevated :class="headerClass">
     <q-toolbar>
       <!-- Logo and App Name (Left Aligned) -->
-      <div
-        class="row items-center cursor-pointer"
-        style="min-width: 80px"
-        @click="$router.push('/dashboard')"
-      >
+      <div class="row items-center cursor-pointer" style="min-width: 80px" @click="$router.push('/dashboard')">
         <q-avatar size="36px" class="q-mr-sm">
           <img src="/izingcweti-logo-icon-no-bg.png" alt="Logo" />
         </q-avatar>
@@ -21,15 +17,7 @@
       <!-- Page Title with Back Button (Centered - takes available space) -->
       <div class="row justify-center items-center" style="flex: 1">
         <!-- Back Button -->
-        <q-btn
-          size="0.6em"
-          v-if="canGoBack"
-          dense
-          round
-          icon="keyboard_arrow_left"
-          class="q-mr-sm"
-          @click="goBack"
-        >
+        <q-btn size="0.6em" v-if="canGoBack" dense round icon="keyboard_arrow_left" class="q-mr-sm" @click="goBack">
           <q-tooltip>Go Back</q-tooltip>
         </q-btn>
 
@@ -41,26 +29,15 @@
       <!-- Right Aligned Buttons -->
       <div class="row items-center q-gutter-sm" style="min-width: 70px; justify-content: flex-end">
         <!-- Connectivity Status Indicator -->
-        <q-btn
-          dense
-          round
-          :icon="isOffline ? 'wifi_off' : 'wifi'"
-          :color="isOffline ? 'red' : 'green'"
-          size="0.7em"
-          @click="toggleNetworkInfo"
-        >
+        <q-btn dense round :icon="isOffline ? 'wifi_off' : 'wifi'" :color="isOffline ? 'red' : 'green'" size="0.7em"
+          @click="toggleNetworkInfo">
           <q-tooltip>{{
             isOffline ? 'Offline Mode - No connection' : 'Online Mode - Connected'
           }}</q-tooltip>
         </q-btn>
 
         <!-- Notifications Button -->
-        <q-btn
-          round
-          :icon="'notifications'"
-          size="0.7em"
-          @click="openNotifications"
-        >
+        <q-btn round :icon="'notifications'" size="0.7em" @click="openNotifications">
           <q-badge v-if="unreadCount > 0" color="red" floating transparent>
             {{ unreadCount > 99 ? '99+' : unreadCount }}
           </q-badge>
@@ -128,7 +105,7 @@ function openNotifications(): void {
 // Load notification counts on mount
 onMounted(async () => {
   if (authStore.isAuthenticated) {
-    await notificationStore.loadCounts()
+    await notificationStore.fetchCounts()
   }
 })
 

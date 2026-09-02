@@ -84,7 +84,7 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Rule Module - Types
 // ============================================
 
-import { BaseEntity } from '../../core/base/base.entity'
+import type { BaseEntity } from './../../../core/base/base.entity';
 
 export interface RuleCondition {
   field: string

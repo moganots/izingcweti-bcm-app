@@ -1,27 +1,24 @@
-// src/stores/notification/notification.store.ts
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { notificationService } from '@/services/notification/notification.service';
-import { useAuth } from '@/composables/auth/useAuth';
+import { notificationService } from './../../services/api/notification/NotificationService';
+import { useAuth } from './../../composables/useAuth';
 import type {
   Notification,
   NotificationPreference,
   NotificationTemplate,
-  CreateNotificationDto,
-  NotificationPreferenceDto,
-  NotificationTemplateDto,
-  NotificationQueryDto,
-  NotificationCountDto,
+  CreateNotificationRequest,
+  NotificationQueryParams,
+  NotificationCountResponse,
   NotificationStats,
   TemplateStats,
-} from '@/types/notification';
-import { NotificationStatus } from '@/types/notification/enums';
+} from './../../models/entities/notification/notification.entity';
+import { NotificationStatus } from './../../models/entities/notification/notification.entity';
 
 export const useNotificationStore = defineStore('notification', () => {
   // ============================================
   // Dependencies
   // ============================================
-  const { userId, isAuthenticated, isAdmin, isBCMManager } = useAuth();
+  const { isAuthenticated, isAdmin, isBCMManager } = useAuth();
 
   // ============================================
   // State
@@ -39,7 +36,7 @@ export const useNotificationStore = defineStore('notification', () => {
   const selectedTemplate = ref<NotificationTemplate | null>(null);
 
   // Counts & Stats
-  const counts = ref<NotificationCountDto | null>(null);
+  const counts = ref<NotificationCountResponse | null>(null);
   const stats = ref<NotificationStats | null>(null);
   const templateStats = ref<TemplateStats | null>(null);
 
@@ -106,7 +103,7 @@ export const useNotificationStore = defineStore('notification', () => {
   // Actions - Notifications
   // ============================================
 
-  async function fetchNotifications(params?: NotificationQueryDto) {
+  async function fetchNotifications(params?: NotificationQueryParams) {
     // Only fetch if authenticated
     if (!isAuthenticated.value) {
       error.value = 'User not authenticated';
@@ -165,7 +162,7 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  async function fetchCounts(): Promise<NotificationCountDto | null> {
+  async function fetchCounts(): Promise<NotificationCountResponse | null> {
     if (!isAuthenticated.value) return null;
 
     try {
@@ -177,7 +174,7 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  async function createNotification(data: CreateNotificationDto): Promise<Notification | null> {
+  async function createNotification(data: CreateNotificationRequest): Promise<Notification | null> {
     if (!isAuthenticated.value) {
       error.value = 'User not authenticated';
       return null;
@@ -317,7 +314,13 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  async function upsertPreference(data: NotificationPreferenceDto): Promise<NotificationPreference | null> {
+  async function upsertPreference(data: {
+    notificationType: string;
+    emailEnabled?: boolean;
+    smsEnabled?: boolean;
+    pushEnabled?: boolean;
+    inAppEnabled?: boolean;
+  }): Promise<NotificationPreference | null> {
     if (!isAuthenticated.value) {
       error.value = 'User not authenticated';
       return null;
@@ -395,7 +398,12 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  async function createTemplate(data: NotificationTemplateDto): Promise<NotificationTemplate | null> {
+  async function createTemplate(data: {
+    notificationType: string;
+    titleTemplate: string;
+    messageTemplate: string;
+    isActive?: boolean;
+  }): Promise<NotificationTemplate | null> {
     if (!isAdmin.value && !isBCMManager.value) {
       error.value = 'Insufficient permissions';
       return null;
@@ -415,7 +423,14 @@ export const useNotificationStore = defineStore('notification', () => {
     }
   }
 
-  async function updateTemplate(uuid: string, data: Partial<NotificationTemplateDto>): Promise<NotificationTemplate | null> {
+  async function updateTemplate(
+    uuid: string,
+    data: Partial<{
+      titleTemplate: string;
+      messageTemplate: string;
+      isActive: boolean;
+    }>
+  ): Promise<NotificationTemplate | null> {
     if (!isAdmin.value && !isBCMManager.value) {
       error.value = 'Insufficient permissions';
       return null;

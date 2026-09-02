@@ -2,6 +2,7 @@
 // Business Continuity Management System - Consolidated Theme
 // ============================================
 
+@use 'sass:math';
 @import 'variables';
 @import 'mixins';
 
@@ -111,11 +112,10 @@
 }
 
 html {
-  font-size: 16px; // Base for rem units
+  font-size: 16px;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
 
-  // Responsive font scaling
   @include respond-below('sm') {
     font-size: 15px;
   }
@@ -127,8 +127,8 @@ html {
 
 body {
   font-family: $font-family-base;
-  font-size: $font-size-base;
-  line-height: $line-height-normal;
+  font-size: map-get($font-sizes-mobile, 'base');
+  line-height: $line-height-mobile;
   color: var(--text-primary);
   background-color: var(--bg-page);
   margin: 0;
@@ -137,10 +137,14 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  // Improve readability on mobile
-  @include respond-below('sm') {
-    font-size: $font-size-sm;
-    line-height: $line-height-relaxed;
+  @include respond-above('md') {
+    font-size: map-get($font-sizes-tablet, 'base');
+    line-height: $line-height-tablet;
+  }
+
+  @include respond-above('lg') {
+    font-size: map-get($font-sizes-desktop, 'base');
+    line-height: $line-height-desktop;
   }
 }
 
@@ -152,7 +156,6 @@ a {
     text-decoration: underline;
   }
 
-  // Better touch target on mobile
   @include respond-below('sm') {
     padding: $spacing-1 0;
   }
@@ -166,103 +169,53 @@ img {
 // Responsive Typography
 // ============================================
 
-h1, .h1 {
-  @include heading-size(1);
-  margin-bottom: $spacing-4;
+// Headings with responsive sizing
+h1, .h1 { @include heading-size(1); }
+h2, .h2 { @include heading-size(2); }
+h3, .h3 { @include heading-size(3); }
+h4, .h4 { @include heading-size(4); }
+h5, .h5 { @include heading-size(5); }
+h6, .h6 { @include heading-size(6); }
 
-  @include respond-below('sm') {
-    margin-bottom: $spacing-3;
-  }
-}
-
-h2, .h2 {
-  @include heading-size(2);
-  margin-bottom: $spacing-3;
-
-  @include respond-below('sm') {
-    margin-bottom: $spacing-2;
-  }
-}
-
-h3, .h3 {
-  @include heading-size(3);
-  margin-bottom: $spacing-2;
-}
-
-h4, .h4 {
-  @include heading-size(4);
-  margin-bottom: $spacing-2;
-}
-
-h5, .h5 {
-  @include heading-size(5);
-  margin-bottom: $spacing-2;
-}
-
-h6, .h6 {
-  @include heading-size(6);
-  margin-bottom: $spacing-1;
-}
-
+// Paragraphs with responsive spacing
 p {
   margin-bottom: $spacing-3;
-  max-width: 70ch; // Optimal readability
+  max-width: 70ch;
 
   @include respond-below('sm') {
     margin-bottom: $spacing-2;
   }
 }
 
+// ============================================
 // Responsive Text Utilities
-.text-xs {
-  font-size: $font-size-xs;
-  line-height: $line-height-normal;
+// ============================================
 
-  @include respond-below('sm') {
-    font-size: 0.6875rem;
-  }
-}
+// Using the new font-size-map mixin
+.text-xs { @include font-size-map('xs'); }
+.text-sm { @include font-size-map('sm'); }
+.text-base { @include font-size-map('base'); }
+.text-md { @include font-size-map('md'); }
+.text-lg { @include font-size-map('lg'); }
+.text-xl { @include font-size-map('xl'); }
+.text-2xl { @include font-size-map('2xl'); }
+.text-3xl { @include font-size-map('3xl'); }
+.text-4xl { @include font-size-map('4xl'); }
 
-.text-sm {
-  font-size: $font-size-sm;
-  line-height: $line-height-normal;
+// Fluid text utilities
+.text-fluid-sm { @include font-size-fluid(0.875rem, 1rem); }
+.text-fluid-base { @include font-size-fluid(1rem, 1.125rem); }
+.text-fluid-lg { @include font-size-fluid(1.125rem, 1.25rem); }
+.text-fluid-xl { @include font-size-fluid(1.25rem, 1.5rem); }
+.text-fluid-2xl { @include font-size-fluid(1.5rem, 1.875rem); }
+.text-fluid-3xl { @include font-size-fluid(1.875rem, 2.25rem); }
+.text-fluid-4xl { @include font-size-fluid(2.25rem, 3rem); }
 
-  @include respond-below('sm') {
-    font-size: 0.8125rem;
-  }
-}
-
-.text-md {
-  font-size: $font-size-md;
-  line-height: $line-height-normal;
-}
-
-.text-lg {
-  font-size: $font-size-lg;
-  line-height: $line-height-relaxed;
-}
-
-.text-xl {
-  font-size: $font-size-xl;
-  line-height: $line-height-relaxed;
-}
-
-// Fluid text - scales with viewport
-.text-fluid-sm {
-  @include fluid-font-size(0.875rem, 1rem);
-}
-
-.text-fluid-base {
-  @include fluid-font-size(1rem, 1.125rem);
-}
-
-.text-fluid-lg {
-  @include fluid-font-size(1.125rem, 1.25rem);
-}
-
-.text-fluid-xl {
-  @include fluid-font-size(1.25rem, 1.5rem);
-}
+// Line height utilities
+.line-height-tight { line-height: $line-height-tight; }
+.line-height-normal { line-height: $line-height-normal; }
+.line-height-relaxed { line-height: $line-height-relaxed; }
+.line-height-loose { line-height: $line-height-loose; }
 
 // ============================================
 // Color & Weight Utilities
@@ -296,82 +249,32 @@ p {
 }
 
 // Responsive Flex Utilities
-.flex {
-  display: flex;
-}
-.flex-center {
-  @include flex-center;
-}
-.flex-between {
-  @include flex-between;
-}
-.flex-column {
-  @include flex-column;
-}
-.flex-wrap {
-  flex-wrap: wrap;
-}
-.flex-1 {
-  flex: 1;
-}
+.flex { display: flex; }
+.flex-center { @include flex-center; }
+.flex-between { @include flex-between; }
+.flex-column { @include flex-column; }
+.flex-wrap { flex-wrap: wrap; }
+.flex-1 { flex: 1; }
 
 // Responsive Grid
-.grid-2 {
-  @include grid-responsive-breakpoints(1, 2, 2);
-}
-
-.grid-3 {
-  @include grid-responsive-breakpoints(1, 2, 3);
-}
-
-.grid-4 {
-  @include grid-responsive-breakpoints(1, 2, 4);
-}
+.grid-2 { @include grid-responsive-breakpoints(1, 2, 2); }
+.grid-3 { @include grid-responsive-breakpoints(1, 2, 3); }
+.grid-4 { @include grid-responsive-breakpoints(1, 2, 4); }
 
 // ============================================
 // Responsive Spacing Utilities
 // ============================================
 @each $size in (0, 1, 2, 3, 4, 5, 6, 7, 8) {
-  .m-#{$size} {
-    margin: #{$size * 0.25}rem;
-  }
-  .mt-#{$size} {
-    margin-top: #{$size * 0.25}rem;
-  }
-  .mr-#{$size} {
-    margin-right: #{$size * 0.25}rem;
-  }
-  .mb-#{$size} {
-    margin-bottom: #{$size * 0.25}rem;
-  }
-  .ml-#{$size} {
-    margin-left: #{$size * 0.25}rem;
-  }
-  .p-#{$size} {
-    padding: #{$size * 0.25}rem;
-  }
-  .pt-#{$size} {
-    padding-top: #{$size * 0.25}rem;
-  }
-  .pr-#{$size} {
-    padding-right: #{$size * 0.25}rem;
-  }
-  .pb-#{$size} {
-    padding-bottom: #{$size * 0.25}rem;
-  }
-  .pl-#{$size} {
-    padding-left: #{$size * 0.25}rem;
-  }
-}
-
-// Responsive Spacing - Mobile adjustments
-@include respond-below('sm') {
-  .m-4 { margin: 0.75rem; }
-  .mt-4 { margin-top: 0.75rem; }
-  .mb-4 { margin-bottom: 0.75rem; }
-  .p-4 { padding: 0.75rem; }
-  .pt-4 { padding-top: 0.75rem; }
-  .pb-4 { padding-bottom: 0.75rem; }
+  .m-#{$size} { margin: #{$size * 0.25}rem; }
+  .mt-#{$size} { margin-top: #{$size * 0.25}rem; }
+  .mr-#{$size} { margin-right: #{$size * 0.25}rem; }
+  .mb-#{$size} { margin-bottom: #{$size * 0.25}rem; }
+  .ml-#{$size} { margin-left: #{$size * 0.25}rem; }
+  .p-#{$size} { padding: #{$size * 0.25}rem; }
+  .pt-#{$size} { padding-top: #{$size * 0.25}rem; }
+  .pr-#{$size} { padding-right: #{$size * 0.25}rem; }
+  .pb-#{$size} { padding-bottom: #{$size * 0.25}rem; }
+  .pl-#{$size} { padding-left: #{$size * 0.25}rem; }
 }
 
 // ============================================
@@ -451,24 +354,13 @@ p {
   @include button-base;
 }
 
-.btn-primary {
-  @include button-variant(var(--primary));
-}
-.btn-secondary {
-  @include button-variant(var(--secondary));
-}
-.btn-success {
-  @include button-variant(var(--success));
-}
-.btn-warning {
-  @include button-variant(var(--warning));
-}
-.btn-error {
-  @include button-variant(var(--error));
-}
-.btn-outline {
-  @include button-outline(var(--primary));
-}
+.btn-primary { @include button-variant-css(var(--primary)); }
+.btn-secondary { @include button-variant-css(var(--secondary)); }
+.btn-success { @include button-variant-css(var(--success)); }
+.btn-warning { @include button-variant-css(var(--warning)); }
+.btn-error { @include button-variant-css(var(--error)); }
+.btn-outline { @include button-outline(var(--primary)); }
+
 .btn-ghost {
   background: transparent;
   color: var(--primary);
@@ -484,11 +376,13 @@ p {
   min-height: 32px;
   min-width: 32px;
 }
+
 .btn-lg {
   padding: $spacing-3 $spacing-5;
   font-size: $font-size-lg;
   min-height: 52px;
 }
+
 .btn-block {
   width: 100%;
 }
@@ -511,22 +405,27 @@ p {
   background: rgba(26, 115, 232, 0.1);
   color: var(--primary);
 }
+
 .badge-success {
   background: var(--success-light);
   color: var(--success-dark);
 }
+
 .badge-warning {
   background: var(--warning-light);
   color: var(--warning-dark);
 }
+
 .badge-error {
   background: var(--error-light);
   color: var(--error-dark);
 }
+
 .badge-info {
   background: var(--info-light);
   color: var(--info-dark);
 }
+
 .badge-neutral {
   background: var(--grey-2);
   color: var(--grey-7);
@@ -539,13 +438,12 @@ p {
 // Dashboard Page
 .dashboard-page {
   .kpi-value {
-    @include fluid-font-size(1.5rem, 2.5rem);
+    @include font-size-fluid(1.5rem, 2.5rem);
     font-weight: $font-weight-bold;
   }
 
   .kpi-label {
     font-size: $font-size-sm;
-    opacity: 0.8;
 
     @include respond-below('sm') {
       font-size: $font-size-xs;
@@ -553,7 +451,7 @@ p {
   }
 
   .section-title {
-    @include fluid-font-size(1.125rem, 1.5rem);
+    @include font-size-fluid(1.125rem, 1.5rem);
     font-weight: $font-weight-semibold;
   }
 }
@@ -574,7 +472,7 @@ p {
 
   .entity-title {
     font-weight: $font-weight-semibold;
-    @include fluid-font-size(1rem, 1.125rem);
+    @include font-size-fluid(1rem, 1.125rem);
   }
 
   .entity-meta {
@@ -586,7 +484,7 @@ p {
   }
 
   .stat-value {
-    @include fluid-font-size(1.25rem, 1.75rem);
+    @include font-size-fluid(1.25rem, 1.75rem);
     font-weight: $font-weight-bold;
   }
 
@@ -603,7 +501,7 @@ p {
 .incident-page {
   .incident-card {
     .incident-title {
-      @include fluid-font-size(1rem, 1.25rem);
+      @include font-size-fluid(1rem, 1.25rem);
       font-weight: $font-weight-semibold;
     }
 
@@ -621,7 +519,7 @@ p {
 .workflow-page {
   .workflow-card {
     .workflow-title {
-      @include fluid-font-size(1rem, 1.125rem);
+      @include font-size-fluid(1rem, 1.125rem);
       font-weight: $font-weight-semibold;
     }
 
@@ -629,7 +527,7 @@ p {
       font-size: $font-size-xs;
       font-weight: $font-weight-bold;
       text-transform: uppercase;
-      letter-spacing: 0.5px;
+      letter-spacing: $letter-spacing-wide;
 
       @include respond-below('sm') {
         font-size: 0.6875rem;
@@ -651,7 +549,8 @@ p {
     min-width: 600px;
     border-collapse: collapse;
 
-    th, td {
+    th,
+    td {
       padding: $spacing-2 $spacing-3;
       text-align: left;
       border-bottom: 1px solid var(--border-light);
@@ -817,7 +716,7 @@ p {
   @include responsive-padding($spacing-6, $spacing-8);
 
   .empty-icon {
-    @include fluid-font-size(48px, 64px);
+    @include font-size-fluid(48px, 64px);
     color: var(--grey-4);
     margin-bottom: $spacing-4;
   }

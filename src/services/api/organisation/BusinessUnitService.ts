@@ -1,21 +1,20 @@
-// src/services/organisation/business-unit.service.ts
-import { BaseService } from '@/services/BaseService';
-import { API_ENDPOINTS } from '@/core/constants/api.constants';
+import { BaseService } from './../../BaseService';
+import { API_ENDPOINTS } from './../../../core/constants/api.constants';
 import type {
   BusinessUnit,
   CreateBusinessUnitDto,
   UpdateBusinessUnitDto,
   BusinessUnitQueryParams,
   BusinessUnitStatsDto,
-} from '@/types/organisation';
-import type { PaginatedResult } from '@/types/common';
+} from './../../../models/entities/organisation/organisation.entity';
+import { PaginatedResponse } from './../../../shared/types/common.types'
 
 export class BusinessUnitService extends BaseService {
   constructor() {
     super();
   }
 
-  async getBusinessUnits(params?: BusinessUnitQueryParams): Promise<PaginatedResult<BusinessUnit>> {
+  async getBusinessUnits(params?: BusinessUnitQueryParams): Promise<PaginatedResponse<BusinessUnit>> {
     return this.getPaginated<BusinessUnit>(
       API_ENDPOINTS.BUSINESS_UNITS.BASE,
       params as Record<string, any>
@@ -30,7 +29,7 @@ export class BusinessUnitService extends BaseService {
   async getBusinessUnitsByOrganisation(
     organisationId: string,
     params?: BusinessUnitQueryParams
-  ): Promise<PaginatedResult<BusinessUnit>> {
+  ): Promise<PaginatedResponse<BusinessUnit>> {
     return this.getPaginated<BusinessUnit>(
       API_ENDPOINTS.BUSINESS_UNITS.BY_ORGANISATION(organisationId),
       params as Record<string, any>
@@ -40,7 +39,7 @@ export class BusinessUnitService extends BaseService {
   async getBusinessUnitsByHeadUser(
     headUserId: string,
     params?: BusinessUnitQueryParams
-  ): Promise<PaginatedResult<BusinessUnit>> {
+  ): Promise<PaginatedResponse<BusinessUnit>> {
     return this.getPaginated<BusinessUnit>(
       API_ENDPOINTS.BUSINESS_UNITS.BY_HEAD_USER(headUserId),
       params as Record<string, any>
@@ -50,7 +49,7 @@ export class BusinessUnitService extends BaseService {
   async getBusinessUnitsByCriticality(
     criticalityScore: string,
     params?: BusinessUnitQueryParams
-  ): Promise<PaginatedResult<BusinessUnit>> {
+  ): Promise<PaginatedResponse<BusinessUnit>> {
     return this.getPaginated<BusinessUnit>(
       API_ENDPOINTS.BUSINESS_UNITS.BY_CRITICALITY(criticalityScore),
       params as Record<string, any>
@@ -80,7 +79,7 @@ export class BusinessUnitService extends BaseService {
     return this.extractData(response);
   }
 
-  async searchBusinessUnits(query: string, organisationId?: string): Promise<PaginatedResult<BusinessUnit>> {
+  async searchBusinessUnits(query: string, organisationId?: string): Promise<PaginatedResponse<BusinessUnit>> {
     const params: BusinessUnitQueryParams = { search: query };
     if (organisationId) params.organisationId = organisationId;
     return this.getBusinessUnits(params);

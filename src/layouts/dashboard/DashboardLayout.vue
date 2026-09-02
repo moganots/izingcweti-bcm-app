@@ -1,4 +1,3 @@
-<!-- src/layouts/user/DashboardLayout.vue -->
 <template>
   <div class="dashboard-layout">
     <q-page class="q-pa-md">
