@@ -87,6 +87,7 @@ export default {
     resetPassword: 'Reset Password',
     changePassword: 'Change Password',
     sendResetLink: 'Send Reset Link',
+    loginProgress: 'Login in progress',
     loginSuccess: 'Login successful',
     loginFailed: 'Login failed',
     logoutSuccess: 'Logged out successfully',
@@ -105,6 +106,39 @@ export default {
     signInToContinue: 'Sign in to continue',
     dontHaveAccount: "Don't have an account?",
     alreadyHaveAccount: 'Already have an account?',
+  },
+
+  // ============================================
+  // Profile, User
+  // ============================================
+  profile: {
+    title: 'Profile Info',
+    edit: 'Edit Profile',
+    view: 'View Profile',
+    firstName: 'First Name',
+    lastName: 'Last Name',
+    fullName: 'Full Name',
+    email: 'Email Address',
+    phone: 'Phone Number',
+    role: 'Role',
+    tenant: 'Tenant',
+    organisation: 'Organisation',
+    businessUnit: 'Business Unit',
+    department: 'Department',
+    position: 'Position',
+    account: 'Profile Management',
+    changePassword: 'Change Password',
+    lastLogin: 'Last Login',
+    profileUpdated: 'Profile updated successfully',
+    profileUpdateFailed: 'Failed to update profile',
+    logout: 'Logout',
+    preferences: 'Preferences',
+    theme: 'Theme',
+    language: 'Language',
+    notifications: 'Profile Notifications',
+    emailNotifications: 'Email Notifications',
+    pushNotifications: 'Push Notifications',
+    smsNotifications: 'SMS Notifications'
   },
 
   // ============================================

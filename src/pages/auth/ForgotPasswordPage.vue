@@ -2,61 +2,91 @@
   <div class="forgot-password-page">
     <div class="text-center q-mb-md">
       <q-icon name="lock_reset" size="48px" color="primary" />
-      <div class="text-h5 q-mt-sm">Reset Password</div>
+      <div class="text-h5 q-mt-sm">{{ $t('auth.reset_password') }}</div>
       <div class="text-subtitle2 text-grey-6">
-        We'll send you instructions to reset your password
+        {{ $t('auth.reset_password_instructions') }}
       </div>
     </div>
 
-    <ForgotPasswordForm
-      :loading="loading"
-      :error-message="errorMessage"
-      @send-reset="handleSendReset"
-      @resend="handleResend"
-      @open-email="openEmailApp"
-    />
+    <ForgotPasswordForm :loading="isLoading" :error-message="errorMessage" @send-reset="handleSendReset"
+      @resend="handleResend" @open-email="openEmailApp" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useQuasar } from 'quasar'
-import { authService } from 'src/services/api/auth/AuthService'
+import { useAuth } from 'src/composables/useAuth'
 import { ForgotPasswordForm } from 'src/components/auth'
 
 const $q = useQuasar()
-const loading = ref(false)
-const errorMessage = ref('')
 
-async function handleSendReset(email: string) {
-  loading.value = true
+// ============================================
+// Auth Composable
+// ============================================
+const { forgotPassword, isLoading } = useAuth()
+
+// ============================================
+// Local State
+// ============================================
+const errorMessage = ref('')
+const emailSentTo = ref('')
+
+// ============================================
+// Computed
+// ============================================
+
+// ============================================
+// Methods
+// ============================================
+async function handleSendReset(email: string): Promise<void> {
   errorMessage.value = ''
+  emailSentTo.value = email
 
   try {
-    await authService.forgotPassword({ email })
+    await forgotPassword(email)
+
     $q.notify({
       type: 'positive',
       message: 'Password reset email sent! Check your inbox.',
       position: 'top',
     })
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.message || 'Failed to send reset email'
+    errorMessage.value = err.message || 'Failed to send reset email'
     $q.notify({
       type: 'negative',
       message: errorMessage.value,
       position: 'top',
     })
-  } finally {
-    loading.value = false
   }
 }
 
-async function handleResend(email: string) {
+async function handleResend(email: string): Promise<void> {
   await handleSendReset(email)
 }
 
-function openEmailApp() {
-  // Try to open email app
+function openEmailApp(): void {
   window.location.href = 'mailto:'
 }
 </script>
+
+<style lang="scss" scoped>
+.forgot-password-page {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 8px 16px;
+
+  @media (max-width: 400px) {
+    padding: 8px 12px;
+  }
+}
+
+.text-h5 {
+  font-size: 1.25rem;
+
+  @media (max-width: 400px) {
+    font-size: 1.125rem;
+  }
+}
+</style>

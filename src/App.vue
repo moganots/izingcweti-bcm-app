@@ -45,7 +45,7 @@ async function initializeApp(): Promise<void> {
 
     // Initialize sync if online
     if (isOnline.value) {
-      await syncStore.initializeSync()
+      await syncStore.initialize()
     }
   } catch (error) {
     console.error('App initialization failed:', error)

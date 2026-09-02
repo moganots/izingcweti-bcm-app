@@ -1,41 +1,27 @@
 <template>
   <div class="verify-email-page">
     <div class="text-center">
-      <q-icon
-        :name="verified ? 'check_circle' : 'email'"
-        :size="verified ? '80px' : '64px'"
-        :color="verified ? 'green' : 'primary'"
-      />
+      <q-icon :name="verified ? 'check_circle' : 'email'" :size="verified ? '80px' : '64px'"
+        :color="verified ? 'green' : 'primary'" />
 
       <div v-if="verifying" class="q-mt-md">
         <q-spinner size="40px" color="primary" />
-        <div class="text-h6 q-mt-sm">Verifying your email...</div>
+        <div class="text-h6 q-mt-sm">{{ $t('auth.verifying_email') }}</div>
       </div>
 
       <div v-else-if="verified" class="q-mt-md">
-        <div class="text-h5 text-green">Email Verified!</div>
-        <div class="text-subtitle1 q-mt-sm">Your email has been successfully verified.</div>
-        <q-btn
-          color="primary"
-          label="Go to Login"
-          class="q-mt-lg"
-          :to="{ name: 'Login' }"
-          unelevated
-        />
+        <div class="text-h5 text-green">{{ $t('auth.email_verified') }}</div>
+        <div class="text-subtitle1 q-mt-sm">{{ $t('auth.email_verified_message') }}</div>
+        <q-btn color="primary" :label="$t('auth.go_to_login')" class="q-mt-lg" :to="{ name: 'Login' }" unelevated />
       </div>
 
       <div v-else class="q-mt-md">
-        <div class="text-h5 text-negative">Verification Failed</div>
+        <div class="text-h5 text-negative">{{ $t('auth.verification_failed') }}</div>
         <div class="text-subtitle1 q-mt-sm">
-          {{ errorMessage || 'Unable to verify your email. The link may be expired or invalid.' }}
+          {{ errorMessage || $t('auth.verification_failed_message') }}
         </div>
-        <q-btn
-          flat
-          color="primary"
-          label="Request New Link"
-          class="q-mt-lg"
-          @click="resendVerification"
-        />
+        <q-btn flat color="primary" :label="$t('auth.request_new_link')" class="q-mt-lg" :loading="resending"
+          @click="resendVerification" />
       </div>
     </div>
   </div>
@@ -43,28 +29,32 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { authService } from 'src/services/api/auth/AuthService'
+import { useApi } from 'src/composables/useApi'
 
 const route = useRoute()
-const router = useRouter()
 const $q = useQuasar()
 
+// ============================================
+// API Composable
+// ============================================
+const { post } = useApi()
+
+// ============================================
+// Local State
+// ============================================
 const verifying = ref(true)
 const verified = ref(false)
 const errorMessage = ref('')
+const resending = ref(false)
 
-onMounted(async () => {
-  const token = route.query.token as string
-  if (!token) {
-    verifying.value = false
-    errorMessage.value = 'No verification token provided'
-    return
-  }
-
+// ============================================
+// Methods
+// ============================================
+async function verifyEmail(token: string): Promise<void> {
   try {
-    await authService.verifyEmail(token)
+    await post('/auth/verify-email', { token })
     verified.value = true
     $q.notify({
       type: 'positive',
@@ -72,7 +62,7 @@ onMounted(async () => {
       position: 'top',
     })
   } catch (err: any) {
-    errorMessage.value = err.response?.data?.message || 'Verification failed'
+    errorMessage.value = err.message || 'Verification failed'
     $q.notify({
       type: 'negative',
       message: errorMessage.value,
@@ -81,11 +71,12 @@ onMounted(async () => {
   } finally {
     verifying.value = false
   }
-})
+}
 
-async function resendVerification() {
+async function resendVerification(): Promise<void> {
+  resending.value = true
   try {
-    await authService.resendVerificationEmail()
+    await post('/auth/resend-verification')
     $q.notify({
       type: 'positive',
       message: 'Verification email sent! Check your inbox.',
@@ -94,9 +85,53 @@ async function resendVerification() {
   } catch (err: any) {
     $q.notify({
       type: 'negative',
-      message: err.response?.data?.message || 'Failed to resend verification',
+      message: err.message || 'Failed to resend verification',
       position: 'top',
     })
+  } finally {
+    resending.value = false
   }
 }
+
+// ============================================
+// Lifecycle
+// ============================================
+onMounted(() => {
+  const token = route.query.token as string
+  if (!token) {
+    verifying.value = false
+    errorMessage.value = 'No verification token provided'
+    return
+  }
+  verifyEmail(token)
+})
 </script>
+
+<style lang="scss" scoped>
+.verify-email-page {
+  width: 100%;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 16px;
+
+  @media (max-width: 400px) {
+    padding: 12px;
+  }
+}
+
+.text-h5 {
+  font-size: 1.25rem;
+
+  @media (max-width: 400px) {
+    font-size: 1.125rem;
+  }
+}
+
+.text-h6 {
+  font-size: 1.125rem;
+
+  @media (max-width: 400px) {
+    font-size: 1rem;
+  }
+}
+</style>

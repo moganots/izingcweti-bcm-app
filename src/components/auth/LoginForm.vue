@@ -3,7 +3,7 @@
     <!-- Email Field -->
     <q-input
       v-model="form.email"
-      label="Email Address"
+      :label="$t('auth.email')"
       type="email"
       outlined
       dense
@@ -16,14 +16,14 @@
       class="login-form__field"
     >
       <template v-slot:prepend>
-        <q-icon name="email" color="primary" />
+        <q-icon name="email" color="primary" size="20px" />
       </template>
     </q-input>
 
     <!-- Password Field -->
     <q-input
       v-model="form.password"
-      label="Password"
+      :label="$t('auth.password')"
       :type="showPassword ? 'text' : 'password'"
       outlined
       dense
@@ -34,12 +34,13 @@
       class="login-form__field"
     >
       <template v-slot:prepend>
-        <q-icon name="lock" color="primary" />
+        <q-icon name="lock" color="primary" size="20px" />
       </template>
       <template v-slot:append>
         <q-icon
           :name="showPassword ? 'visibility_off' : 'visibility'"
           class="cursor-pointer login-form__toggle-password"
+          size="20px"
           @click="showPassword = !showPassword"
         />
       </template>
@@ -49,7 +50,7 @@
     <div class="login-form__row login-form__row--between">
       <q-checkbox
         v-model="form.rememberMe"
-        label="Remember me"
+        :label="$t('auth.rememberMe')"
         dense
         color="primary"
         :disable="loading"
@@ -59,7 +60,7 @@
         flat
         dense
         color="primary"
-        label="Forgot Password?"
+        :label="$t('auth.forgotPassword')"
         no-caps
         :to="{ name: 'ForgotPassword' }"
         :disable="loading"
@@ -74,11 +75,11 @@
       rounded
     >
       <template v-slot:avatar>
-        <q-icon name="error_outline" color="red-8" />
+        <q-icon name="error_outline" color="red-8" size="18px" />
       </template>
       {{ errorMessage }}
       <template v-slot:action>
-        <q-btn flat color="red-8" label="Dismiss" @click="$emit('clear-error')" />
+        <q-btn flat dense color="red-8" :label="$t('common.dismiss')" @click="$emit('clear-error')" />
       </template>
     </q-banner>
 
@@ -86,15 +87,15 @@
     <q-btn
       type="submit"
       color="primary"
-      label="Sign In"
+      :label="$t('auth.login')"
       :loading="loading"
-      class="login-form__submit-btn full-width q-py-sm"
+      class="login-form__submit-btn full-width"
       size="lg"
       unelevated
     >
       <template v-slot:loading>
-        <q-spinner-hourglass />
-        Signing in...
+        <q-spinner-hourglass size="20px" />
+        {{ $t('auth.loginProgress') }}
       </template>
     </q-btn>
 
@@ -104,8 +105,8 @@
       outline
       color="primary"
       icon="fingerprint"
-      label="Sign in with Biometrics"
-      class="login-form__biometric-btn full-width q-mt-sm"
+      :label="$t('auth.biometricLogin')"
+      class="login-form__biometric-btn full-width"
       :disable="loading"
       @click="$emit('biometric-login')"
     />
@@ -174,38 +175,37 @@ function handleSubmit(): void {
   margin: 0 auto;
   padding: 0;
 
-  // Consistent spacing between form elements
   .login-form__field {
-    margin-bottom: 20px;
+    margin-bottom: 16px;
 
-    // Fix for q-input internal padding
-    :deep(.q-field__control) {
-      padding-left: 12px;
-      padding-right: 12px;
-    }
+    @media (max-width: 400px) {
+      margin-bottom: 10px;
 
-    :deep(.q-field__native) {
-      padding-left: 8px;
-      padding-right: 8px;
-    }
+      :deep(.q-field__native) {
+        font-size: 16px;
+        padding-left: 6px;
+        padding-right: 6px;
+      }
 
-    :deep(.q-field__prepend) {
-      padding-right: 8px;
-    }
-
-    :deep(.q-field__append) {
-      padding-left: 8px;
+      :deep(.q-field__control) {
+        padding-left: 10px;
+        padding-right: 10px;
+      }
     }
   }
 
-  // Row with Remember Me and Forgot Password
   .login-form__row--between {
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100%;
     padding: 4px 0;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+
+    @media (max-width: 400px) {
+      flex-wrap: wrap;
+      gap: 4px;
+    }
 
     .login-form__checkbox {
       margin: 0;
@@ -215,106 +215,50 @@ function handleSubmit(): void {
     .login-form__forgot-btn {
       margin: 0;
       padding: 4px 8px;
-      font-size: 0.875rem;
+      font-size: 0.8125rem;
       min-height: 32px;
     }
   }
 
-  // Error Banner
   .login-form__error-banner {
     width: 100%;
-    margin: 0 0 16px 0;
-    padding: 12px 16px;
+    margin: 0 0 12px 0;
+    padding: 10px 14px;
+
+    @media (max-width: 400px) {
+      padding: 8px 12px;
+      font-size: 0.8125rem;
+    }
   }
 
-  // Submit Button
   .login-form__submit-btn {
     margin: 0;
     padding: 10px 0;
-    min-height: 48px;
-    font-size: 1rem;
+    min-height: 44px;
+    font-size: 0.9375rem;
     font-weight: 600;
-    letter-spacing: 0.5px;
+
+    @media (max-width: 400px) {
+      padding: 8px 0;
+      min-height: 40px;
+      font-size: 0.875rem;
+    }
   }
 
-  // Biometric Button
   .login-form__biometric-btn {
-    margin-top: 12px;
+    margin-top: 10px;
     padding: 10px 0;
-    min-height: 48px;
+    min-height: 44px;
+
+    @media (max-width: 400px) {
+      padding: 8px 0;
+      min-height: 40px;
+      font-size: 0.8125rem;
+    }
   }
 
-  // Toggle password icon
   .login-form__toggle-password {
     padding: 4px;
-  }
-}
-
-// Mobile adjustments
-@media (max-width: 600px) {
-  .login-form {
-    max-width: 100%;
-    padding: 0 4px;
-
-    .login-form__field {
-      margin-bottom: 16px;
-
-      :deep(.q-field__control) {
-        padding-left: 10px;
-        padding-right: 10px;
-      }
-
-      :deep(.q-field__native) {
-        padding-left: 6px;
-        padding-right: 6px;
-        font-size: 16px; // Prevents iOS zoom
-      }
-    }
-
-    .login-form__row--between {
-      flex-wrap: wrap;
-      gap: 8px;
-      margin-bottom: 12px;
-
-      .login-form__checkbox {
-        font-size: 0.875rem;
-      }
-
-      .login-form__forgot-btn {
-        font-size: 0.8125rem;
-        padding: 2px 6px;
-      }
-    }
-
-    .login-form__submit-btn {
-      padding: 8px 0;
-      min-height: 44px;
-      font-size: 0.9375rem;
-    }
-
-    .login-form__biometric-btn {
-      padding: 8px 0;
-      min-height: 44px;
-      font-size: 0.875rem;
-    }
-
-    .login-form__error-banner {
-      padding: 10px 12px;
-      font-size: 0.875rem;
-    }
-  }
-}
-
-// Tablet adjustments
-@media (min-width: 601px) and (max-width: 1024px) {
-  .login-form {
-    max-width: 380px;
-
-    .login-form__field {
-      :deep(.q-field__native) {
-        font-size: 16px;
-      }
-    }
   }
 }
 </style>
