@@ -5,22 +5,26 @@ import type { Organisation } from './../organisation/organisation.entity'
 // Compliance Module - Enums (Aligned with Backend)
 // ============================================
 
-export enum ComplianceStandard {
-    ISO22301 = 'ISO22301',
-    NIST800_34 = 'NIST800-34',
-    FFIEC = 'FFIEC',
-    COBIT_2019 = 'COBIT2019',
-    SOC2 = 'SOC2',
-    GDPR = 'GDPR',
-    HIPAA = 'HIPAA',
-    PCI_DSS = 'PCI_DSS',
+export enum ComplianceStatus {
+  NOT_ASSESSED = "NOT_ASSESSED",
+  NON_COMPLIANT = "NON_COMPLIANT",
+  PLANNED = 'PLANNED',
+  IN_PROGRESS = "IN_PROGRESS",
+  UNDER_REVIEW = "UNDER_REVIEW",
+  PARTIALLY_COMPLIANT = "PARTIALLY_COMPLIANT",
+  COMPLIANT = "COMPLIANT",
 }
 
-export enum ComplianceStatus {
-    COMPLIANT = 'COMPLIANT',
-    PARTIALLY_COMPLIANT = 'PARTIALLY_COMPLIANT',
-    NON_COMPLIANT = 'NON_COMPLIANT',
-    NOT_ASSESSED = 'NOT_ASSESSED',
+export enum ComplianceStandard {
+  ISO22301 = "ISO22301",
+  NIST80034 = "NIST80034",
+  FFIEC = "FFIEC",
+  COBIT2019 = "COBIT2019",
+  SOC2 = "SOC2",
+  GDPR = "GDPR",
+  POPIA = "POPIA",
+  PCIDSS = "PCIDSS",
+  HIPAA = "HIPAA",
 }
 
 // ============================================

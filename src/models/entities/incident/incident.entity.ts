@@ -7,38 +7,85 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Incident Module - Enums (Aligned with Backend)
 // ============================================
 
-export enum IncidentSeverity {
-  CRITICAL = 'CRITICAL',
-  HIGH = 'HIGH',
-  MEDIUM = 'MEDIUM',
-  LOW = 'LOW',
-  INFORMATIONAL = 'INFORMATIONAL',
-}
-
-export enum IncidentStatus {
-  OPEN = 'OPEN',
-  INVESTIGATING = 'INVESTIGATING',
-  RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED',
-  ESCALATED = 'ESCALATED',
-}
-
 export enum EscalationLevel {
-  NO_ESCALATION = 'NO_ESCALATION',
-  LEVEL_1_SUPERVISOR = 'LEVEL_1_SUPERVISOR',
-  LEVEL_2_DEPARTMENT_HEAD = 'LEVEL_2_DEPARTMENT_HEAD',
-  LEVEL_3_BUSINESS_UNIT_MANAGER = 'LEVEL_3_BUSINESS_UNIT_MANAGER',
-  LEVEL_4_EXECUTIVE_DIRECTOR = 'LEVEL_4_EXECUTIVE_DIRECTOR',
-  LEVEL_5_BOARD = 'LEVEL_5_BOARD',
-  CRITICAL = 'CRITICAL',
+  NO_ESCALATION = "NoEscalation",
+  LEVEL_1_SUPERVISOR = "Level1Supervisor",
+  LEVEL_2_DEPARTMENT_HEAD = "Level2DepartmentHead",
+  LEVEL_3_BUSINESS_UNIT_MANAGER = "Level3BusinessUnitManager",
+  LEVEL_4_EXECUTIVE_DIRECTOR = "Level4ExecutiveDirector",
+  LEVEL_5_BOARD = "Level5Board",
+  CRITICAL = "Critical",
 }
 
 export enum EscalationStatus {
-  NOT_ESCALATED = 'NOT_ESCALATED',
-  IN_PROGRESS = 'IN_PROGRESS',
-  ESCALATED = 'ESCALATED',
-  RESOLVED = 'RESOLVED',
-  DECLINED = 'DECLINED',
+  NOT_ESCALATED = "NotEscalated",
+  ESCALATED = "Escalated",
+  ACKNOWLEDGED = "Acknowledged",
+  IN_PROGRESS = "InProgress",
+  RESOLVED = "Resolved",
+  REJECTED = "Rejected",
+  DECLINED = "Declined",
+}
+
+export enum IncidentCategory {
+  TECHNICAL = "Technical",
+  PROCESS = "Process",
+  PEOPLE = "People",
+  EXTERNAL = "External",
+  ENVIRONMENTAL = "Environmental",
+  CYBERSECURITY = "Cybersecurity",
+  PHYSICAL = "Physical",
+  COMPLIANCE = "Compliance",
+}
+
+export enum IncidentSeverity {
+  LOW = "Low",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  CRITICAL = "Critical",
+  CATASTROPHIC = "Catastrophic",
+  INFORMATIONAL = "Informational",
+  UNKNOWN = 'Unknown',
+}
+
+export enum IncidentStatus {
+  ACTIVE = 'Active',
+  DETECTED = 'Detected',
+  REPORTED = 'Reported',
+  ASSESSING = 'Assessing',
+  CLASSIFIED = 'Classified',
+  ESCALATED = 'Escalated',
+  RESPONDING = 'Responding',
+  MITIGATING = 'Mitigating',
+  STABILISED = 'Stabilised',
+  RECOVERING = 'Recovering',
+  RESOLVED = 'Resolved',
+  CLOSED = 'Closed',
+  REOPENED = 'Reopened',
+  MONITORING = 'Monitoring',
+  UNDER_INVESTIGATION = 'UnderInvestigation',
+  AWAITING_APPROVAL = 'AwaitingApproval',
+  REJECTED = 'Rejected',
+  CANCELLED = 'Cancelled',
+  DUPLICATE = 'Duplicate',
+  OPEN = "Open",
+  IN_PROGRESS = "InProgress",
+  MITIGATED = "Mitigated",
+}
+
+export enum ReopenReason {
+  NEW_EVIDENCE = "NewEvidence",
+  INCORRECT_RESOLUTION = "IncorrectResolution",
+  RELATED_INCIDENT = "RelatedIncident",
+  ONGOING_IMPACT = "OngoingImpact",
+  CUSTOMER_REQUEST = "CustomerRequest",
+  REGULATORY_REQUIREMENT = "RegulatoryRequirement",
+  AUDIT_FINDING = "AuditFinding",
+  ROOT_CAUSE_NOT_ADDRESSED = "RootCauseNotAddressed",
+  PREMATURE_CLOSURE = "PrematureClosure",
+  SYSTEM_REOPENED = "SystemReopened",
+  ADMIN_OVERRIDE = "AdminOverride",
+  OTHER = "Other",
 }
 
 // ============================================

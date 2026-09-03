@@ -1,59 +1,88 @@
 import type { BaseEntity } from './../../../core/base/base.entity';
 
 export enum RiskCategory {
-  FINANCIAL = 'FINANCIAL',
-  OPERATIONAL = 'OPERATIONAL',
-  COMPLIANCE = 'COMPLIANCE',
-  REPUTATIONAL = 'REPUTATIONAL',
-  STRATEGIC = 'STRATEGIC',
-  CYBERSECURITY = 'CYBERSECURITY',
-  NATURAL_DISASTER = 'NATURAL_DISASTER',
-  TECHNOLOGY_FAILURE = 'TECHNOLOGY_FAILURE',
-  HUMAN_ERROR = 'HUMAN_ERROR',
-  THIRD_PARTY = 'THIRD_PARTY',
-  OTHER = "OTHER",
+  FINANCIAL = 'Financial',
+  OPERATIONAL = 'Operational',
+  COMPLIANCE = 'Compliance',
+  REPUTATIONAL = 'Reputational',
+  STRATEGIC = 'Strategic',
+  CYBERSECURITY = 'Cybersecurity',
+  NATURAL_DISASTER = 'NaturalDisaster',
+  TECHNOLOGY_FAILURE = 'TechnologyFailure',
+  HUMAN_ERROR = 'HumanError',
+  THIRD_PARTY = 'ThirdParty',
+  REGULATORY = 'Regulatory',
+  HEALTH_SAFETY = 'HealthSafety',
+  SUPPLY_CHAIN = 'SupplyChain',
+  LEGAL = 'Legal',
+  POLITICAL = 'Political',
+  ENVIRONMENTAL = 'Environmental',
+  COMPLIANCE_AND_LEGAL = "ComplianceAndLegal",
+  FINANCIAL_AND_ECONOMIC = "FinancialAndEconomic",
+  STRATEGIC_AND_REPUTATIONAL = "StrategicAndReputational",
+  PEOPLE_AND_SAFETY = "PeopleAndSafety",
+  ASSETS_AND_IT = "AssetsAndIT",
+  CYBER = "Cyber",
+  NATURAL = "Natural",
+  HUMAN = "Human",
+  SUPPLY = "Supply",
+  BUSINESS_INTERRUPTION = "BusinessInterruption",
+  DATA_BREACH = "DataBreach",
 }
 
 export enum RiskStatus {
-  IDENTIFIED = 'IDENTIFIED',
-  ASSESSING = 'ASSESSING',
-  APPROVED = 'APPROVED',
-  TREATING = 'TREATING',
-  MONITORING = 'MONITORING',
-  CLOSED = 'CLOSED',
-  REJECTED = 'REJECTED',
+  IDENTIFIED = "Identified",
+  ASSESSING = "Assessing",
+  ASSESED = "Assessed",
+  IN_REVIEW = "InReview",
+  APPROVED = "Approved",
+  TREATMENT_PLANNED = "TreatmentPlanned",
+  IN_PROGESS = "InProgress",
+  MITIGATED = "Mitigated",
+  TREATING = "Treating",
+  MONITORING = "Monitoring",
+  TRANSFERRED = "Transferred",
+  ACCEPTED = "Accepted",
+  CLOSED = "Closed",
+  REJECTED = "Rejected",
 }
 
 export enum RiskTreatment {
-  AVOID = 'AVOID',
-  MITIGATE = 'MITIGATE',
-  TRANSFER = 'TRANSFER',
-  ACCEPT = 'ACCEPT',
-  EXPLOIT = 'EXPLOIT',
-}
-
-export enum RiskLikelihoodLevel {
-  RARE = 'RARE',
-  UNLIKELY = 'UNLIKELY',
-  POSSIBLE = 'POSSIBLE',
-  LIKELY = 'LIKELY',
-  ALMOST_CERTAIN = 'ALMOST_CERTAIN',
+  AVOID = "Avoid",
+  REDUCE = "Reduce",
+  MITIGATE = "Mitigate",
+  TRANSFER = "Transfer",
+  ACCEPT = "Accept",
+  SHARE = "Share",
+  EXPLOIT = "Exploit",
 }
 
 export enum RiskImpactLevel {
-  INSIGNIFICANT = 'INSIGNIFICANT',
-  MINOR = 'MINOR',
-  MODERATE = 'MODERATE',
-  MAJOR = 'MAJOR',
-  SEVERE = 'SEVERE',
-  CATASTROPHIC = 'CATASTROPHIC',
+  INSIGNIFICANT = "Insignificant",
+  LOW = "Low",
+  MINOR = "Minor",
+  MODERATE = "Moderate",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  MAJOR = "Major",
+  CRITICAL = "Critical",
+  SEVERE = "Severe",
+  CATASTROPHIC = "Catastrophic",
+}
+
+export enum RiskLikelihoodLevel {
+  RARE = "Rare",
+  UNLIKELY = "Unlikely",
+  POSSIBLE = "Possible",
+  LIKELY = "Likely",
+  ALMOST_CERTAIN = "AlmostCertain",
 }
 
 export enum RiskScoreLevel {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  EXTREME = 'EXTREME',
+  LOW = "Low",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  EXTREME = "Extreme",
 }
 
 export function getRiskScoreLevel(score: number): RiskScoreLevel {
@@ -144,33 +173,6 @@ export interface Risk extends BaseEntity {
 // ============================================
 // DTOs
 // ============================================
-
-export interface RiskDto extends BaseEntity {
-  organisationId: string;
-  title: string;
-  description?: string;
-  riskCategory: RiskCategory;
-  status: RiskStatus;
-  inherentLikelihood: number;
-  inherentImpact: number;
-  inherentRiskScore: number;
-  residualLikelihood?: number;
-  residualImpact?: number;
-  residualRiskScore?: number;
-  treatmentStrategy?: RiskTreatment;
-  treatmentPlan?: string;
-  assignedTo?: string;
-  reviewDate?: Date;
-  targetCompletionDate?: Date;
-  actualCompletionDate?: Date;
-  mitigatingControls?: MitigatingControlDto[];
-  riskFactors?: RiskFactorDto[];
-  actionHistory?: ActionHistoryDto[];
-  requiresApproval: boolean;
-  approvedBy?: string;
-  approvedAt?: Date;
-  approvalNotes?: string;
-}
 
 export interface CreateRiskDto {
   title: string;

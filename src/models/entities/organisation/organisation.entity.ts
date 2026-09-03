@@ -1,14 +1,21 @@
 import type { BaseEntity } from './../../../core/base/base.entity';
 
+/**
+ * Industry Enum
+ */
 export enum IndustryType {
-  FINANCE = 'FINANCE',
-  HEALTHCARE = 'HEALTHCARE',
-  TECH = 'TECH',
-  MANUFACTURING = 'MANUFACTURING',
-  RETAIL = 'RETAIL',
-  GOVERNMENT = 'GOVERNMENT',
-  EDUCATION = 'EDUCATION',
-  OTHER = 'OTHER',
+  FINANCE = "Finance",
+  HEALTHCARE = "Healthcare",
+  TECH = "Tech",
+  MANUFACTURING = "Manufacturing",
+  RETAIL = "Retail",
+  GOVERNMENT = "Government",
+  EDUCATION = "Education",
+  TRANSPORTATION = "Transportation",
+  ENERGY = "Energy",
+  TELECOMMUNICATIONS = "Telecommunications",
+  TECHNOLOGY = "Technology",
+  OTHER = "Other",
 }
 
 export enum MaturityScore {

@@ -1,35 +1,39 @@
+import { BaseEntity } from "src/core/base/base.entity";
+
 /**
- * User Role Enum - Aligned with Backend
+ * User Role Enum
+ * Defines all user roles in the BCM system
  */
 export enum UserRole {
-  SYSTEM_ADMINISTRATOR = 'System Administrator',
-  BCM_MANAGER = 'BCM Manager',
-  RISK_OWNER = 'Risk Owner',
-  PROCESS_OWNER = 'Process Owner',
-  BCM_COORDINATOR = 'BCM Coordinator',
-  IT_RECOVERY_OWNER = 'IT/Recovery Owner',
-  APPROVER = 'Approver',
-  AUDITOR = 'Auditor',
-  SUPER_ADMIN = 'Super Admin',
+  SYSTEM_ADMINISTRATOR = "System Administrator",
+  SUPER_ADMIN = "Super Admin",
+  GENERAL = "General",
+  BCM_MANAGER = "BCM Manager",
+  RISK_OWNER = "Risk Owner",
+  PROCESS_OWNER = "Process Owner",
+  BCM_COORDINATOR = "BCM Coordinator",
+  IT_RECOVERY_OWNER = "IT/Recovery Owner",
+  APPROVER = "Approver",
+  AUDITOR = "Auditor",
 }
 
-/**
- * Auth Token Type Enum - Aligned with Backend
- */
+export enum UserRelationshipReportingType {
+  DIRECT = "Direct",
+  DOTTED = "Dotted",
+  MATRIX = "Matrix"
+}
+
 export enum AuthTokenType {
-  ACCESS = 'ACCESS',
-  REFRESH = 'REFRESH',
-  RESET = 'RESET',
-  VERIFY = 'VERIFY',
+  ACCESS = 'Access',
+  REFRESH = 'Refresh',
+  FORGOT = 'Forgot',
+  RESET = 'Reset',
 }
 
-/**
- * Auth Token Status Enum - Aligned with Backend
- */
 export enum AuthTokenStatus {
-  ACTIVE = 'ACTIVE',
-  REVOKED = 'REVOKED',
-  EXPIRED = 'EXPIRED',
+  ACTIVE = "Active",
+  REVOKED = "Revoked",
+  EXPIRED = "Expired",
 }
 
 // ============================================
@@ -39,8 +43,7 @@ export enum AuthTokenStatus {
 /**
  * User Entity - Aligned with Backend DTO (camelCase)
  */
-export interface User {
-  uuid: string;
+export interface User extends BaseEntity {
   organisationId: string;
   departmentId?: string;
   email: string;
@@ -64,14 +67,6 @@ export interface User {
   lockedAt?: string | Date | null;
   lockedUntil?: string | Date | null;
   lockReason?: string;
-  createdBy: string;
-  createdAt: string | Date;
-  updatedBy: string;
-  updatedAt: string | Date;
-  version: number;
-  syncStatus?: string;
-  deletedBy?: string | null;
-  deletedAt?: string | null;
   // Relationships
   organisation?: {
     uuid: string;
@@ -90,8 +85,7 @@ export interface User {
 /**
  * Auth Token Entity - Aligned with Backend DTO (camelCase)
  */
-export interface AuthTokenEntity {
-  uuid: string;
+export interface AuthTokenEntity extends BaseEntity {
   userId: string;
   organisationId: string;
   token: string;
@@ -106,10 +100,6 @@ export interface AuthTokenEntity {
   deviceName?: string;
   isActiveSession: boolean;
   sessionMetadata?: Record<string, any>;
-  createdBy: string;
-  createdAt: string | Date;
-  updatedBy: string;
-  updatedAt: string | Date;
 }
 
 /**

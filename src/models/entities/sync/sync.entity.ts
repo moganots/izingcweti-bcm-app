@@ -2,10 +2,63 @@
 // Sync Module - Enums (Aligned with Backend)
 // ============================================
 
-export enum SyncStatus {
-  PENDING = 'PENDING',
-  SYNCED = 'SYNCED',
-  CONFLICT = 'CONFLICT',
+import { BaseEntity } from "src/core/base/base.entity";
+
+export enum ConflictResolutionEnvironment {
+  LOCAL = "Local",
+  REMOTE = "Remote",
+}
+
+export enum ConflictResolutionStrategy {
+  CLIENT_WINS = "ClientWins",
+  SERVER_WINS = "ServerWins",
+  LATEST_WINS = "LatestWins",
+  HIGHER_VERSION_WINS = "HigherVersionWins",
+  MERGE = "Merge",
+  MANUAL = "Manual",
+  AUTO_RESOLVED = "AutoResolved",
+  CUSTOM = "Custom",
+  SKIP = "Skip",
+  NEW_VERSION = "NewVersion",
+  LAST_WRITE_WINS = "LastWriteWins",
+  DELETE_WINS = "DeleteWins",
+  USER_MEDIATED = "UserMediated",
+}
+
+export enum ConflictType {
+  UPDATE_UPDATE = "UPDATE_UPDATE",
+  DELETE_UPDATE = "DELETE_UPDATE",
+  UPDATE_DELETE = "UPDATE_DELETE",
+  CREATE_CREATE = "CREATE_CREATE",
+  UNIQUE_CONSTRAINT = "UNIQUE_CONSTRAINT",
+  VERSION_SKEW = "VERSION_SKEW",
+  SCHEMA_CONFLICT = "SCHEMA_CONFLICT",
+  DEPENDENCY_CONFLICT = "DEPENDENCY_CONFLICT",
+  PERMISSION_CONFLICT = "PERMISSION_CONFLICT",
+  VALIDATION_CONFLICT = "VALIDATION_CONFLICT",
+  REFERENCE_CONFLICT = "REFERENCE_CONFLICT",
+  DATA_TYPE_CONFLICT = "DATA_TYPE_CONFLICT",
+  REQUIRED_FIELD_CONFLICT = "REQUIRED_FIELD_CONFLICT",
+  BUSINESS_RULE_CONFLICT = "BUSINESS_RULE_CONFLICT",
+  CONCURRENT_MODIFICATION = "CONCURRENT_MODIFICATION",
+  NETWORK_CONFLICT = "NETWORK_CONFLICT",
+  CUSTOM = "CUSTOM",
+  VERSION_MISMATCH = "VERSION_MISMATCH",
+  DATA_CORRUPTION = "DATA_CORRUPTION",
+}
+
+export enum ConflictSeverity {
+  LOW = "LOW",
+  MEDIUM = "MEDIUM",
+  HIGH = "HIGH",
+  CRITICAL = "CRITICAL",
+}
+
+export enum ConflictResolutionCategory {
+  AUTO_RESOLVABLE = "AUTO_RESOLVABLE",
+  MANUAL_REQUIRED = "MANUAL_REQUIRED",
+  ADMIN_REQUIRED = "ADMIN_REQUIRED",
+  BLOCKING = "BLOCKING",
 }
 
 export enum SyncPriority {
@@ -15,24 +68,41 @@ export enum SyncPriority {
   LOW = 4,
 }
 
+export enum SyncStatus {
+  IDLE = "Idle",
+  OFFLINE = "Offline",
+  PENDING = "Pending",
+  SYNCING = "Syncing",
+  SYNCED = "Synced",
+  CONFLICT = "Conflict",
+  ERROR = "Error",
+}
+
+export enum FeatureFlag {
+  SYNC_AUTO_SYNC_ENABLED = "sync.autoSyncEnabled",
+  SYNC_CONFLICT_STRATEGY_DEFAULT = "sync.conflictStrategy.default",
+  SYNC_BATCH_SIZE = "sync.batchSize",
+  OFFLINE_MAX_DAYS = "offline.maxDays",
+  STORAGE_QUOTA_MB = "storage.quotaMB",
+}
+
+export enum PendingChangeStatus {
+  PENDING = "Pending",
+  PROCESSING = "Processing",
+  COMPLETED = "Completed",
+  FAILED = "Failed",
+}
+
+export enum PendingChangeOperation {
+  CREATE = "Create",
+  UPDATE = "Update",
+  DELETE = "Delete",
+}
+
 export enum OperationType {
-  CREATE = 'CREATE',
-  UPDATE = 'UPDATE',
-  DELETE = 'DELETE',
-}
-
-export enum ConflictType {
-  UPDATE_UPDATE = 'Update-Update',
-  DELETE_UPDATE = 'Delete-Update',
-  UNIQUE_CONSTRAINT = 'UniqueConstraint',
-  VERSION_SKEW = 'VersionSkew',
-}
-
-export enum ConflictResolutionStrategy {
-  LAST_WRITE_WINS = 'LWW',
-  DELETE_WINS = 'DeleteWins',
-  USER_MEDIATED = 'UserMediated',
-  MERGE = 'Merge',
+  CREATE = "Create",
+  UPDATE = "Update",
+  DELETE = "Delete",
 }
 
 export enum NetworkStatus {
@@ -46,8 +116,7 @@ export enum NetworkStatus {
 // Pending Change - Aligned with Backend PendingChange entity (camelCase)
 // ============================================
 
-export interface PendingChange {
-  uuid: string;
+export interface PendingChange extends BaseEntity {
   entityType: string;
   entityId: string;
   operationType: OperationType;
@@ -56,22 +125,13 @@ export interface PendingChange {
   attempts: number;
   status: string; // PendingChangeStatus from backend
   errorMessage?: string;
-  createdBy: string;
-  createdAt: string | Date;
-  updatedBy: string;
-  updatedAt: string | Date;
-  version: number;
-  deletedBy?: string | null;
-  deletedAt?: string | null;
-  syncStatus?: SyncStatus;
 }
 
 // ============================================
 // Sync Conflict - Aligned with Backend SyncConflict entity (camelCase)
 // ============================================
 
-export interface SyncConflict {
-  uuid: string;
+export interface SyncConflict extends BaseEntity {
   entityId: string;
   entityType: string;
   sourceData: Record<string, any>;
@@ -87,32 +147,15 @@ export interface SyncConflict {
   resolvedAt?: string | Date;
   resolvedBy?: string;
   resolutionNotes?: string;
-  createdBy: string;
-  createdAt: string | Date;
-  updatedBy: string;
-  updatedAt: string | Date;
-  version: number;
-  deletedBy?: string | null;
-  deletedAt?: string | null;
-  syncStatus?: SyncStatus;
 }
 
 // ============================================
 // Sync Metadata - Aligned with Backend SyncMetadata entity (camelCase)
 // ============================================
 
-export interface SyncMetadata {
-  uuid: string;
+export interface SyncMetadata extends BaseEntity {
   key: string;
   value: string;
-  createdBy: string;
-  createdAt: string | Date;
-  updatedBy: string;
-  updatedAt: string | Date;
-  version: number;
-  deletedBy?: string | null;
-  deletedAt?: string | null;
-  syncStatus?: SyncStatus;
 }
 
 // ============================================

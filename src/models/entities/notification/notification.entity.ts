@@ -2,54 +2,80 @@
 // Notification Module - Enums (Aligned with Backend)
 // ============================================
 
-export enum NotificationType {
-  WORKFLOW_UPDATE = 'WORKFLOW_UPDATE',
-  WORKFLOW_ASSIGNED = 'WORKFLOW_ASSIGNED',
-  WORKFLOW_APPROVED = 'WORKFLOW_APPROVED',
-  WORKFLOW_REJECTED = 'WORKFLOW_REJECTED',
-  WORKFLOW_ESCALATED = 'WORKFLOW_ESCALATED',
-  DOCUMENT_APPROVED = 'DOCUMENT_APPROVED',
-  DOCUMENT_REJECTED = 'DOCUMENT_REJECTED',
-  DOCUMENT_EXPIRING = 'DOCUMENT_EXPIRING',
-  INCIDENT_REPORTED = 'INCIDENT_REPORTED',
-  INCIDENT_RESOLVED = 'INCIDENT_RESOLVED',
-  INCIDENT_ESCALATED = 'INCIDENT_ESCALATED',
-  RISK_ASSESSMENT_DUE = 'RISK_ASSESSMENT_DUE',
-  RISK_THRESHOLD_EXCEEDED = 'RISK_THRESHOLD_EXCEEDED',
-  BCP_REVIEW_DUE = 'BCP_REVIEW_DUE',
-  BCP_APPROVED = 'BCP_APPROVED',
-  EXERCISE_SCHEDULED = 'EXERCISE_SCHEDULED',
-  EXERCISE_COMPLETED = 'EXERCISE_COMPLETED',
-  COMPLIANCE_AUDIT_DUE = 'COMPLIANCE_AUDIT_DUE',
-  COMPLIANCE_NON_COMPLIANT = 'COMPLIANCE_NON_COMPLIANT',
-  TRAINING_ASSIGNED = 'TRAINING_ASSIGNED',
-  TRAINING_COMPLETED = 'TRAINING_COMPLETED',
-  SYSTEM_ALERT = 'SYSTEM_ALERT',
-  SYSTEM_MAINTENANCE = 'SYSTEM_MAINTENANCE',
-  SYNC_CONFLICT = 'SYNC_CONFLICT',
-  SYNC_COMPLETED = 'SYNC_COMPLETED',
-  CUSTOM = 'CUSTOM',
-}
-
-export enum NotificationPriority {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  URGENT = 'URGENT',
-}
-
-export enum NotificationStatus {
-  UNREAD = 'UNREAD',
-  READ = 'READ',
-  ARCHIVED = 'ARCHIVED',
-  DISMISSED = 'DISMISSED',
+export enum AlertSeverity {
+  INFO = "Info",
+  WARNING = "Warning",
+  ERROR = "Error",
+  CRITICAL = "Critical",
 }
 
 export enum NotificationChannel {
-  EMAIL = 'EMAIL',
-  SMS = 'SMS',
-  IN_APP = 'IN_APP',
-  PUSH = 'PUSH',
+  EMAIL = "Email",
+  SMS = "Sms",
+  IN_APP = "InApp",
+  DASHBOARD = "Dashboard",
+  PUSH = "Push",
+}
+
+export enum LogLevel {
+  TRACE = "Trace",
+  DEBUG = "Debug",
+  INFO = "Info",
+  WARN = "Warn",
+  ERROR = "Error",
+  FATAL = "Fatal",
+}
+
+export enum NotificationType {
+  WORKFLOW_UPDATE = "WorkflowUpdate",
+  WORKFLOW_ASSIGNED = "WorkflowAssigned",
+  WORKFLOW_APPROVED = "WorkflowApproved",
+  WORKFLOW_REJECTED = "WorkflowRejected",
+  WORKFLOW_ESCALATED = "WorkflowEscalated",
+  DOCUMENT_APPROVED = "DocumentApproved",
+  DOCUMENT_REJECTED = "DocumentRejected",
+  DOCUMENT_EXPIRING = "DocumentExpiring",
+  INCIDENT_REPORTED = "IncidentReported",
+  INCIDENT_RESOLVED = "IncidentResolved",
+  INCIDENT_ESCALATED = "IncidentEscalated",
+  RISK_ASSESSMENT_DUE = "RiskAssessmentDue",
+  RISK_THRESHOLD_EXCEEDED = "RiskThresholdExceeded",
+  BCP_REVIEW_DUE = "BcpReviewDue",
+  BCP_APPROVED = "BcpApproved",
+  EXERCISE_SCHEDULED = "ExerciseScheduled",
+  EXERCISE_COMPLETED = "ExerciseCompleted",
+  COMPLIANCE_AUDIT_DUE = "ComplianceAuditDue",
+  COMPLIANCE_NON_COMPLIANT = "ComplianceNonCompliant",
+  TRAINING_ASSIGNED = "TrainingAssigned",
+  TRAINING_COMPLETED = "TrainingCompleted",
+  SYSTEM_ALERT = "SystemAlert",
+  SYSTEM_MAINTENANCE = "SystemMaintenance",
+  SYNC_CONFLICT = "SyncConflict",
+  SYNC_COMPLETED = "SyncCompleted",
+  CUSTOM = "Custom",
+  BCM_ALERT = "BcmAlert",
+  TASK_ASSIGNMENT = "TaskAssignment",
+  COMPLIANCE_REMINDER = "ComplianceReminder",
+  RISK_ESCALATION = "RiskEscalation",
+  DOCUMENT_APPROVAL = "DocumentApproval",
+  TEST_SCHEDULED = "TestScheduled",
+  RISK_IDENTIFIED = "RiskIdentified",
+  COMPLIANCE_ALERT = "ComplianceAlert",
+}
+
+export enum NotificationPriority {
+  LOW = "Low",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  URGENT = "Urgent",
+  CRITICAL = "Critical",
+}
+
+export enum NotificationStatus {
+  UNREAD = "Unread",
+  READ = "Read",
+  ARCHIVED = "Archived",
+  DISMISSED = "Dismissed",
 }
 
 // ============================================

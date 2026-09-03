@@ -6,37 +6,37 @@ import type { Organisation } from './../organisation/organisation.entity'
 // ============================================
 
 export enum FeatureToggleType {
-    RELEASE = 'RELEASE',
-    EXPERIMENT = 'EXPERIMENT',
-    OPERATIONAL = 'OPERATIONAL',
-    PERMISSION = 'PERMISSION',
-    KILL_SWITCH = 'KILL_SWITCH',
+  RELEASE = 'Release',
+  EXPERIMENT = 'Experiment',
+  OPERATIONAL = 'Operational',
+  PERMISSION = 'Permission',
+  KILL_SWITCH = 'KillSwitch',
 }
 
 export enum FeatureToggleStatus {
-    DRAFT = 'DRAFT',
-    ACTIVE = 'ACTIVE',
-    INACTIVE = 'INACTIVE',
-    ARCHIVED = 'ARCHIVED',
-    SCHEDULED = 'SCHEDULED',
+  DRAFT = 'Draft',
+  ACTIVE = 'Active',
+  INACTIVE = 'Inactive',
+  ARCHIVED = 'Archived',
+  SCHEDULED = 'Scheduled',
 }
 
 export enum ToggleEnvironment {
-    DEVELOPMENT = 'DEVELOPMENT',
-    STAGING = 'STAGING',
-    PRODUCTION = 'PRODUCTION',
-    TESTING = 'TESTING',
-    INTEGRATION = 'INTEGRATION',
+  DEVELOPMENT = 'Development',
+  STAGING = 'Staging',
+  INTEGRATION = "Integration",
+  PRODUCTION = 'Production',
+  TESTING = 'Testing',
 }
 
 export enum TargetingType {
-    USER_ID = 'USER_ID',
-    ORGANISATION_ID = 'ORGANISATION_ID',
-    ROLE = 'ROLE',
-    PERCENTAGE = 'PERCENTAGE',
-    CUSTOM = 'CUSTOM',
-    ALL_USERS = 'ALL_USERS',
-    CUSTOM_RULE = 'CUSTOM_RULE',
+  USER_ID = 'UserId',
+  ORGANISATION_ID = 'OrganisationId',
+  ROLE = 'Role',
+  PERCENTAGE = 'Percentage',
+  CUSTOM = 'Custom',
+  ALL_USERS = 'AllUsers',
+  CUSTOM_RULE = 'CustomRule',
 }
 
 // ============================================

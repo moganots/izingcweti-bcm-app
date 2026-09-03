@@ -1,63 +1,94 @@
+import { BaseEntity } from 'src/core/base/base.entity'
 import { User } from './../user/user.entity'
-import { AuditAction } from './../bcm/bcm.entity'
-import { SyncStatus } from './../sync/sync.entity'
+import { QueryParams } from 'src/shared/types/common.types'
 
-/**
- * Audit Severity Enum
- */
-export enum AuditSeverity {
-  INFO = 'INFO',
-  WARNING = 'WARNING',
-  ERROR = 'ERROR',
-  CRITICAL = 'CRITICAL',
+export enum AuditAction {
+  CREATE = "Create",
+  UPDATE = "Update",
+  DELETE = "Delete",
+  APPROVE = "Approve",
+  REJECT = "Reject",
+  SYNC = "Sync",
+  CONFLICT_RESOLVE = "ConflictResolve",
+  VIEW = "View",
+  LOGIN = "Login",
+  EXPORT = "Export",
+  LOGOUT = "Logout",
+  SOFT_DELETE = "SoftDelete",
+  RESTORE = "Restore",
+  PERMANENT_DELETE = "PermanentDelete",
+  BULK_CREATE = "BulkCreate",
+  BULK_UPDATE = "BulkUpdate",
+  BULK_DELETE = "BulkDelete",
 }
 
-/**
- * Audit Category Enum
- */
+export enum AuditSeverity {
+  INFO = "Info",
+  WARNING = "Warning",
+  ERROR = "Error",
+  CRITICAL = "Critical",
+}
+
 export enum AuditCategory {
-  USER_ACTIVITY = 'USER_ACTIVITY',
-  SYSTEM_EVENT = 'SYSTEM_EVENT',
-  SECURITY = 'SECURITY',
-  DATA_CHANGE = 'DATA_CHANGE',
-  ACCESS_CONTROL = 'ACCESS_CONTROL',
-  WORKFLOW = 'WORKFLOW',
-  COMPLIANCE = 'COMPLIANCE',
-  SYNC = 'SYNC',
-  CONFIGURATION = 'CONFIGURATION',
-  PERFORMANCE = 'PERFORMANCE',
+  USER_ACTIVITY = "UserActivity",
+  SYSTEM_EVENT = "SystemEvent",
+  SECURITY = "Security",
+  DATA_CHANGE = "DataChange",
+  ACCESS_CONTROL = "AccessControl",
+  WORKFLOW = "Workflow",
+  COMPLIANCE = "Compliance",
+  SYNC = "Sync",
+  CONFIGURATION = "Configuration",
+  PERFORMANCE = "Performance",
+  SYSTEM_CONFIG = "SystemConfig",
+  DOCUMENT_MANAGEMENT = "DocumentManagement",
+  USER_MANAGEMENT = "UserManagement",
+  BUSINESS_CONTINUITY = "BusinessContinuity",
+  RISK_MANAGEMENT = "RiskManagement",
+}
+
+export enum AuditStatus {
+  SUCCESS = "Success",
+  FAILURE = "Failure",
+  PENDING = "Pending",
+  IN_PROGRESS = "InProgress",
+  COMPLETED = "Completed",
+  CANCELLED = "Cancelled",
+}
+
+export enum AuditSource {
+  API = "API",
+  WEB = "Web",
+  MOBILE = "Mobile",
+  SYSTEM = "System",
+  SCHEDULED_TASK = "ScheduledTask",
+  MANUAL = "Manual",
+  THIRD_PARTY = "ThirdParty",
 }
 
 /**
  * Audit Log Entity
  */
-export interface AuditLog {
-  uuid: string
-  user_id: string
-  organisation_id?: string | null
+export interface AuditLog extends BaseEntity {
+  userId: string
+  organisationId?: string | null
   action: AuditAction
-  audit_category: AuditCategory
+  auditCategory: AuditCategory
   severity: AuditSeverity
-  entity_type: string
-  entity_id: string
+  entityType: string
+  entityId: string
   description: string
-  old_value?: Record<string, any> | null
-  new_value?: Record<string, any> | null
+  oldValue?: Record<string, any> | null
+  newValue?: Record<string, any> | null
   metadata?: Record<string, any> | null
-  ip_address?: string | null
+  ipAddress?: string | null
   user_agent?: string | null
-  session_id?: string | null
-  request_method?: string | null
-  request_path?: string | null
-  response_status?: number | null
-  execution_time_ms?: number | null
-  is_sensitive: boolean
-  created_by: string
-  created_at: string
-  updated_by: string
-  updated_at: string
-  version: number
-  sync_status: SyncStatus
+  sessionId?: string | null
+  requestMethod?: string | null
+  requestPath?: string | null
+  responseStatus?: number | null
+  executionTimeMs?: number | null
+  isSensitive: boolean
   user?: User
 }
 
@@ -65,13 +96,13 @@ export interface AuditLog {
  * Audit Query Parameters
  */
 export interface AuditQueryParams extends QueryParams {
-  user_id?: string
-  organisation_id?: string
+  userId?: string
+  organisationId?: string
   action?: AuditAction
   audit_category?: AuditCategory
   severity?: AuditSeverity
   entity_type?: string
-  entity_id?: string
+  entityId?: string
   start_date?: string
   end_date?: string
   search?: string
@@ -99,7 +130,7 @@ export interface AuditStats {
  */
 export interface AuditRetentionPolicy {
   uuid: string
-  organisation_id: string
+  organisationId: string
   audit_category: AuditCategory
   retention_days: number
   is_active: boolean

@@ -1,72 +1,153 @@
 import type { BaseEntity } from './../../../core/base/base.entity';
 import type { Organisation, Department } from './../organisation/organisation.entity'
 import type { ComplianceGap } from '../compliance/compliance.entity';
-import type { RecentActivity } from 'src/modules/dashboard';
 
 // ============================================
 // BCM Module - Enums (Aligned with Backend)
 // ============================================
 
-export enum BCMPlanStatus {
-  DRAFT = 'DRAFT',
-  APPROVED = 'APPROVED',
-  ACTIVE = 'ACTIVE',
-  ARCHIVED = 'ARCHIVED',
-  UNDER_REVIEW = 'UNDER_REVIEW',
+/**
+ * Maturity Score Enum (numeric, keep as is)
+ */
+export enum MaturityScore {
+  INITIAL = "Initial",
+  REPEATABLE = "Repeatable",
+  DEFINED = "Defined",
+  QUANTITATIVELY_MANAGED = "QuantitativelyManaged",
+  OPTIMISED = "Optimised",
 }
 
-export enum RecoveryStrategyType {
-  HOT_SITE = 'HotSite',
-  COLD_SITE = 'ColdSite',
-  CLOUD_FAILOVER = 'CloudFailover',
-  MANUAL_WORKAROUND = 'ManualWorkaround',
-  HYBRID = 'Hybrid',
-  MUTUAL_AGREEMENT = 'MutualAgreement',
-}
-
-export enum ExerciseTestType {
-  TABLETOP = 'TABLETOP',
-  WALKTHROUGH = 'WALKTHROUGH',
-  FULL = 'FULL',
-  TECHNICAL = 'TECHNICAL',
-  FULL_SCALE = 'FULL_SCALE',
-  SIMULATION = 'SIMULATION',
-}
-
+/**
+ * Reputational Impact Enum
+ */
 export enum ReputationalImpact {
-  LOW = 'LOW',
-  MEDIUM = 'MEDIUM',
-  HIGH = 'HIGH',
-  CRITICAL = 'CRITICAL',
+  LOW = "Low",
+  MEDIUM = "Medium",
+  HIGH = "High",
+  CRITICAL = "Critical",
+  SIGNIFICANT = "Significant",
 }
 
-export enum RecoveryPriority {
-  CRITICAL = 'CRITICAL',
-  HIGH = 'HIGH',
-  MEDIUM = 'MEDIUM',
-  LOW = 'LOW',
+/**
+ * BCM Plan Status Enum
+ */
+export enum BCMPlanStatus {
+  DRAFT = "Draft",
+  UNDER_REVIEW = "UnderReview",
+  APPROVED = "Approved",
+  ACTIVE = "Active",
+  ARCHIVED = "Archived",
+  PUBLISHED = "Published",
+  UNDER_REVIEW_APPROVED = "UnderReviewApproved",
+  UNDER_REVIEW_REJECTED = "UnderReviewRejected",
+  UNDER_REVIEW_PENDING = "UnderReviewPending",
+  UNDER_REVIEW_IN_PROGRESS = "UnderReviewInProgress",
+  UNDER_REVIEW_COMPLETED = "UnderReviewCompleted",
+  UNDER_REVIEW_CANCELLED = "UnderReviewCancelled",
+  UNDER_REVIEW_EXPIRED = "UnderReviewExpired",
+  UNDER_REVIEW_REVOKED = "UnderReviewRevoked",
+  UNDER_REVIEW_SUSPENDED = "UnderReviewSuspended",
+  UNDER_REVIEW_TERMINATED = "UnderReviewTerminated",
+  UNDER_REVIEW_ON_HOLD = "UnderReviewOnHold",
+  UNDER_REVIEW_RESUMED = "UnderReviewResumed",
+  UNDER_REVIEW_REOPENED = "UnderReviewReopened",
+  UNDER_REVIEW_CLOSED = "UnderReviewClosed",
+  UNDER_REVIEW_COMPLETED_WITH_ISSUES = "UnderReviewCompletedWithIssues",
+  UNDER_REVISION = "UnderRevision",
+  VALIDATION_PENDING = "ValidationPending",
+  VALIDATION_APPROVED = "ValidationApproved",
+  VALIDATION_REJECTED = "ValidationRejected",
+  DEACTIVATED = "Deactivated",
+  REACTIVATED = "Reactivated",
+  EXPIRED = "Expired",
+  REVOKED = "Revoked",
+  SUSPENDED = "Suspended",
+  TERMINATED = "Terminated",
+  ON_HOLD = "OnHold",
+  RESUMED = "Resumed",
+  REOPENED = "Reopened",
+  CLOSED = "Closed",
+  COMPLETED_WITH_ISSUES = "CompletedWithIssues",
 }
 
 export enum BCPTemplateCategory {
-  GENERAL = 'GENERAL',
-  IT = 'IT',
-  FINANCE = 'FINANCE',
-  HR = 'HR',
-  OPERATIONS = 'OPERATIONS',
-  SUPPLY_CHAIN = 'SUPPLY_CHAIN',
-  CUSTOM = 'CUSTOM',
+  IT_DISASTER_RECOVERY = "IT_DISASTER_RECOVERY",
+  BUSINESS_CONTINUITY = "BUSINESS_CONTINUITY",
+  CRISIS_MANAGEMENT = "CRISIS_MANAGEMENT",
+  PANDEMIC_RESPONSE = "PANDEMIC_RESPONSE",
+  CYBER_SECURITY = "CYBER_SECURITY",
+  OPERATIONAL_RESILIENCE = "OPERATIONAL_RESILIENCE",
+  SUPPLY_CHAIN = "SUPPLY_CHAIN",
+  COMMUNICATION = "COMMUNICATION",
+  GENERAL = "GENERAL",
+  FINANCIAL = "FINANCIAL",
+  HUMAN_RESOURCES = "HUMAN_RESOURCES",
+  LEGAL_COMPLIANCE = "LEGAL_COMPLIANCE",
+  FACILITIES = "FACILITIES",
+  TECHNOLOGY = "TECHNOLOGY",
+  DATA_PROTECTION = "DATA_PROTECTION",
+  CLOUD_RECOVERY = "CLOUD_RECOVERY",
+  PHYSICAL_SECURITY = "PHYSICAL_SECURITY",
+  CUSTOMER_SERVICE = "CUSTOMER_SERVICE",
+  VENDOR_MANAGEMENT = "VENDOR_MANAGEMENT",
+  INSURANCE = "INSURANCE",
+  ENVIRONMENTAL = "ENVIRONMENTAL",
+  PUBLIC_RELATIONS = "PUBLIC_RELATIONS",
+  EXECUTIVE_LEADERSHIP = "EXECUTIVE_LEADERSHIP",
+  OPERATIONS = "OPERATIONS",
+  RISK_MANAGEMENT = "RISK_MANAGEMENT",
+}
+
+/**
+ * Recovery Strategy Type Enum
+ */
+export enum RecoveryStrategyType {
+  HOT_SITE = 'HotSite',
+  COLD_SITE = 'ColdSite',
+  MOBILE_SITE = 'MobileSite',
+  CLOUD_FAILOVER = 'CloudFailover',
+  MANUAL_WORKAROUND = 'ManualWorkaround',
+  HYBRID = 'Hybrid',
+  MUTUAL_AGREEMENT = 'ManualAgreement',
+  CLOUD_BASED = "CloudBased",
+  WARM_SITE = "WarmSite",
+  RECIPROCAL_AGREEMENT = "ReciprocalAgreement"
+}
+
+/**
+ * Recovery Priority levels for critical functions and business processes
+ * Defines the order and urgency of recovery during a disruption
+ */
+export enum RecoveryPriority {
+  CRITICAL = "Critical",
+  HIGH = "High",
+  MEDIUM = "Medium",
+  LOW = "Low",
+  VERY_LOW = "VeryLow",
+}
+
+/**
+ * Exercise Test Type Enum
+ */
+export enum ExerciseTestType {
+  TABLETOP = "Tabletop",
+  WALKTHROUGH = "Walkthrough",
+  FULL = "Full",
+  TECHNICAL = "Technical",
+  FULL_SCALE = "FullScale",
+  SIMULATION = "Simulation",
 }
 
 export enum BCMLifecyclePhase {
-  INITIATION_GOVERNANCE = 'INITIATION_GOVERNANCE',
-  EMBEDDING = 'EMBEDDING',
-  RISK_ASSESSMENT = 'RISK_ASSESSMENT',
-  BUSINESS_IMPACT_ANALYSIS = 'BUSINESS_IMPACT_ANALYSIS',
-  STRATEGY_DESIGN = 'STRATEGY_DESIGN',
-  PLAN_GENERATION = 'PLAN_GENERATION',
-  APPROVAL_WORKFLOWS = 'APPROVAL_WORKFLOWS',
-  TESTING_VALIDATION = 'TESTING_VALIDATION',
-  CONTINUOUS_IMPROVEMENT = 'CONTINUOUS_IMPROVEMENT',
+  INITIATION_GOVERNANCE = "InitiationAndGovernance",
+  EMBEDDING = "EmbeddingBusinessContinuity",
+  RISK_ASSESSMENT = "RiskAssessment",
+  BUSINESS_IMPACT_ANALYSIS = "BusinessImpactAnalysis",
+  STRATEGY_DESIGN = "StrategyDesign",
+  PLAN_GENERATION = "PlanGeneration",
+  APPROVAL_WORKFLOWS = "ApprovalWorkflows",
+  TESTING_VALIDATION = "TestingAndValidation",
+  CONTINUOUS_IMPROVEMENT = "ContinuousImprovement",
 }
 
 // ============================================
@@ -714,6 +795,17 @@ export interface BCMDashboardData {
   pendingApprovals: number
   expiringPlans: ExpiringPlan[]
   complianceGaps: ComplianceGap[]
+}
+
+export interface RecentActivity {
+  id: string
+  action: string
+  user: string;
+  entityType: string
+  entityName: string
+  timestamp: string
+  icon: string
+  color: string
 }
 
 export interface UpcomingReview {

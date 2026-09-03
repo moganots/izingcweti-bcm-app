@@ -1,3 +1,5 @@
+import { BaseEntity } from "src/core/base/base.entity"
+
 // ============================================
 // Cache Module - Enums (Aligned with Backend)
 // ============================================
@@ -22,8 +24,7 @@ export enum CacheCompressionAlgorithm {
 /**
  * Cache Entry - Matches backend Cache entity
  */
-export interface CacheEntry {
-  uuid: string
+export interface CacheEntry extends BaseEntity {
   key: string
   value: any
   expiresAt?: string | Date | null
@@ -33,14 +34,6 @@ export interface CacheEntry {
   sizeBytes: number
   isCompressed: boolean
   compressionAlgorithm?: string | null
-  createdBy: string
-  createdAt: string | Date
-  updatedBy: string
-  updatedAt: string | Date
-  version: number
-  deletedBy?: string | null
-  deletedAt?: string | null
-  syncStatus?: string
 }
 
 /**

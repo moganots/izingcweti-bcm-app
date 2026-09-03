@@ -6,50 +6,62 @@ import { QueryParams } from 'src/shared/types/common.types'
 // Document Module - Enums (Aligned with Backend)
 // ============================================
 
+/**
+ * Document Type Enum
+ */
 export enum DocumentType {
-    BCM_POLICY = 'BCM_POLICY',
-    RISK_ASSESSMENT = 'RISK_ASSESSMENT',
-    BIA_REPORT = 'BIA_REPORT',
-    BCP_DOCUMENT = 'BCP_DOCUMENT',
-    RECOVERY_STRATEGY = 'RECOVERY_STRATEGY',
-    TEST_RESULTS = 'TEST_RESULTS',
-    INCIDENT_REPORT = 'INCIDENT_REPORT',
-    COMPLIANCE_EVIDENCE = 'COMPLIANCE_EVIDENCE',
-    TRAINING_MATERIAL = 'TRAINING_MATERIAL',
-    AUDIT_REPORT = 'AUDIT_REPORT',
-    EXERCISE_REPORT = 'EXERCISE_REPORT',
-    MEETING_MINUTES = 'MEETING_MINUTES',
-    PROCEDURE = 'PROCEDURE',
-    WORK_INSTRUCTION = 'WORK_INSTRUCTION',
-    CONTACT_LIST = 'CONTACT_LIST',
-    VENDOR_CONTRACT = 'VENDOR_CONTRACT',
-    SLA_DOCUMENT = 'SLA_DOCUMENT',
-    REGULATORY_DOCUMENT = 'REGULATORY_DOCUMENT',
-    CERTIFICATE = 'CERTIFICATE',
-    GAP_ANALYSIS = 'GAP_ANALYSIS',
-    IMPROVEMENT_PLAN = 'IMPROVEMENT_PLAN',
-    OTHER = 'OTHER',
+  BCM_POLICY = "BcmPolicy",
+  RISK_ASSESSMENT = "RiskAssessment",
+  BIA_REPORT = "BiaReport",
+  BCP_DOCUMENT = "BcpDocument",
+  RECOVERY_STRATEGY = "RecoveryStrategy",
+  TEST_RESULTS = "TestResults",
+  INCIDENT_REPORT = "IncidentReport",
+  COMPLIANCE_EVIDENCE = "ComplianceEvidence",
+  TRAINING_MATERIAL = "TrainingMaterial",
+  AUDIT_REPORT = "AuditReport",
+  EXERCISE_REPORT = "ExerciseReport",
+  MEETING_MINUTES = "MeetingMinutes",
+  PROCEDURE = "Procedure",
+  WORK_INSTRUCTION = "WorkInstruction",
+  CONTACT_LIST = "ContactList",
+  VENDOR_CONTRACT = "VendorContract",
+  SLA_DOCUMENT = "SlaDocument",
+  REGULATORY_DOCUMENT = "RegulatoryDocument",
+  CERTIFICATE = "Certificate",
+  GAP_ANALYSIS = "GapAnalysis",
+  IMPROVEMENT_PLAN = "ImprovementPlan",
+  OTHER = "Other",
 }
 
+/**
+ * Document Status Enum
+ */
 export enum DocumentStatus {
-    DRAFT = 'DRAFT',
-    PUBLISHED = 'PUBLISHED',
-    ARCHIVED = 'ARCHIVED',
-    UNDER_REVIEW = 'UNDER_REVIEW',
-    APPROVED = 'APPROVED',
-    REJECTED = 'REJECTED',
-    EXPIRED = 'EXPIRED',
-    PENDING_APPROVAL = 'PENDING_APPROVAL',
-    UNDER_REVISION = 'UNDER_REVISION',
-    SUPERSEDED = 'SUPERSEDED',
+  DRAFT = 'Draft',
+  UNDER_REVIEW = 'UnderReview',
+  APPROVED = 'Approved',
+  PUBLISHED = 'Published',
+  ACTIVE = 'Active',
+  REVIEW_REQUIRED = 'ReviewRequired',
+  UNDER_REVISION = 'UnderRevision',
+  SUPERSEDED = 'Superceded',
+  ARCHIVED = 'Archived',
+  EXPIRED = 'Expired',
+  REJECTED = 'Rejected',
+  OBSOLETE = 'Obsolete',
+  PENDING_APPROVAL = "PendingApproval"
 }
 
+/**
+ * Access Level Enum
+ */
 export enum AccessLevel {
-    PUBLIC = 'PUBLIC',
-    INTERNAL = 'INTERNAL',
-    CONFIDENTIAL = 'CONFIDENTIAL',
-    RESTRICTED = 'RESTRICTED',
-    PRIVATE = 'PRIVATE',
+  PUBLIC = "Public",
+  INTERNAL = "Internal",
+  CONFIDENTIAL = "Confidential",
+  RESTRICTED = "Restricted",
+  PRIVATE = "Private",
 }
 
 // ============================================
