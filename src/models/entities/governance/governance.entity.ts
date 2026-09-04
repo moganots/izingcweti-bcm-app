@@ -15,20 +15,20 @@ import type { User } from '../user/user.entity'
  * Policy Status Enum
  */
 export enum PolicyStatus {
-    DRAFT = 'DRAFT',
-    ACTIVE = 'ACTIVE',
-    ARCHIVED = 'ARCHIVED',
-    UNDER_REVIEW = 'UNDER_REVIEW',
-    APPROVED = 'APPROVED',
-    SUSPENDED = 'SUSPENDED',
-    UNDER_REVISION = 'UNDER_REVISION',
-    REVIEW_REQUIRED = 'REVIEW_REQUIRED',
-    SUPERSEDED = 'SUPERSEDED',
-    EXPIRED = 'EXPIRED',
-    REJECTED = 'REJECTED',
-    WITHDRAWN = 'WITHDRAWN',
-    OBSOLETE = 'OBSOLETE',
-    INACTIVE = 'INACTIVE',
+    DRAFT = 'Draft',
+    ACTIVE = 'Active',
+    ARCHIVED = 'Archived',
+    UNDER_REVIEW = 'Under Review',
+    APPROVED = 'Approved',
+    SUSPENDED = 'Suspended',
+    UNDER_REVISION = 'Under Revision',
+    REVIEW_REQUIRED = 'Review Required',
+    SUPERSEDED = 'Superseded',
+    EXPIRED = 'Expired',
+    REJECTED = 'Rejected',
+    WITHDRAWN = 'Withdrawn',
+    OBSOLETE = 'Obsolete',
+    INACTIVE = 'Inactive',
 }
 
 /**
@@ -36,76 +36,76 @@ export enum PolicyStatus {
  */
 export enum PolicyCategory {
     BCM = 'BCM',
-    RISK_MANAGEMENT = 'RISK_MANAGEMENT',
-    COMPLIANCE = 'COMPLIANCE',
-    IT_SECURITY = 'IT_SECURITY',
-    HR = 'HR',
-    OPERATIONS = 'OPERATIONS',
-    FINANCE = 'FINANCE',
-    DATA_PRIVACY = 'DATA_PRIVACY',
-    INCIDENT_MANAGEMENT = 'INCIDENT_MANAGEMENT',
-    CRISIS_COMMUNICATION = 'CRISIS_COMMUNICATION',
-    BUSINESS_CONTINUITY = 'BUSINESS_CONTINUITY',
-    DISASTER_RECOVERY = 'DISASTER_RECOVERY',
-    QUALITY = 'QUALITY',
-    ENVIRONMENTAL = 'ENVIRONMENTAL',
-    HEALTH_SAFETY = 'HEALTH_SAFETY',
-    SUPPLY_CHAIN = 'SUPPLY_CHAIN',
-    LEGAL = 'LEGAL',
-    OTHER = 'OTHER',
+    RISK_MANAGEMENT = 'Risk Management',
+    COMPLIANCE = 'Compliance',
+    IT_SECURITY = 'IT Security',
+    HR = 'Human Resources',
+    OPERATIONS = 'Operations',
+    FINANCE = 'Finance',
+    DATA_PRIVACY = 'Data Privacy',
+    INCIDENT_MANAGEMENT = 'Incident Management',
+    CRISIS_COMMUNICATION = 'Crisis Communication',
+    BUSINESS_CONTINUITY = 'Business Continuity',
+    DISASTER_RECOVERY = 'Disaster Recovery',
+    QUALITY = 'Quality',
+    ENVIRONMENTAL = 'Environmental',
+    HEALTH_SAFETY = 'Health & Safety',
+    SUPPLY_CHAIN = 'Supply Chain',
+    LEGAL = 'Legal',
+    OTHER = 'Other',
 }
 
 /**
  * Activity Action Enum
  */
 export enum ActivityAction {
-    POLICY_CREATED = 'POLICY_CREATED',
-    POLICY_UPDATED = 'POLICY_UPDATED',
-    POLICY_ACTIVATED = 'POLICY_ACTIVATED',
-    POLICY_DEACTIVATED = 'POLICY_DEACTIVATED',
-    POLICY_ARCHIVED = 'POLICY_ARCHIVED',
-    POLICY_REVIEWED = 'POLICY_REVIEWED',
-    POLICY_APPROVED = 'POLICY_APPROVED',
-    POLICY_REJECTED = 'POLICY_REJECTED',
-    ASSESSMENT_CREATED = 'ASSESSMENT_CREATED',
-    ASSESSMENT_UPDATED = 'ASSESSMENT_UPDATED',
-    ASSESSMENT_DELETED = 'ASSESSMENT_DELETED',
-    MATURITY_LEVEL_CHANGED = 'MATURITY_LEVEL_CHANGED',
-    COMPLIANCE_CHECK = 'COMPLIANCE_CHECK',
-    AUDIT_COMPLETED = 'AUDIT_COMPLETED',
-    REVIEW_COMPLETED = 'REVIEW_COMPLETED',
-    USER_LOGGED_IN = 'USER_LOGGED_IN',
-    USER_LOGGED_OUT = 'USER_LOGGED_OUT',
-    USER_CREATED = 'USER_CREATED',
-    USER_UPDATED = 'USER_UPDATED',
-    USER_DELETED = 'USER_DELETED',
-    PERMISSION_CHANGED = 'PERMISSION_CHANGED',
-    SETTINGS_CHANGED = 'SETTINGS_CHANGED',
-    SYSTEM_CONFIGURED = 'SYSTEM_CONFIGURED',
-    EXPORT_COMPLETED = 'EXPORT_COMPLETED',
-    REPORT_GENERATED = 'REPORT_GENERATED',
-    IMPORT_COMPLETED = 'IMPORT_COMPLETED',
-    WORKFLOW_TRIGGERED = 'WORKFLOW_TRIGGERED',
-    NOTIFICATION_SENT = 'NOTIFICATION_SENT',
-    SYNC_COMPLETED = 'SYNC_COMPLETED',
-    BACKUP_CREATED = 'BACKUP_CREATED',
-    RESTORE_COMPLETED = 'RESTORE_COMPLETED',
+    POLICY_CREATED = 'Policy Created',
+    POLICY_UPDATED = 'Policy Updated',
+    POLICY_ACTIVATED = 'Policy Activated',
+    POLICY_DEACTIVATED = 'Policy Deactivated',
+    POLICY_ARCHIVED = 'Policy Archived',
+    POLICY_REVIEWED = 'Policy Reviewed',
+    POLICY_APPROVED = 'Policy Approved',
+    POLICY_REJECTED = 'Policy Rejected',
+    ASSESSMENT_CREATED = 'Assessment Created',
+    ASSESSMENT_UPDATED = 'Assessment Updated',
+    ASSESSMENT_DELETED = 'Assessment Deleted',
+    MaturityLevel_CHANGED = 'Maturity Level Changed',
+    COMPLIANCE_CHECK = 'Compliance Check',
+    AUDIT_COMPLETED = 'Audit Completed',
+    REVIEW_COMPLETED = 'Review Completed',
+    USER_LOGGED_IN = 'User Logged In',
+    USER_LOGGED_OUT = 'User Logged Out',
+    USER_CREATED = 'User Created',
+    USER_UPDATED = 'User Updated',
+    USER_DELETED = 'User Deleted',
+    PERMISSION_CHANGED = 'Permission Changed',
+    SETTINGS_CHANGED = 'Settings Changed',
+    SYSTEM_CONFIGURED = 'System Configured',
+    EXPORT_COMPLETED = 'Export Completed',
+    REPORT_GENERATED = 'Report Generated',
+    IMPORT_COMPLETED = 'Import Completed',
+    WORKFLOW_TRIGGERED = 'Workflow Triggered',
+    NOTIFICATION_SENT = 'Notification Sent',
+    SYNC_COMPLETED = 'Sync Completed',
+    BACKUP_CREATED = 'Backup Created',
+    RESTORE_COMPLETED = 'Restore Completed',
 }
 
 /**
  * Maturity Level Enum
  */
 export enum MaturityLevel {
-    INITIAL = 'INITIAL',
-    MANAGED = 'MANAGED',
-    DEFINED = 'DEFINED',
-    QUANTITATIVELY_MANAGED = 'QUANTITATIVELY_MANAGED',
-    OPTIMISED = 'OPTIMISED',
-    DEVELOPING = 'DEVELOPING',
-    REPEATABLE = 'REPEATABLE',
-    ESTABLISHED = 'ESTABLISHED',
-    ADVANCED = 'ADVANCED',
-    OPTIMISING = 'OPTIMISING',
+    INITIAL = 'Initial',
+    MANAGED = 'Managed',
+    DEFINED = 'Defined',
+    QUANTITATIVELY_MANAGED = 'Quantitatively Managed',
+    OPTIMISED = 'Optimised',
+    DEVELOPING = 'Developing',
+    REPEATABLE = 'Repeatable',
+    ESTABLISHED = 'Established',
+    ADVANCED = 'Advanced',
+    OPTIMISING = 'Optimising',
 }
 
 // ============================================
@@ -365,7 +365,8 @@ export interface GovernanceHealth {
 // Display Constants & Helpers
 // ============================================
 
-export const POLICY_STATUS_LABELS: Record<PolicyStatus, string> = {
+// Policy Status Labels
+export const PolicyStatus_LABELS: Record<PolicyStatus, string> = {
     [PolicyStatus.DRAFT]: 'Draft',
     [PolicyStatus.ACTIVE]: 'Active',
     [PolicyStatus.ARCHIVED]: 'Archived',
@@ -382,25 +383,27 @@ export const POLICY_STATUS_LABELS: Record<PolicyStatus, string> = {
     [PolicyStatus.INACTIVE]: 'Inactive',
 }
 
-export const POLICY_STATUS_COLORS: Record<PolicyStatus, string> = {
+// Policy Status Colors
+export const PolicyStatus_COLORS: Record<PolicyStatus, string> = {
     [PolicyStatus.DRAFT]: 'grey',
-    [PolicyStatus.ACTIVE]: 'positive',
+    [PolicyStatus.ACTIVE]: 'success',
     [PolicyStatus.ARCHIVED]: 'grey-7',
     [PolicyStatus.UNDER_REVIEW]: 'warning',
-    [PolicyStatus.APPROVED]: 'green',
+    [PolicyStatus.APPROVED]: 'success',
     [PolicyStatus.SUSPENDED]: 'orange',
-    [PolicyStatus.UNDER_REVISION]: 'blue',
+    [PolicyStatus.UNDER_REVISION]: 'info',
     [PolicyStatus.REVIEW_REQUIRED]: 'orange',
     [PolicyStatus.SUPERSEDED]: 'grey-6',
-    [PolicyStatus.EXPIRED]: 'red',
-    [PolicyStatus.REJECTED]: 'negative',
+    [PolicyStatus.EXPIRED]: 'danger',
+    [PolicyStatus.REJECTED]: 'danger',
     [PolicyStatus.WITHDRAWN]: 'grey',
     [PolicyStatus.OBSOLETE]: 'grey-8',
     [PolicyStatus.INACTIVE]: 'grey-5',
 }
 
-export const POLICY_CATEGORY_LABELS: Record<PolicyCategory, string> = {
-    [PolicyCategory.BCM]: 'BCM',
+// Policy Category Labels
+export const PolicyCategory_LABELS: Record<PolicyCategory, string> = {
+    [PolicyCategory.BCM]: 'Business Continuity Management',
     [PolicyCategory.RISK_MANAGEMENT]: 'Risk Management',
     [PolicyCategory.COMPLIANCE]: 'Compliance',
     [PolicyCategory.IT_SECURITY]: 'IT Security',
@@ -420,7 +423,135 @@ export const POLICY_CATEGORY_LABELS: Record<PolicyCategory, string> = {
     [PolicyCategory.OTHER]: 'Other',
 }
 
-export const MATURITY_LEVEL_LABELS: Record<MaturityLevel, string> = {
+// Policy Category Colors
+export const PolicyCategory_COLORS: Record<PolicyCategory, string> = {
+    [PolicyCategory.BCM]: 'deep-purple',
+    [PolicyCategory.RISK_MANAGEMENT]: 'orange',
+    [PolicyCategory.COMPLIANCE]: 'blue',
+    [PolicyCategory.IT_SECURITY]: 'cyan',
+    [PolicyCategory.HR]: 'pink',
+    [PolicyCategory.OPERATIONS]: 'teal',
+    [PolicyCategory.FINANCE]: 'green',
+    [PolicyCategory.DATA_PRIVACY]: 'indigo',
+    [PolicyCategory.INCIDENT_MANAGEMENT]: 'red',
+    [PolicyCategory.CRISIS_COMMUNICATION]: 'amber',
+    [PolicyCategory.BUSINESS_CONTINUITY]: 'deep-green',
+    [PolicyCategory.DISASTER_RECOVERY]: 'brown',
+    [PolicyCategory.QUALITY]: 'light-blue',
+    [PolicyCategory.ENVIRONMENTAL]: 'green',
+    [PolicyCategory.HEALTH_SAFETY]: 'lime',
+    [PolicyCategory.SUPPLY_CHAIN]: 'purple',
+    [PolicyCategory.LEGAL]: 'grey',
+    [PolicyCategory.OTHER]: 'grey-7',
+}
+
+// Activity Action Labels
+export const ActivityAction_LABELS: Record<ActivityAction, string> = {
+    [ActivityAction.POLICY_CREATED]: 'Policy Created',
+    [ActivityAction.POLICY_UPDATED]: 'Policy Updated',
+    [ActivityAction.POLICY_ACTIVATED]: 'Policy Activated',
+    [ActivityAction.POLICY_DEACTIVATED]: 'Policy Deactivated',
+    [ActivityAction.POLICY_ARCHIVED]: 'Policy Archived',
+    [ActivityAction.POLICY_REVIEWED]: 'Policy Reviewed',
+    [ActivityAction.POLICY_APPROVED]: 'Policy Approved',
+    [ActivityAction.POLICY_REJECTED]: 'Policy Rejected',
+    [ActivityAction.ASSESSMENT_CREATED]: 'Assessment Created',
+    [ActivityAction.ASSESSMENT_UPDATED]: 'Assessment Updated',
+    [ActivityAction.ASSESSMENT_DELETED]: 'Assessment Deleted',
+    [ActivityAction.MaturityLevel_CHANGED]: 'Maturity Level Changed',
+    [ActivityAction.COMPLIANCE_CHECK]: 'Compliance Check',
+    [ActivityAction.AUDIT_COMPLETED]: 'Audit Completed',
+    [ActivityAction.REVIEW_COMPLETED]: 'Review Completed',
+    [ActivityAction.USER_LOGGED_IN]: 'User Logged In',
+    [ActivityAction.USER_LOGGED_OUT]: 'User Logged Out',
+    [ActivityAction.USER_CREATED]: 'User Created',
+    [ActivityAction.USER_UPDATED]: 'User Updated',
+    [ActivityAction.USER_DELETED]: 'User Deleted',
+    [ActivityAction.PERMISSION_CHANGED]: 'Permission Changed',
+    [ActivityAction.SETTINGS_CHANGED]: 'Settings Changed',
+    [ActivityAction.SYSTEM_CONFIGURED]: 'System Configured',
+    [ActivityAction.EXPORT_COMPLETED]: 'Export Completed',
+    [ActivityAction.REPORT_GENERATED]: 'Report Generated',
+    [ActivityAction.IMPORT_COMPLETED]: 'Import Completed',
+    [ActivityAction.WORKFLOW_TRIGGERED]: 'Workflow Triggered',
+    [ActivityAction.NOTIFICATION_SENT]: 'Notification Sent',
+    [ActivityAction.SYNC_COMPLETED]: 'Sync Completed',
+    [ActivityAction.BACKUP_CREATED]: 'Backup Created',
+    [ActivityAction.RESTORE_COMPLETED]: 'Restore Completed',
+}
+
+// Activity Action Colors
+export const ActivityAction_COLORS: Record<ActivityAction, string> = {
+    [ActivityAction.POLICY_CREATED]: 'success',
+    [ActivityAction.POLICY_UPDATED]: 'info',
+    [ActivityAction.POLICY_ACTIVATED]: 'success',
+    [ActivityAction.POLICY_DEACTIVATED]: 'warning',
+    [ActivityAction.POLICY_ARCHIVED]: 'grey',
+    [ActivityAction.POLICY_REVIEWED]: 'info',
+    [ActivityAction.POLICY_APPROVED]: 'success',
+    [ActivityAction.POLICY_REJECTED]: 'danger',
+    [ActivityAction.ASSESSMENT_CREATED]: 'success',
+    [ActivityAction.ASSESSMENT_UPDATED]: 'info',
+    [ActivityAction.ASSESSMENT_DELETED]: 'danger',
+    [ActivityAction.MaturityLevel_CHANGED]: 'warning',
+    [ActivityAction.COMPLIANCE_CHECK]: 'info',
+    [ActivityAction.AUDIT_COMPLETED]: 'success',
+    [ActivityAction.REVIEW_COMPLETED]: 'success',
+    [ActivityAction.USER_LOGGED_IN]: 'success',
+    [ActivityAction.USER_LOGGED_OUT]: 'warning',
+    [ActivityAction.USER_CREATED]: 'success',
+    [ActivityAction.USER_UPDATED]: 'info',
+    [ActivityAction.USER_DELETED]: 'danger',
+    [ActivityAction.PERMISSION_CHANGED]: 'warning',
+    [ActivityAction.SETTINGS_CHANGED]: 'info',
+    [ActivityAction.SYSTEM_CONFIGURED]: 'info',
+    [ActivityAction.EXPORT_COMPLETED]: 'success',
+    [ActivityAction.REPORT_GENERATED]: 'success',
+    [ActivityAction.IMPORT_COMPLETED]: 'success',
+    [ActivityAction.WORKFLOW_TRIGGERED]: 'info',
+    [ActivityAction.NOTIFICATION_SENT]: 'info',
+    [ActivityAction.SYNC_COMPLETED]: 'success',
+    [ActivityAction.BACKUP_CREATED]: 'info',
+    [ActivityAction.RESTORE_COMPLETED]: 'success',
+}
+
+// Activity Action Icons
+export const ActivityAction_ICONS: Record<ActivityAction, string> = {
+    [ActivityAction.POLICY_CREATED]: 'add_circle',
+    [ActivityAction.POLICY_UPDATED]: 'edit',
+    [ActivityAction.POLICY_ACTIVATED]: 'check_circle',
+    [ActivityAction.POLICY_DEACTIVATED]: 'cancel',
+    [ActivityAction.POLICY_ARCHIVED]: 'archive',
+    [ActivityAction.POLICY_REVIEWED]: 'rate_review',
+    [ActivityAction.POLICY_APPROVED]: 'approval',
+    [ActivityAction.POLICY_REJECTED]: 'block',
+    [ActivityAction.ASSESSMENT_CREATED]: 'assessment',
+    [ActivityAction.ASSESSMENT_UPDATED]: 'edit_note',
+    [ActivityAction.ASSESSMENT_DELETED]: 'delete',
+    [ActivityAction.MaturityLevel_CHANGED]: 'trending_up',
+    [ActivityAction.COMPLIANCE_CHECK]: 'verified',
+    [ActivityAction.AUDIT_COMPLETED]: 'fact_check',
+    [ActivityAction.REVIEW_COMPLETED]: 'done_all',
+    [ActivityAction.USER_LOGGED_IN]: 'login',
+    [ActivityAction.USER_LOGGED_OUT]: 'logout',
+    [ActivityAction.USER_CREATED]: 'person_add',
+    [ActivityAction.USER_UPDATED]: 'person_edit',
+    [ActivityAction.USER_DELETED]: 'person_remove',
+    [ActivityAction.PERMISSION_CHANGED]: 'security',
+    [ActivityAction.SETTINGS_CHANGED]: 'settings',
+    [ActivityAction.SYSTEM_CONFIGURED]: 'build',
+    [ActivityAction.EXPORT_COMPLETED]: 'file_download',
+    [ActivityAction.REPORT_GENERATED]: 'description',
+    [ActivityAction.IMPORT_COMPLETED]: 'file_upload',
+    [ActivityAction.WORKFLOW_TRIGGERED]: 'play_arrow',
+    [ActivityAction.NOTIFICATION_SENT]: 'notifications',
+    [ActivityAction.SYNC_COMPLETED]: 'sync',
+    [ActivityAction.BACKUP_CREATED]: 'backup',
+    [ActivityAction.RESTORE_COMPLETED]: 'restore',
+}
+
+// Maturity Level Labels
+export const MaturityLevel_LABELS: Record<MaturityLevel, string> = {
     [MaturityLevel.INITIAL]: 'Initial',
     [MaturityLevel.MANAGED]: 'Managed',
     [MaturityLevel.DEFINED]: 'Defined',
@@ -433,11 +564,12 @@ export const MATURITY_LEVEL_LABELS: Record<MaturityLevel, string> = {
     [MaturityLevel.OPTIMISING]: 'Optimising',
 }
 
-export const MATURITY_LEVEL_COLORS: Record<MaturityLevel, string> = {
+// Maturity Level Colors
+export const MaturityLevel_COLORS: Record<MaturityLevel, string> = {
     [MaturityLevel.INITIAL]: 'grey',
     [MaturityLevel.MANAGED]: 'blue',
     [MaturityLevel.DEFINED]: 'info',
-    [MaturityLevel.QUANTITATIVELY_MANAGED]: 'positive',
+    [MaturityLevel.QUANTITATIVELY_MANAGED]: 'success',
     [MaturityLevel.OPTIMISED]: 'green',
     [MaturityLevel.DEVELOPING]: 'purple',
     [MaturityLevel.REPEATABLE]: 'orange',
@@ -446,56 +578,142 @@ export const MATURITY_LEVEL_COLORS: Record<MaturityLevel, string> = {
     [MaturityLevel.OPTIMISING]: 'deep-green',
 }
 
+// Maturity Level Score Ranges
+export const MaturityLevel_RANGES: Record<MaturityLevel, { min: number; max: number }> = {
+    [MaturityLevel.INITIAL]: { min: 0, max: 20 },
+    [MaturityLevel.MANAGED]: { min: 21, max: 40 },
+    [MaturityLevel.DEFINED]: { min: 41, max: 60 },
+    [MaturityLevel.QUANTITATIVELY_MANAGED]: { min: 61, max: 80 },
+    [MaturityLevel.OPTIMISED]: { min: 81, max: 100 },
+    [MaturityLevel.DEVELOPING]: { min: 0, max: 25 },
+    [MaturityLevel.REPEATABLE]: { min: 26, max: 45 },
+    [MaturityLevel.ESTABLISHED]: { min: 46, max: 65 },
+    [MaturityLevel.ADVANCED]: { min: 66, max: 85 },
+    [MaturityLevel.OPTIMISING]: { min: 86, max: 100 },
+}
+
+// ============================================
+// Helper Functions
+// ============================================
+
 /**
  * Get policy status label
  */
 export function getPolicyStatusLabel(status: PolicyStatus): string {
-    return POLICY_STATUS_LABELS[status] || status
+    return PolicyStatus_LABELS[status] || status
 }
 
 /**
  * Get policy status color
  */
 export function getPolicyStatusColor(status: PolicyStatus): string {
-    return POLICY_STATUS_COLORS[status] || 'grey'
+    return PolicyStatus_COLORS[status] || 'grey'
 }
 
 /**
  * Get policy category label
  */
 export function getPolicyCategoryLabel(category: PolicyCategory): string {
-    return POLICY_CATEGORY_LABELS[category] || category
+    return PolicyCategory_LABELS[category] || category
+}
+
+/**
+ * Get policy category color
+ */
+export function getPolicyCategoryColor(category: PolicyCategory): string {
+    return PolicyCategory_COLORS[category] || 'grey'
+}
+
+/**
+ * Get activity action label
+ */
+export function getActivityActionLabel(action: ActivityAction): string {
+    return ActivityAction_LABELS[action] || action
+}
+
+/**
+ * Get activity action color
+ */
+export function getActivityActionColor(action: ActivityAction): string {
+    return ActivityAction_COLORS[action] || 'grey'
+}
+
+/**
+ * Get activity action icon
+ */
+export function getActivityActionIcon(action: ActivityAction): string {
+    return ActivityAction_ICONS[action] || 'event_note'
 }
 
 /**
  * Get maturity level label
  */
 export function getMaturityLevelLabel(level: MaturityLevel): string {
-    return MATURITY_LEVEL_LABELS[level] || level
+    return MaturityLevel_LABELS[level] || level
 }
 
 /**
  * Get maturity level color
  */
 export function getMaturityLevelColor(level: MaturityLevel): string {
-    return MATURITY_LEVEL_COLORS[level] || 'grey'
+    return MaturityLevel_COLORS[level] || 'grey'
 }
 
 /**
  * Get maturity level score range
  */
 export function getMaturityLevelRange(level: MaturityLevel): { min: number; max: number } {
-    const ranges: Record<MaturityLevel, { min: number; max: number }> = {
-        [MaturityLevel.INITIAL]: { min: 0, max: 20 },
-        [MaturityLevel.MANAGED]: { min: 21, max: 40 },
-        [MaturityLevel.DEFINED]: { min: 41, max: 60 },
-        [MaturityLevel.QUANTITATIVELY_MANAGED]: { min: 61, max: 80 },
-        [MaturityLevel.OPTIMISED]: { min: 81, max: 100 },
-        [MaturityLevel.DEVELOPING]: { min: 0, max: 25 },
-        [MaturityLevel.REPEATABLE]: { min: 26, max: 45 },
-        [MaturityLevel.ESTABLISHED]: { min: 46, max: 65 },
-        [MaturityLevel.ADVANCED]: { min: 66, max: 85 },
-        [MaturityLevel.OPTIMISING]: { min: 86, max: 100 },
+    return MaturityLevel_RANGES[level] || { min: 0, max: 100 }
+}
+
+/**
+ * Get maturity level from score
+ */
+export function getMaturityLevelFromScore(score: number): MaturityLevel {
+    for (const [level, range] of Object.entries(MaturityLevel_RANGES)) {
+        if (score >= range.min && score <= range.max) {
+            return level as MaturityLevel
+        }
     }
-    return ranges[level] || { min: 0, max: 100 }
+    return MaturityLevel.INITIAL
+}
+
+/**
+ * Get all policy statuses as select options
+ */
+export function getPolicyStatusOptions(): Array<{ label: string; value: PolicyStatus }> {
+    return Object.values(PolicyStatus).map((status) => ({
+        label: getPolicyStatusLabel(status),
+        value: status,
+    }))
+}
+
+/**
+ * Get all policy categories as select options
+ */
+export function getPolicyCategoryOptions(): Array<{ label: string; value: PolicyCategory }> {
+    return Object.values(PolicyCategory).map((category) => ({
+        label: getPolicyCategoryLabel(category),
+        value: category,
+    }))
+}
+
+/**
+ * Get all maturity levels as select options
+ */
+export function getMaturityLevelOptions(): Array<{ label: string; value: MaturityLevel }> {
+    return Object.values(MaturityLevel).map((level) => ({
+        label: getMaturityLevelLabel(level),
+        value: level,
+    }))
+}
+
+/**
+ * Get all activity actions as select options
+ */
+export function getActivityActionOptions(): Array<{ label: string; value: ActivityAction }> {
+    return Object.values(ActivityAction).map((action) => ({
+        label: getActivityActionLabel(action),
+        value: action,
+    }))
 }

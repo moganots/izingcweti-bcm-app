@@ -5,24 +5,25 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { governanceService } from 'src/services/api/governance/GovernanceService'
-import type {
-    GovernancePolicy,
-    GovernanceActivity,
-    MaturityAssessment,
-    GovernanceMetrics,
-    ComplianceOverview,
-    GovernanceHealth,
-    PolicyStats,
-    MaturityStats,
-    ActivityStats,
-    CreatePolicyRequest,
-    UpdatePolicyRequest,
-    CreateMaturityAssessmentRequest,
-    UpdateMaturityAssessmentRequest,
-    CreateActivityRequest,
-    PolicyQueryParams,
-    MaturityQueryParams,
-    ActivityQueryParams,
+import {
+    type GovernancePolicy,
+    type GovernanceActivity,
+    type MaturityAssessment,
+    type GovernanceMetrics,
+    type ComplianceOverview,
+    type GovernanceHealth,
+    type PolicyStats,
+    type MaturityStats,
+    type ActivityStats,
+    type CreatePolicyRequest,
+    type UpdatePolicyRequest,
+    type CreateMaturityAssessmentRequest,
+    type UpdateMaturityAssessmentRequest,
+    type CreateActivityRequest,
+    type PolicyQueryParams,
+    type MaturityQueryParams,
+    type ActivityQueryParams,
+    PolicyStatus,
 } from 'src/models/entities/governance/governance.entity'
 
 export const useGovernanceStore = defineStore('governance', () => {
@@ -77,15 +78,15 @@ export const useGovernanceStore = defineStore('governance', () => {
     const hasRecentActivities = computed(() => recentActivities.value.length > 0)
 
     const activePolicies = computed(() =>
-        policies.value.filter((p) => p.status === 'ACTIVE')
+        policies.value.filter((p) => p.status === PolicyStatus.ACTIVE)
     )
 
     const draftPolicies = computed(() =>
-        policies.value.filter((p) => p.status === 'DRAFT')
+        policies.value.filter((p) => p.status === PolicyStatus.DRAFT)
     )
 
     const archivedPolicies = computed(() =>
-        policies.value.filter((p) => p.status === 'ARCHIVED')
+        policies.value.filter((p) => p.status === PolicyStatus.ARCHIVED)
     )
 
     const averageMaturityScore = computed(() => {

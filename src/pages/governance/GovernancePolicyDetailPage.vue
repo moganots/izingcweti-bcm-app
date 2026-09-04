@@ -23,9 +23,9 @@
                 </div>
                 <div class="row q-gutter-sm">
                     <q-btn color="primary" icon="edit" label="Edit" unelevated @click="handleEdit" />
-                    <q-btn v-if="policy.status === 'DRAFT'" color="positive" icon="check_circle" label="Activate"
+                    <q-btn v-if="policy.status === PolicyStatus.DRAFT" color="positive" icon="check_circle" label="Activate"
                         unelevated @click="handleActivate" />
-                    <q-btn v-if="policy.status === 'ACTIVE'" color="orange" icon="pause_circle" label="Deactivate"
+                    <q-btn v-if="policy.status === PolicyStatus.ACTIVE" color="orange" icon="pause_circle" label="Deactivate"
                         unelevated @click="handleDeactivate" />
                     <q-btn color="negative" icon="delete" label="Delete" outline @click="handleDelete" />
                 </div>
@@ -60,6 +60,7 @@ import { useQuasar } from 'quasar'
 import { useGovernance } from 'src/composables/useGovernance'
 import { PolicyDetails, PolicyForm } from 'src/components/governance'
 import { ConfirmDialog } from 'src/components/.common'
+import { PolicyStatus } from 'src/models/entities/governance/governance.entity'
 
 // ============================================
 // Composables

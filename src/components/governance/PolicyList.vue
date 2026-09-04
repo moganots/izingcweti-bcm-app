@@ -79,12 +79,12 @@
                                     <q-item-section avatar><q-icon name="edit" /></q-item-section>
                                     <q-item-section>Edit</q-item-section>
                                 </q-item>
-                                <q-item v-if="policy.status === 'DRAFT'" clickable v-close-popup
+                                <q-item v-if="policy.status === PolicyStatus.DRAFT" clickable v-close-popup
                                     @click="$emit('activate', policy)">
                                     <q-item-section avatar><q-icon name="check_circle" /></q-item-section>
                                     <q-item-section>Activate</q-item-section>
                                 </q-item>
-                                <q-item v-if="policy.status === 'ACTIVE'" clickable v-close-popup
+                                <q-item v-if="policy.status === PolicyStatus.ACTIVE" clickable v-close-popup
                                     @click="$emit('deactivate', policy)">
                                     <q-item-section avatar><q-icon name="pause_circle" /></q-item-section>
                                     <q-item-section>Deactivate</q-item-section>
@@ -110,11 +110,12 @@
 
 <script setup lang="ts">
 import { reactive, computed, watch } from 'vue'
-import type { GovernancePolicy, PolicyStatus, PolicyCategory } from 'src/models/entities/governance/governance.entity'
+import type { GovernancePolicy, PolicyCategory } from 'src/models/entities/governance/governance.entity'
 import {
     getPolicyStatusLabel,
     getPolicyStatusColor,
     getPolicyCategoryLabel,
+    PolicyStatus,
 } from 'src/models/entities/governance/governance.entity'
 import { formatDate } from 'src/utils/date.utils'
 

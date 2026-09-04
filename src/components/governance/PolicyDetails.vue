@@ -8,9 +8,9 @@
                 </div>
                 <div class="row q-gutter-sm">
                     <q-btn flat color="primary" icon="edit" label="Edit" @click="$emit('edit')" />
-                    <q-btn v-if="policy?.status === 'DRAFT'" flat color="positive" icon="check_circle" label="Activate"
+                    <q-btn v-if="policy?.status === PolicyStatus.DRAFT" flat color="positive" icon="check_circle" label="Activate"
                         @click="$emit('activate')" />
-                    <q-btn v-if="policy?.status === 'ACTIVE'" flat color="orange" icon="pause_circle" label="Deactivate"
+                    <q-btn v-if="policy?.status === PolicyStatus.ACTIVE" flat color="orange" icon="pause_circle" label="Deactivate"
                         @click="$emit('deactivate')" />
                     <q-btn flat color="negative" icon="delete" label="Delete" @click="$emit('delete')" />
                 </div>
