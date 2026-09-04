@@ -790,30 +790,6 @@ export const API_ENDPOINTS = {
   },
 
   // ============================================
-  // Improvements/Lessons Endpoints (improvements.routes.ts)
-  // ============================================
-  IMPROVEMENTS: {
-    LESSONS: {
-      BASE: '/improvements/lessons',
-      STATS: '/improvements/lessons/stats',
-      WITH_ACTIONS: '/improvements/lessons/with-actions',
-      BY_SOURCE: (source: string) => `/improvements/lessons/source/${source}`,
-      BY_IDENTIFIED_BY: (userId: string) =>
-        `/improvements/lessons/identified-by/${userId}`,
-      DETAIL: (uuid: string) => `/improvements/lessons/${uuid}/detail`,
-      BY_ID: (uuid: string) => `/improvements/lessons/${uuid}`,
-      UPDATE: (uuid: string) => `/improvements/lessons/${uuid}`,
-      DELETE: (uuid: string) => `/improvements/lessons/${uuid}`,
-      BULK: '/improvements/lessons/bulk',
-      ACTIONS: {
-        ADD: (uuid: string) => `/improvements/lessons/${uuid}/actions`,
-        REMOVE: (uuid: string, actionId: string) =>
-          `/improvements/lessons/${uuid}/actions/${actionId}`,
-      },
-    },
-  },
-
-  // ============================================
   // Cache Endpoints (admin.routes.ts) - Top-level for backward compatibility
   // ============================================
   CACHE: {
@@ -911,6 +887,29 @@ export const API_ENDPOINTS = {
     USER_ATTESTATIONS: {
       BASE: '/attestation/user-attestations',
       CREATE: '/attestation/user-attestations',
+    },
+  },
+
+  // ============================================
+  // Improvements/Lessons Endpoints (improvements.routes.ts)
+  // ============================================
+  IMPROVEMENTS: {
+    LESSONS: {
+      BASE: '/improvements/lessons',
+      STATS: '/improvements/lessons/stats',
+      WITH_ACTIONS: '/improvements/lessons/with-actions',
+      BY_SOURCE: (source: string) => `/improvements/lessons/source/${source}`,
+      BY_IDENTIFIED_BY: (userId: string) => `/improvements/lessons/identified-by/${userId}`,
+      DETAIL: (uuid: string) => `/improvements/lessons/${uuid}/detail`,
+      BY_ID: (uuid: string) => `/improvements/lessons/${uuid}`,
+      UPDATE: (uuid: string) => `/improvements/lessons/${uuid}`,
+      DELETE: (uuid: string) => `/improvements/lessons/${uuid}`,
+      BULK: '/improvements/lessons/bulk',
+      ACTIONS: {
+        ADD: (uuid: string) => `/improvements/lessons/${uuid}/actions`,
+        REMOVE: (uuid: string, actionId: string) =>
+          `/improvements/lessons/${uuid}/actions/${actionId}`,
+      },
     },
   },
 } as const
