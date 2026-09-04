@@ -1,8 +1,12 @@
 @import 'variables';
 
 // ==========================================
-// RESPONSIVE BREAKPOINTS
+// RESPONSIVE BREAKPOINT MIXINS
 // ==========================================
+
+@function strip-unit($value) {
+  @return math.div($value, $value * 0 + 1);
+}
 
 @mixin respond-above($breakpoint) {
   @if map-has-key($breakpoints, $breakpoint) {
@@ -35,30 +39,14 @@
 }
 
 // ==========================================
-// RESPONSIVE TYPOGRAPHY MIXINS
+// MODERN FLUID TYPOGRAPHY MIXINS
 // ==========================================
 
 /**
- * Strip unit from a value for calculations
+ * Fluid font size with clamp() - Modern approach
+ * Usage: @include font-fluid(14px, 20px);
  */
-@function strip-unit($value) {
-  @return math.div($value, $value * 0 + 1);
-}
-
-// ==========================================
-// 1. RESPONSIVE FONT SIZE WITH CLAMP()
-// ==========================================
-
-/**
- * Fluid typography with clamp() - BEST for most use cases
- * 
- * Usage:
- *   @include font-size-fluid(14px, 18px);
- *   @include font-size-fluid(1rem, 1.25rem);
- * 
- * Note: Both parameters should use the same unit type
- */
-@mixin font-size-fluid($min-size, $max-size, $min-width: 320px, $max-width: 1200px) {
+@mixin font-fluid($min-size, $max-size, $min-width: 320px, $max-width: 1920px) {
   $min-size-num: strip-unit($min-size);
   $max-size-num: strip-unit($max-size);
   $min-width-num: strip-unit($min-width);
@@ -68,69 +56,18 @@
   $intercept: $min-size-num - math.div($slope * $min-width-num, 100);
   $unit: unit($min-size);
 
-  font-size: clamp(#{$min-size}, #{$slope}vw + #{$intercept}#{$unit}, #{$max-size});
+  font-size: clamp(
+    #{$min-size},
+    #{$slope}vw + #{$intercept}#{$unit},
+    #{$max-size}
+  );
 }
 
-// ==========================================
-// 2. RESPONSIVE FONT SIZE WITH MEDIA QUERIES
-// ==========================================
-
 /**
- * Responsive font size using media queries
- * Use when clamp() is not supported or you need more control
- * 
- * Usage:
- *   @include font-size-responsive(14px, 16px, 18px);
+ * Fluid font size with rem units - Recommended
+ * Usage: @include font-fluid-rem(0.875rem, 1.25rem);
  */
-@mixin font-size-responsive($mobile-size, $tablet-size: null, $desktop-size: null) {
-  font-size: $mobile-size;
-
-  @if $tablet-size {
-    @include respond-above('md') {
-      font-size: $tablet-size;
-    }
-  }
-
-  @if $desktop-size {
-    @include respond-above('lg') {
-      font-size: $desktop-size;
-    }
-  }
-}
-
-// ==========================================
-// 3. RESPONSIVE FONT SIZE WITH MAP
-// ==========================================
-
-/**
- * Responsive font size using a size map
- * 
- * Usage:
- *   @include font-size-map('base');
- *   @include font-size-map('xl');
- */
-@mixin font-size-map($size-key) {
-  // Mobile first
-  font-size: map-get($font-sizes-mobile, $size-key);
-
-  @include respond-above('md') {
-    font-size: map-get($font-sizes-tablet, $size-key);
-  }
-
-  @include respond-above('lg') {
-    font-size: map-get($font-sizes-desktop, $size-key);
-  }
-}
-
-// ==========================================
-// 4. SIMPLIFIED FLUID FONT SIZE (REM ONLY)
-// ==========================================
-
-/**
- * Simplified fluid font size - uses only rem units
- * Recommended for most use cases
- */
-@mixin font-size-fluid-rem($min-rem, $max-rem, $min-width: 20rem, $max-width: 75rem) {
+@mixin font-fluid-rem($min-rem, $max-rem, $min-width: 20rem, $max-width: 120rem) {
   $min-size-num: strip-unit($min-rem);
   $max-size-num: strip-unit($max-rem);
   $min-width-num: strip-unit($min-width);
@@ -139,239 +76,167 @@
   $slope: math.div($max-size-num - $min-size-num, $max-width-num - $min-width-num) * 100;
   $intercept: $min-size-num - math.div($slope * $min-width-num, 100);
 
-  font-size: clamp(#{$min-rem}, #{$slope}vw + #{$intercept}rem, #{$max-rem});
+  font-size: clamp(
+    #{$min-rem},
+    #{$slope}vw + #{$intercept}rem,
+    #{$max-rem}
+  );
 }
-
-// ==========================================
-// 5. VIEWPORT-BASED FONT SIZE (NO CLAMP)
-// ==========================================
 
 /**
- * Use viewport units with fallback
- * Best for simple scaling without clamp()
+ * Responsive font size with media queries - Use when clamp isn't suitable
+ * Usage: @include font-responsive(14px, 16px, 18px);
  */
-@mixin font-size-vw($min-size, $max-size, $min-vw: 320, $max-vw: 1200) {
-  $min-size-num: strip-unit($min-size);
-  $max-size-num: strip-unit($max-size);
-  $unit: unit($min-size);
+@mixin font-responsive($mobile, $tablet: null, $desktop: null, $large: null) {
+  font-size: $mobile;
 
-  $slope: math.div($max-size-num - $min-size-num, $max-vw - $min-vw) * 100;
-  $intercept: $min-size-num - math.div($slope * $min-vw, 100);
-
-  font-size: calc(#{$slope}vw + #{$intercept}#{$unit});
-
-  @media (max-width: #{$min-vw}px) {
-    font-size: $min-size;
+  @if $tablet {
+    @include respond-above('md') {
+      font-size: $tablet;
+    }
   }
 
-  @media (min-width: #{$max-vw}px) {
-    font-size: $max-size;
+  @if $desktop {
+    @include respond-above('lg') {
+      font-size: $desktop;
+    }
+  }
+
+  @if $large {
+    @include respond-above('xl') {
+      font-size: $large;
+    }
   }
 }
 
-// ==========================================
-// HEADING SIZES WITH RESPONSIVE SCALING
-// ==========================================
+/**
+ * Modern heading mixin with fluid sizing
+ * Usage: @include heading(1) or @include heading('xl')
+ */
+@mixin heading($level: 1) {
+  font-family: $font-family-heading;
+  font-weight: $font-weight-bold;
+  line-height: $line-height-tight;
+  letter-spacing: $letter-spacing-tight;
 
-@mixin heading-size($level: 1) {
-  @if $level == 1 {
-    @include font-size-fluid-rem(1.75rem, 2.5rem);
-    font-weight: $font-weight-bold;
-    line-height: $line-height-tight;
-    letter-spacing: $letter-spacing-tight;
-  } @else if $level == 2 {
-    @include font-size-fluid-rem(1.5rem, 2rem);
-    font-weight: $font-weight-bold;
-    line-height: $line-height-tight;
-    letter-spacing: $letter-spacing-tight;
-  } @else if $level == 3 {
-    @include font-size-fluid-rem(1.25rem, 1.75rem);
+  @if $level == 1 or $level == 'xl' {
+    @include font-fluid-rem(1.75rem, 3rem);
+  } @else if $level == 2 or $level == 'lg' {
+    @include font-fluid-rem(1.5rem, 2.5rem);
+  } @else if $level == 3 or $level == 'md' {
+    @include font-fluid-rem(1.25rem, 2rem);
+  } @else if $level == 4 or $level == 'sm' {
+    @include font-fluid-rem(1.125rem, 1.5rem);
     font-weight: $font-weight-semibold;
-    line-height: $line-height-snug;
-    letter-spacing: $letter-spacing-normal;
-  } @else if $level == 4 {
-    @include font-size-fluid-rem(1.125rem, 1.5rem);
+  } @else if $level == 5 or $level == 'xs' {
+    @include font-fluid-rem(1rem, 1.25rem);
     font-weight: $font-weight-semibold;
-    line-height: $line-height-snug;
-    letter-spacing: $letter-spacing-normal;
-  } @else if $level == 5 {
-    @include font-size-fluid-rem(1rem, 1.25rem);
-    font-weight: $font-weight-semibold;
-    line-height: $line-height-normal;
     letter-spacing: $letter-spacing-normal;
   } @else if $level == 6 {
-    @include font-size-fluid-rem(0.875rem, 1rem);
+    @include font-fluid-rem(0.875rem, 1rem);
     font-weight: $font-weight-semibold;
-    line-height: $line-height-normal;
     letter-spacing: $letter-spacing-wide;
     text-transform: uppercase;
   }
 }
 
 // ==========================================
-// RESPONSIVE LINE HEIGHT
+// RESPONSIVE SPACING MIXINS
 // ==========================================
 
-@mixin line-height-responsive($mobile: $line-height-mobile, $tablet: $line-height-tablet, $desktop: $line-height-desktop) {
-  line-height: $mobile;
+/**
+ * Responsive spacing with clamp()
+ * Usage: @include spacing(padding, 16px, 32px);
+ */
+@mixin spacing($property, $min-size, $max-size, $min-width: 320px, $max-width: 1920px) {
+  $min-size-num: strip-unit($min-size);
+  $max-size-num: strip-unit($max-size);
+  $min-width-num: strip-unit($min-width);
+  $max-width-num: strip-unit($max-width);
+  $unit: unit($min-size);
 
-  @include respond-above('md') {
-    line-height: $tablet;
-  }
+  $slope: math.div($max-size-num - $min-size-num, $max-width-num - $min-width-num) * 100;
+  $intercept: $min-size-num - math.div($slope * $min-width-num, 100);
 
-  @include respond-above('lg') {
-    line-height: $desktop;
-  }
+  #{$property}: clamp(
+    #{$min-size},
+    #{$slope}vw + #{$intercept}#{$unit},
+    #{$max-size}
+  );
 }
 
-// ==========================================
-// TYPOGRAPHY UTILITY MIXINS
-// ==========================================
-
-@mixin font-size($size, $line-height: null) {
-  font-size: $size;
-
-  @if $line-height {
-    line-height: $line-height;
-  }
-}
-
-@mixin truncate($lines: 1) {
-  @if $lines == 1 {
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  } @else {
-    display: -webkit-box;
-    -webkit-line-clamp: $lines;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
-
-@mixin text-gradient($start-color, $end-color, $angle: 135deg) {
-  background: linear-gradient($angle, $start-color, $end-color);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-}
-
-// ==========================================
-// RESPONSIVE SPACING
-// ==========================================
-
-@mixin responsive-spacing($property, $mobile, $tablet: null, $desktop: null) {
-  #{$property}: $mobile;
-
-  @if $tablet {
-    @include respond-above('md') {
-      #{$property}: $tablet;
-    }
+/**
+ * Responsive padding with different values per side
+ * Usage: @include padding(16px, 24px, 16px, 24px);
+ */
+@mixin padding($top: null, $right: null, $bottom: null, $left: null) {
+  @if $top and $right and $bottom and $left {
+    padding: $top $right $bottom $left;
+  } @else if $top and $right and $bottom {
+    padding: $top $right $bottom $right;
+  } @else if $top and $right {
+    padding: $top $right;
+  } @else if $top {
+    padding: $top;
   }
 
-  @if $desktop {
-    @include respond-above('lg') {
-      #{$property}: $desktop;
+  // Mobile adjustments
+  @include respond-below('sm') {
+    @if $top and $right and $bottom and $left {
+      $top-mobile: math.div(strip-unit($top), 1.5) * 1px;
+      $right-mobile: math.div(strip-unit($right), 1.5) * 1px;
+      $bottom-mobile: math.div(strip-unit($bottom), 1.5) * 1px;
+      $left-mobile: math.div(strip-unit($left), 1.5) * 1px;
+      padding: $top-mobile $right-mobile $bottom-mobile $left-mobile;
+    } @else if $top and $right {
+      $top-mobile: math.div(strip-unit($top), 1.5) * 1px;
+      $right-mobile: math.div(strip-unit($right), 1.5) * 1px;
+      padding: $top-mobile $right-mobile;
+    } @else if $top {
+      $top-mobile: math.div(strip-unit($top), 1.5) * 1px;
+      padding: $top-mobile;
     }
   }
 }
 
-@mixin responsive-padding($mobile, $tablet: null, $desktop: null) {
-  @include responsive-spacing(padding, $mobile, $tablet, $desktop);
-}
-
-@mixin responsive-margin($mobile, $tablet: null, $desktop: null) {
-  @include responsive-spacing(margin, $mobile, $tablet, $desktop);
-}
-
 // ==========================================
-// FLEXBOX
+// RESPONSIVE GRID MIXINS
 // ==========================================
 
-@mixin flex-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-@mixin flex-between {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-@mixin flex-column {
-  display: flex;
-  flex-direction: column;
-}
-
-@mixin flex-wrap($wrap: wrap, $gap: null) {
-  display: flex;
-  flex-wrap: $wrap;
-
-  @if $gap {
-    gap: $gap;
-  }
-}
-
-// ==========================================
-// RESPONSIVE GRID
-// ==========================================
-
-@mixin grid($columns: 2, $gap: $spacing-4) {
-  display: grid;
-  grid-template-columns: repeat($columns, 1fr);
-  gap: $gap;
-}
-
-@mixin grid-responsive($min-width: 250px, $gap: $spacing-4) {
+/**
+ * Auto-fit responsive grid
+ * Usage: @include grid-auto(250px, 16px);
+ */
+@mixin grid-auto($min-width: 250px, $gap: $spacing-4) {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax($min-width, 1fr));
   gap: $gap;
 }
 
-@mixin grid-responsive-breakpoints($mobile-columns: 1, $tablet-columns: 2, $desktop-columns: 3, $gap: $spacing-4) {
+/**
+ * Responsive grid with breakpoints
+ * Usage: @include grid-responsive(1, 2, 3, 4);
+ */
+@mixin grid-responsive($mobile: 1, $tablet: 2, $desktop: 3, $large: 4, $gap: $spacing-4) {
   display: grid;
-  grid-template-columns: repeat($mobile-columns, 1fr);
+  grid-template-columns: repeat($mobile, 1fr);
   gap: $gap;
 
   @include respond-above('md') {
-    grid-template-columns: repeat($tablet-columns, 1fr);
+    grid-template-columns: repeat($tablet, 1fr);
   }
 
   @include respond-above('lg') {
-    grid-template-columns: repeat($desktop-columns, 1fr);
+    grid-template-columns: repeat($desktop, 1fr);
+  }
+
+  @include respond-above('xl') {
+    grid-template-columns: repeat($large, 1fr);
   }
 }
 
 // ==========================================
-// POSITIONING
-// ==========================================
-
-@mixin absolute-center {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-}
-
-@mixin absolute-fill {
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  left: 0;
-}
-
-@mixin sticky($top: 0, $z-index: $z-index-sticky) {
-  position: sticky;
-  top: $top;
-  z-index: $z-index;
-}
-
-// ==========================================
-// BUTTONS & INTERACTIVE
+// RESPONSIVE BUTTON MIXINS
 // ==========================================
 
 @mixin button-base {
@@ -388,163 +253,189 @@
   white-space: nowrap;
   border-radius: $border-radius-base;
   cursor: pointer;
-  transition: all $transition-fast;
-  min-height: 44px; // WCAG touch target size
+  transition: all 0.2s ease;
+  min-height: 44px; // WCAG touch target
   min-width: 44px;
+  user-select: none;
+  border: 1px solid transparent;
+
+  @include respond-below('sm') {
+    padding: $spacing-2 $spacing-3;
+    min-height: 40px;
+    font-size: $font-size-sm;
+    border-radius: $border-radius-sm;
+  }
 
   &:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    pointer-events: none;
   }
+
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
+  }
+}
+
+// ==========================================
+// RESPONSIVE CARD MIXINS
+// ==========================================
+
+@mixin card-base {
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-sm;
+  transition: box-shadow 0.25s ease, transform 0.25s ease;
 
   @include respond-below('sm') {
-    padding: $spacing-2 $spacing-3;
-    font-size: $font-size-sm;
-    min-height: 40px;
+    border-radius: $border-radius-md;
   }
 }
 
-@mixin button-variant-css($bg-var, $color: $white) {
-  background-color: $bg-var;
-  color: $color;
-  border: 1px solid $bg-var;
+@mixin card-interactive {
+  @include card-base;
+  cursor: pointer;
 
-  &:hover:not(:disabled) {
-    filter: brightness(0.9);
-    border-color: $bg-var;
-  }
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
 
-  &:active:not(:disabled) {
-    filter: brightness(0.8);
-  }
-}
-
-@mixin button-outline($color) {
-  background-color: transparent;
-  color: $color;
-  border: 1px solid $color;
-
-  &:hover:not(:disabled) {
-    background-color: $color;
-    color: $white;
+    @include respond-below('sm') {
+      transform: translateY(-1px);
+      box-shadow: $shadow-base;
+    }
   }
 }
 
 // ==========================================
-// FORMS
+// RESPONSIVE CONTAINER MIXIN
 // ==========================================
 
-@mixin input-base {
+@mixin container {
   width: 100%;
-  padding: $spacing-2 $spacing-3;
-  font-size: $font-size-base;
-  line-height: $line-height-normal;
-  color: $body-color;
-  background-color: $white;
-  border: 1px solid $border-color;
-  border-radius: $border-radius-base;
-  transition: border-color $transition-fast, box-shadow $transition-fast;
-  min-height: 44px; // WCAG touch target
-
-  &:focus {
-    outline: none;
-    border-color: $primary;
-    box-shadow: 0 0 0 3px rgba($primary, 0.1);
-  }
-
-  &::placeholder {
-    color: $gray-400;
-  }
-
-  &:disabled {
-    background-color: $gray-100;
-    cursor: not-allowed;
-  }
+  max-width: map-get($breakpoints, 'xl');
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: clamp(16px, 4vw, 32px);
+  padding-right: clamp(16px, 4vw, 32px);
 
   @include respond-below('sm') {
-    font-size: $font-size-sm;
-    padding: $spacing-2;
-    min-height: 40px;
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+
+  @include respond-above('2xl') {
+    max-width: map-get($breakpoints, '2xl');
+    padding-left: 48px;
+    padding-right: 48px;
   }
 }
 
 // ==========================================
-// EFFECTS & ANIMATIONS
+// RESPONSIVE IMAGE MIXINS
 // ==========================================
 
-@mixin hover-lift($distance: -4px) {
-  transition: transform $transition-fast;
-
-  &:hover {
-    transform: translateY($distance);
-  }
-}
-
-@mixin hover-scale($scale: 1.05) {
-  transition: transform $transition-fast;
-
-  &:hover {
-    transform: scale($scale);
-  }
-}
-
-@mixin smooth-shadow($hover-intensity: $shadow-md) {
-  transition: box-shadow $transition-fast;
-
-  &:hover {
-    box-shadow: $hover-intensity;
-  }
-}
-
-@mixin keyframes($animation-name) {
-  @keyframes #{$animation-name} {
-    @content;
-  }
-}
-
-@mixin animate($animation, $duration: $transition-base, $iteration: 1, $fill-mode: forwards) {
-  animation: $animation $duration $iteration $fill-mode;
-}
-
-// ==========================================
-// RESPONSIVE IMAGES
-// ==========================================
-
-@mixin responsive-image {
+@mixin image-responsive {
   max-width: 100%;
   height: auto;
   display: block;
 }
 
-@mixin cover-image {
+@mixin image-cover {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
-@mixin contain-image {
+@mixin image-contain {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center;
 }
 
 // ==========================================
-// BACKGROUNDS
+// RESPONSIVE TABLE MIXIN
 // ==========================================
 
-@mixin bg-blur($blur: 10px, $bg-opacity: 0.8) {
-  backdrop-filter: blur($blur);
-  -webkit-backdrop-filter: blur($blur);
-  background-color: rgba($white, $bg-opacity);
+@mixin table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+
+  table {
+    width: 100%;
+    min-width: 600px;
+    border-collapse: collapse;
+
+    @include respond-below('sm') {
+      min-width: 100%;
+      font-size: $font-size-sm;
+    }
+  }
+
+  th, td {
+    padding: $spacing-2 $spacing-3;
+    text-align: left;
+    border-bottom: 1px solid $gray-200;
+
+    @include respond-below('sm') {
+      padding: $spacing-1 $spacing-2;
+    }
+  }
+
+  th {
+    font-weight: $font-weight-semibold;
+    background: $gray-50;
+  }
 }
 
-@mixin gradient-bg($direction, $start, $end) {
-  background: linear-gradient($direction, $start, $end);
+// ==========================================
+// RESPONSIVE MODAL MIXIN
+// ==========================================
+
+@mixin modal-responsive {
+  width: 100%;
+  max-width: 640px;
+  margin: $spacing-4 auto;
+  background: $white;
+  border-radius: $border-radius-lg;
+  box-shadow: $shadow-xl;
+  padding: $spacing-6;
+
+  @include respond-below('sm') {
+    margin: $spacing-2;
+    padding: $spacing-4;
+    border-radius: $border-radius-md;
+    max-height: 95vh;
+    overflow-y: auto;
+  }
+
+  @include respond-above('xl') {
+    max-width: 800px;
+    padding: $spacing-8;
+  }
 }
 
 // ==========================================
-// UTILITIES
+// UTILITY MIXINS
 // ==========================================
+
+@mixin truncate($lines: 1) {
+  @if $lines == 1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
 
 @mixin hide-scrollbar {
   scrollbar-width: none;
@@ -555,87 +446,61 @@
   }
 }
 
-@mixin custom-scrollbar($width: 8px, $track-color: $gray-200, $thumb-color: $gray-400) {
+@mixin custom-scrollbar($width: 8px, $track: $gray-100, $thumb: $gray-400) {
+  scrollbar-width: thin;
+  scrollbar-color: $thumb $track;
+
   &::-webkit-scrollbar {
     width: $width;
     height: $width;
   }
 
   &::-webkit-scrollbar-track {
-    background: $track-color;
+    background: $track;
     border-radius: $border-radius-full;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: $thumb-color;
+    background: $thumb;
     border-radius: $border-radius-full;
 
     &:hover {
-      background: darken($thumb-color, 10%);
+      background: darken($thumb, 10%);
     }
   }
 }
 
-@mixin aspect-ratio($width, $height) {
-  position: relative;
+@mixin absolute-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
 
-  &::before {
-    content: '';
-    display: block;
-    padding-top: math.div($height, $width) * 100%;
-  }
+@mixin flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
 
-  > * {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+@mixin flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+@mixin hover-lift($distance: -4px) {
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+
+  &:hover {
+    transform: translateY($distance);
+    box-shadow: $shadow-md;
   }
 }
 
-@mixin placeholder {
-  &::placeholder {
-    @content;
-  }
-}
-
-@mixin selection {
-  ::selection {
-    @content;
-  }
-}
-
-// ==========================================
-// RESPONSIVE CONTAINER
-// ==========================================
-
-@mixin container {
-  width: 100%;
-  max-width: map-get($container-max-widths, 'xl');
-  margin-left: auto;
-  margin-right: auto;
-  padding-left: $container-padding-x;
-  padding-right: $container-padding-x;
-
-  @include respond-below('sm') {
-    padding-left: $spacing-3;
-    padding-right: $spacing-3;
-  }
-}
-
-// ==========================================
-// PRINT STYLES
-// ==========================================
-
-@mixin print-only {
-  @media print {
-    @content;
-  }
-}
-
-@mixin print-hide {
-  @media print {
-    display: none !important;
+@mixin focus-ring {
+  &:focus-visible {
+    outline: 2px solid $primary;
+    outline-offset: 2px;
   }
 }

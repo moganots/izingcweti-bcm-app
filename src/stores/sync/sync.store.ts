@@ -6,9 +6,11 @@ import type {
   SyncProgress,
   SyncStatistics,
   OperationType,
-  ConflictResolutionStrategy,
 } from '../../types/sync.types';
-import { SyncConflict } from 'src/models/entities/sync/sync.entity';
+import {
+  SyncConflict,
+  ConflictResolutionStrategy,
+} from 'src/models/entities/sync/sync.entity';
 
 export const useSyncStore = defineStore('sync', () => {
   const auth = useAuthStore();

@@ -305,8 +305,8 @@ export class SyncService extends BaseService {
     uuid: string,
     data: {
       resolutionStrategy: ConflictResolutionStrategy;
-      resolvedData?: Record<string, any>;
-      notes?: string;
+      resolvedData?: Record<string, any> | undefined;
+      notes?: string | undefined;
     }
   ): Promise<SyncConflict> {
     const response = await this.post<SyncConflict>(

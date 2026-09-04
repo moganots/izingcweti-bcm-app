@@ -197,6 +197,57 @@ export default {
   },
 
   // ============================================
+  // Sync
+  // ============================================
+  sync: {
+    dashboard: {
+      title: 'Sync Dashboard',
+      subtitle: 'Manage your data synchronization and resolve conflicts',
+      syncNow: 'Sync Now',
+      status: 'Status',
+      syncLater: 'Sync Later',
+      lastSync: 'Last Sync',
+      pendingChanges: 'Pending Changes',
+      conflicts: 'Conflicts',
+      syncing: 'Syncing...',
+      syncComplete: 'Sync completed successfully',
+      history: 'History'
+    },
+    title: 'Synchronization',
+    syncing: 'Syncing...',
+    syncComplete: 'Sync completed',
+    syncFailed: 'Sync failed',
+    offline: 'You are offline',
+    online: 'Back online',
+    pendingChanges: 'Pending Changes',
+    noPendingChanges: 'No pending changes',
+    conflicts: 'Conflicts',
+    noConflicts: 'No conflicts',
+    resolveConflict: 'Resolve Conflict',
+    lastSynced: 'Last synced',
+    never: 'Never',
+    secondsAgo: '{count}s ago',
+    minutesAgo: '{count}m ago',
+    hoursAgo: '{count}h ago',
+    syncNow: 'Sync Now',
+    autoSync: 'Auto Sync',
+    syncInterval: 'Sync Interval',
+    pushChanges: 'Push Changes',
+    pullChanges: 'Pull Changes',
+    conflictStrategy: 'Conflict Resolution Strategy',
+    lastWriteWins: 'Last Write Wins',
+    clientWins: 'Client Wins',
+    serverWins: 'Server Wins',
+    manual: 'Manual Resolution',
+    networkStatus: 'Network Status',
+    wifi: 'WiFi',
+    cellular: 'Cellular',
+    unknown: 'Unknown',
+    retryCount: 'Retry {count}',
+    maxRetries: 'Max Retries',
+  },
+
+  // ============================================
   // Critical Functions
   // ============================================
   criticalFunctions: {
@@ -605,44 +656,6 @@ export default {
     syncConflict: 'Sync conflict detected',
     syncComplete: 'Sync completed successfully',
     systemMaintenance: 'System maintenance scheduled',
-  },
-
-  // ============================================
-  // Sync
-  // ============================================
-  sync: {
-    title: 'Synchronization',
-    syncing: 'Syncing...',
-    syncComplete: 'Sync completed',
-    syncFailed: 'Sync failed',
-    offline: 'You are offline',
-    online: 'Back online',
-    pendingChanges: 'Pending Changes',
-    noPendingChanges: 'No pending changes',
-    conflicts: 'Conflicts',
-    noConflicts: 'No conflicts',
-    resolveConflict: 'Resolve Conflict',
-    lastSynced: 'Last synced',
-    never: 'Never',
-    secondsAgo: '{count}s ago',
-    minutesAgo: '{count}m ago',
-    hoursAgo: '{count}h ago',
-    syncNow: 'Sync Now',
-    autoSync: 'Auto Sync',
-    syncInterval: 'Sync Interval',
-    pushChanges: 'Push Changes',
-    pullChanges: 'Pull Changes',
-    conflictStrategy: 'Conflict Resolution Strategy',
-    lastWriteWins: 'Last Write Wins',
-    clientWins: 'Client Wins',
-    serverWins: 'Server Wins',
-    manual: 'Manual Resolution',
-    networkStatus: 'Network Status',
-    wifi: 'WiFi',
-    cellular: 'Cellular',
-    unknown: 'Unknown',
-    retryCount: 'Retry {count}',
-    maxRetries: 'Max Retries',
   },
 
   // ============================================

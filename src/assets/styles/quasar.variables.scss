@@ -1,59 +1,141 @@
-// Quasar SCSS (& Sass) Variables
-// --------------------------------------------------
-// To customize the look and feel of this app, you can override
-// the Sass/SCSS variables found in Quasar's source Sass/SCSS files.
-
 // ============================================
-// BRAND COLORS - BCM Application Theme
+// Quasar Variables - Modern Responsive Theme
 // ============================================
 
-// Primary - Professional Blue
+// Brand Colors
 $primary   : #1a73e8;
 $secondary : #5c6bc0;
 $accent    : #ff6f00;
 
-// Dark Theme Colors
+// Dark Theme
 $dark      : #1a1f36;
 $dark-page : #121212;
 
 // Semantic Colors
-$positive  : #4caf50;
-$negative  : #f44336;
-$info      : #2196f3;
-$warning   : #ff9800;
+$positive  : #06d6a0;
+$negative  : #ef476f;
+$info      : #118ab2;
+$warning   : #ffd166;
 
-// ============================================
-// TYPOGRAPHY - System Font Stack
-// ============================================
+// Typography - Modern System Font Stack
+$typography-font-family: "Inter", -apple-system, BlinkMacSystemFont,
+                         "Segoe UI", Roboto, "Helvetica Neue", Arial,
+                         "Noto Sans", sans-serif,
+                         "Apple Color Emoji", "Segoe UI Emoji",
+                         "Segoe UI Symbol", "Noto Color Emoji";
 
-// System font stack for optimal performance
-$typography-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
-                         "Helvetica Neue", Arial, "Noto Sans", sans-serif,
-                         "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol",
-                         "Noto Color Emoji";
+// Typography - Sizes (using CSS clamp for fluid sizing)
+$typography: (
+  'headline': (
+    size: clamp(2rem, 4vw, 3.5rem),
+    weight: 700,
+    line-height: 1.2,
+    letter-spacing: -0.02em,
+  ),
+  'h1': (
+    size: clamp(1.75rem, 3.5vw, 3rem),
+    weight: 700,
+    line-height: 1.2,
+    letter-spacing: -0.02em,
+  ),
+  'h2': (
+    size: clamp(1.5rem, 3vw, 2.5rem),
+    weight: 700,
+    line-height: 1.25,
+    letter-spacing: -0.02em,
+  ),
+  'h3': (
+    size: clamp(1.25rem, 2.5vw, 2rem),
+    weight: 600,
+    line-height: 1.3,
+    letter-spacing: -0.01em,
+  ),
+  'h4': (
+    size: clamp(1.125rem, 2vw, 1.5rem),
+    weight: 600,
+    line-height: 1.35,
+  ),
+  'h5': (
+    size: clamp(1rem, 1.5vw, 1.25rem),
+    weight: 600,
+    line-height: 1.4,
+  ),
+  'h6': (
+    size: clamp(0.875rem, 1vw, 1rem),
+    weight: 600,
+    line-height: 1.4,
+    letter-spacing: 0.02em,
+    text-transform: uppercase,
+  ),
+  'subtitle1': (
+    size: clamp(0.9375rem, 1.2vw, 1.125rem),
+    weight: 400,
+    line-height: 1.5,
+  ),
+  'subtitle2': (
+    size: clamp(0.8125rem, 1vw, 1rem),
+    weight: 500,
+    line-height: 1.5,
+  ),
+  'body1': (
+    size: clamp(0.9375rem, 1.2vw, 1.125rem),
+    weight: 400,
+    line-height: 1.6,
+  ),
+  'body2': (
+    size: clamp(0.8125rem, 1vw, 1rem),
+    weight: 400,
+    line-height: 1.5,
+  ),
+  'caption': (
+    size: clamp(0.6875rem, 0.8vw, 0.875rem),
+    weight: 400,
+    line-height: 1.4,
+  ),
+  'overline': (
+    size: clamp(0.625rem, 0.7vw, 0.75rem),
+    weight: 600,
+    line-height: 1.5,
+    letter-spacing: 0.08em,
+    text-transform: uppercase,
+  ),
+);
 
-// ============================================
-// BRANDING
-// ============================================
-
+// Branding
 $brand-primary   : $primary;
 $brand-secondary : $secondary;
 $brand-accent    : $accent;
 
-// ============================================
-// APP LAYOUT
-// ============================================
+// Layout
+$app-header-height : clamp(48px, 6vh, 64px);
+$app-footer-height : clamp(48px, 6vh, 64px);
 
-$app-header-height : 56px;
-$app-footer-height : 56px;
-
-// ============================================
-// BREAKPOINTS - Mobile-First
-// ============================================
-
-$breakpoint-xs : 375px;
-$breakpoint-sm : 640px;
+// Breakpoints
+$breakpoint-xs : 320px;
+$breakpoint-sm : 480px;
 $breakpoint-md : 768px;
 $breakpoint-lg : 1024px;
-$breakpoint-xl : 1280px;
-$breakpoint-2xl: 1536px;
+$breakpoint-xl : 1440px;
+$breakpoint-2xl: 1920px;
+
+// Spacing - Responsive
+$space-base: clamp(4px, 0.5vw, 8px);
+$space-sm: $space-base * 1.5;
+$space-md: $space-base * 2.5;
+$space-lg: $space-base * 4;
+$space-xl: $space-base * 6;
+$space-2xl: $space-base * 8;
+
+// Border Radius
+$border-radius-sm: clamp(4px, 0.3vw, 6px);
+$border-radius-base: clamp(6px, 0.5vw, 8px);
+$border-radius-lg: clamp(8px, 0.8vw, 12px);
+$border-radius-xl: clamp(12px, 1vw, 16px);
+$border-radius-2xl: clamp(16px, 1.5vw, 24px);
+
+// Shadows
+$shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+$shadow-base: 0 4px 6px rgba(0, 0, 0, 0.07);
+$shadow-md: 0 10px 15px rgba(0, 0, 0, 0.08);
+$shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.1);
+$shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15);

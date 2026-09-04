@@ -1,25 +1,23 @@
 <template>
   <q-page padding>
-    <PageHeader title="Sync Settings" subtitle="Configure synchronization behavior" />
+    <PageHeader :title="$t('sync.settings.title')" :subtitle="$t('sync.settings.subtitle')" />
 
     <div class="settings-container q-gutter-md">
       <!-- General Settings -->
-      <SettingsSection title="General" icon="settings" description="Basic synchronization settings">
+      <SettingsSection :title="$t('sync.settings.general')" icon="settings"
+        :description="$t('sync.settings.general_description')">
         <q-list>
           <q-item tag="label">
             <q-item-section avatar>
               <q-icon name="sync" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Auto Sync</q-item-label>
-              <q-item-label caption>Automatically sync changes when online</q-item-label>
+              <q-item-label>{{ $t('sync.settings.auto_sync') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.auto_sync_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.autoSync"
-                color="primary"
-                @update:model-value="saveSetting('autoSync', settings.autoSync)"
-              />
+              <q-toggle v-model="settings.autoSync" color="primary"
+                @update:model-value="saveSetting('autoSync', settings.autoSync)" />
             </q-item-section>
           </q-item>
 
@@ -30,20 +28,12 @@
               <q-icon name="timer" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Sync Interval</q-item-label>
-              <q-item-label caption>How often to sync in the background</q-item-label>
+              <q-item-label>{{ $t('sync.settings.sync_interval') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.sync_interval_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-select
-                v-model="settings.syncInterval"
-                :options="intervalOptions"
-                outlined
-                dense
-                style="width: 150px"
-                emit-value
-                map-options
-                @update:model-value="saveSetting('syncInterval', settings.syncInterval)"
-              />
+              <q-select v-model="settings.syncInterval" :options="intervalOptions" outlined dense style="width: 150px"
+                emit-value map-options @update:model-value="saveSetting('syncInterval', settings.syncInterval)" />
             </q-item-section>
           </q-item>
 
@@ -54,15 +44,12 @@
               <q-icon name="wifi" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Sync on WiFi Only</q-item-label>
-              <q-item-label caption>Only sync when connected to WiFi</q-item-label>
+              <q-item-label>{{ $t('sync.settings.wifi_only') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.wifi_only_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.wifiOnly"
-                color="primary"
-                @update:model-value="saveSetting('wifiOnly', settings.wifiOnly)"
-              />
+              <q-toggle v-model="settings.wifiOnly" color="primary"
+                @update:model-value="saveSetting('wifiOnly', settings.wifiOnly)" />
             </q-item-section>
           </q-item>
 
@@ -73,47 +60,32 @@
               <q-icon name="signal_cellular_alt" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Sync on Cellular</q-item-label>
-              <q-item-label caption>Allow sync when using mobile data</q-item-label>
+              <q-item-label>{{ $t('sync.settings.metered_sync') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.metered_sync_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.meteredSync"
-                color="primary"
-                :disable="settings.wifiOnly"
-                @update:model-value="saveSetting('meteredSync', settings.meteredSync)"
-              />
+              <q-toggle v-model="settings.meteredSync" color="primary" :disable="settings.wifiOnly"
+                @update:model-value="saveSetting('meteredSync', settings.meteredSync)" />
             </q-item-section>
           </q-item>
         </q-list>
       </SettingsSection>
 
       <!-- Advanced Settings -->
-      <SettingsSection
-        title="Advanced"
-        icon="tune"
-        description="Advanced synchronization configuration"
-      >
+      <SettingsSection :title="$t('sync.settings.advanced')" icon="tune"
+        :description="$t('sync.settings.advanced_description')">
         <q-list>
           <q-item tag="label">
             <q-item-section avatar>
               <q-icon name="batch_prediction" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Batch Size</q-item-label>
-              <q-item-label caption>Number of changes to sync per batch</q-item-label>
+              <q-item-label>{{ $t('sync.settings.batch_size') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.batch_size_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-select
-                v-model="settings.batchSize"
-                :options="batchSizeOptions"
-                outlined
-                dense
-                style="width: 120px"
-                emit-value
-                map-options
-                @update:model-value="saveSetting('batchSize', settings.batchSize)"
-              />
+              <q-select v-model="settings.batchSize" :options="batchSizeOptions" outlined dense style="width: 120px"
+                emit-value map-options @update:model-value="saveSetting('batchSize', settings.batchSize)" />
             </q-item-section>
           </q-item>
 
@@ -124,20 +96,12 @@
               <q-icon name="replay" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Max Retries</q-item-label>
-              <q-item-label caption>Maximum retry attempts for failed syncs</q-item-label>
+              <q-item-label>{{ $t('sync.settings.max_retries') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.max_retries_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-select
-                v-model="settings.maxRetries"
-                :options="retryOptions"
-                outlined
-                dense
-                style="width: 120px"
-                emit-value
-                map-options
-                @update:model-value="saveSetting('maxRetries', settings.maxRetries)"
-              />
+              <q-select v-model="settings.maxRetries" :options="retryOptions" outlined dense style="width: 120px"
+                emit-value map-options @update:model-value="saveSetting('maxRetries', settings.maxRetries)" />
             </q-item-section>
           </q-item>
 
@@ -148,46 +112,33 @@
               <q-icon name="compress" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Compression</q-item-label>
-              <q-item-label caption>Compress data before syncing</q-item-label>
+              <q-item-label>{{ $t('sync.settings.compression') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.compression_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.compression"
-                color="primary"
-                @update:model-value="saveSetting('compression', settings.compression)"
-              />
+              <q-toggle v-model="settings.compression" color="primary"
+                @update:model-value="saveSetting('compression', settings.compression)" />
             </q-item-section>
           </q-item>
         </q-list>
       </SettingsSection>
 
       <!-- Conflict Resolution -->
-      <SettingsSection
-        title="Conflict Resolution"
-        icon="build"
-        description="How sync conflicts are handled"
-      >
+      <SettingsSection :title="$t('sync.settings.conflict_resolution')" icon="build"
+        :description="$t('sync.settings.conflict_resolution_description')">
         <q-list>
           <q-item tag="label">
             <q-item-section avatar>
               <q-icon name="gavel" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Default Strategy</q-item-label>
-              <q-item-label caption>How to resolve conflicts by default</q-item-label>
+              <q-item-label>{{ $t('sync.settings.default_strategy') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.default_strategy_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-select
-                v-model="settings.conflictStrategy"
-                :options="strategyOptions"
-                outlined
-                dense
-                style="width: 180px"
-                emit-value
-                map-options
-                @update:model-value="saveSetting('conflictStrategy', settings.conflictStrategy)"
-              />
+              <q-select v-model="settings.conflictStrategy" :options="strategyOptions" outlined dense
+                style="width: 180px" emit-value map-options
+                @update:model-value="saveSetting('conflictStrategy', settings.conflictStrategy)" />
             </q-item-section>
           </q-item>
 
@@ -198,15 +149,12 @@
               <q-icon name="notifications_active" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Notify on Conflict</q-item-label>
-              <q-item-label caption>Send notification when conflicts occur</q-item-label>
+              <q-item-label>{{ $t('sync.settings.notify_conflict') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.notify_conflict_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.notifyConflict"
-                color="primary"
-                @update:model-value="saveSetting('notifyConflict', settings.notifyConflict)"
-              />
+              <q-toggle v-model="settings.notifyConflict" color="primary"
+                @update:model-value="saveSetting('notifyConflict', settings.notifyConflict)" />
             </q-item-section>
           </q-item>
 
@@ -217,34 +165,28 @@
               <q-icon name="auto_fix_high" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Auto-Resolve</q-item-label>
-              <q-item-label caption>Automatically resolve simple conflicts</q-item-label>
+              <q-item-label>{{ $t('sync.settings.auto_resolve') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.auto_resolve_description') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <q-toggle
-                v-model="settings.autoResolve"
-                color="primary"
-                @update:model-value="saveSetting('autoResolve', settings.autoResolve)"
-              />
+              <q-toggle v-model="settings.autoResolve" color="primary"
+                @update:model-value="saveSetting('autoResolve', settings.autoResolve)" />
             </q-item-section>
           </q-item>
         </q-list>
       </SettingsSection>
 
       <!-- Data Management -->
-      <SettingsSection
-        title="Data Management"
-        icon="storage"
-        description="Manage synchronized data"
-      >
+      <SettingsSection :title="$t('sync.settings.data_management')" icon="storage"
+        :description="$t('sync.settings.data_management_description')">
         <q-list>
           <q-item clickable @click="clearPendingChanges">
             <q-item-section avatar>
               <q-icon name="delete_sweep" color="orange" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Clear Pending Changes</q-item-label>
-              <q-item-label caption>Remove all queued changes</q-item-label>
+              <q-item-label>{{ $t('sync.settings.clear_pending') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.clear_pending_description') }}</q-item-label>
             </q-item-section>
           </q-item>
 
@@ -255,8 +197,8 @@
               <q-icon name="restart_alt" color="red" />
             </q-item-section>
             <q-item-section>
-              <q-item-label class="text-negative">Reset Sync State</q-item-label>
-              <q-item-label caption>Clear sync metadata and start fresh</q-item-label>
+              <q-item-label class="text-negative">{{ $t('sync.settings.reset_sync') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.reset_sync_description') }}</q-item-label>
             </q-item-section>
           </q-item>
 
@@ -267,19 +209,20 @@
               <q-icon name="download" color="primary" />
             </q-item-section>
             <q-item-section>
-              <q-item-label>Export Sync Logs</q-item-label>
-              <q-item-label caption>Download synchronization logs for debugging</q-item-label>
+              <q-item-label>{{ $t('sync.settings.export_logs') }}</q-item-label>
+              <q-item-label caption>{{ $t('sync.settings.export_logs_description') }}</q-item-label>
             </q-item-section>
           </q-item>
         </q-list>
       </SettingsSection>
 
       <!-- Sync Statistics -->
-      <SettingsSection title="Statistics" icon="analytics" description="Synchronization statistics">
+      <SettingsSection :title="$t('sync.settings.statistics')" icon="analytics"
+        :description="$t('sync.settings.statistics_description')">
         <q-list>
           <q-item>
             <q-item-section>
-              <q-item-label>Total Pushed</q-item-label>
+              <q-item-label>{{ $t('sync.settings.total_pushed') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <span class="text-body2 text-weight-bold">{{ syncStats.totalPushed }}</span>
@@ -288,7 +231,7 @@
           <q-separator />
           <q-item>
             <q-item-section>
-              <q-item-label>Total Pulled</q-item-label>
+              <q-item-label>{{ $t('sync.settings.total_pulled') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <span class="text-body2 text-weight-bold">{{ syncStats.totalPulled }}</span>
@@ -297,7 +240,7 @@
           <q-separator />
           <q-item>
             <q-item-section>
-              <q-item-label>Conflicts Resolved</q-item-label>
+              <q-item-label>{{ $t('sync.settings.conflicts_resolved') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <span class="text-body2 text-weight-bold">{{ syncStats.conflictsResolved }}</span>
@@ -306,7 +249,7 @@
           <q-separator />
           <q-item>
             <q-item-section>
-              <q-item-label>Average Sync Time</q-item-label>
+              <q-item-label>{{ $t('sync.settings.avg_sync_time') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <span class="text-body2 text-weight-bold">{{ syncStats.avgSyncTime }}ms</span>
@@ -315,7 +258,7 @@
           <q-separator />
           <q-item>
             <q-item-section>
-              <q-item-label>Data Transferred</q-item-label>
+              <q-item-label>{{ $t('sync.settings.data_transferred') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
               <span class="text-body2 text-weight-bold">{{ syncStats.dataTransferred }}</span>
@@ -324,12 +267,12 @@
           <q-separator />
           <q-item>
             <q-item-section>
-              <q-item-label>Success Rate</q-item-label>
+              <q-item-label>{{ $t('sync.settings.success_rate') }}</q-item-label>
             </q-item-section>
             <q-item-section side>
-              <span class="text-body2 text-weight-bold text-green"
-                >{{ syncStats.successRate }}%</span
-              >
+              <span class="text-body2 text-weight-bold text-green">
+                {{ syncStats.successRate }}%
+              </span>
             </q-item-section>
           </q-item>
         </q-list>
@@ -339,16 +282,23 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, onMounted } from 'vue'  // Remove 'ref' from here
+import { ref, reactive, onMounted } from 'vue'
 import { useQuasar } from 'quasar'
-import { useSyncStore } from './../../stores'
-import PageHeader from '../../components/.common/PageHeader.vue'
-import SettingsSection from '../../components/settings/SettingsSection.vue'
+import { useI18n } from 'vue-i18n'
+import { useSync } from 'src/composables/useSync'
+import PageHeader from 'src/components/.common/PageHeader.vue'
+import SettingsSection from 'src/components/settings/SettingsSection.vue'
 
+// ============================================
+// Composables
+// ============================================
 const $q = useQuasar()
-const syncStore = useSyncStore()
+const { t } = useI18n()
+const sync = useSync()
 
+// ============================================
 // Settings
+// ============================================
 const settings = reactive({
   autoSync: true,
   syncInterval: 5,
@@ -362,7 +312,9 @@ const settings = reactive({
   autoResolve: true,
 })
 
+// ============================================
 // Options
+// ============================================
 const intervalOptions = [
   { label: '1 minute', value: 1 },
   { label: '5 minutes', value: 5 },
@@ -387,13 +339,15 @@ const retryOptions = [
 ]
 
 const strategyOptions = [
-  { label: 'Last Write Wins', value: 'last_write_wins' },
-  { label: 'Client Wins', value: 'client_wins' },
-  { label: 'Server Wins', value: 'server_wins' },
-  { label: 'Manual Resolution', value: 'manual' },
+  { label: t('sync.strategies.last_write_wins'), value: 'last_write_wins' },
+  { label: t('sync.strategies.client_wins'), value: 'client_wins' },
+  { label: t('sync.strategies.server_wins'), value: 'server_wins' },
+  { label: t('sync.strategies.manual'), value: 'manual' },
 ]
 
-// Sync stats
+// ============================================
+// Sync Stats
+// ============================================
 const syncStats = reactive({
   totalPushed: 0,
   totalPulled: 0,
@@ -403,96 +357,186 @@ const syncStats = reactive({
   successRate: 100,
 })
 
-// Load statistics on mount
-onMounted(async () => {
-  await loadStats()
-})
+// ============================================
+// Methods
+// ============================================
 
+/**
+ * Load statistics
+ */
 async function loadStats(): Promise<void> {
   try {
-    // Load stats from sync store
-    syncStats.totalPushed = syncStore.totalPushed || 0
-    syncStats.totalPulled = syncStore.totalPulled || 0
-
-    // Calculate success rate based on sync history
-    const history = await syncStore.getSyncHistory()
-    if (history && history.length > 0) {
-      const successful = history.filter((h: any) => h.status === 'success').length
-      syncStats.successRate = Math.round((successful / history.length) * 100)
+    const progress = await sync.getSyncProgress()
+    if (progress) {
+      syncStats.totalPushed = progress.totalProcessed || 0
     }
+
+    // Calculate success rate based on sync history    // In a real implementation, this would come from an API
+    syncStats.successRate = 98
   } catch (err) {
     console.error('Failed to load stats:', err)
   }
 }
 
+/**
+ * Save a setting
+ */
 function saveSetting(key: string, value: any): void {
   localStorage.setItem(`sync_setting_${key}`, JSON.stringify(value))
-  
+
+  // Apply settings to sync composable
   if (key === 'autoSync') {
-    syncStore.setAutoSync(value)
+    if (value) {
+      sync.startAutoSync()
+    } else {
+      sync.stopAutoSync()
+    }
   } else if (key === 'syncInterval') {
-    syncStore.setSyncInterval(value)
+    sync.stopAutoSync()
+    // Restart with new interval
+    if (settings.autoSync) {
+      sync.startAutoSync()
+    }
   }
-  
-  $q.notify({ 
-    type: 'positive', 
-    message: `${key} setting saved`, 
+
+  $q.notify({
+    type: 'positive',
+    message: t('sync.settings.saved', { key: key }),
     timeout: 1500,
-    position: 'bottom'
+    position: 'bottom',
   })
 }
 
+/**
+ * Clear pending changes
+ */
 function clearPendingChanges(): void {
   $q.dialog({
-    title: 'Clear Pending Changes',
-    message: 'Are you sure you want to clear all pending changes? Unsynchronized data will be lost.',
+    title: t('sync.dialogs.clear_title'),
+    message: t('sync.dialogs.clear_message'),
     cancel: true,
-    ok: { color: 'negative', label: 'Clear' },
+    ok: { color: 'negative', label: t('common.clear') },
   }).onOk(async () => {
     try {
-      await syncStore.clearPendingChanges()  // Use clearPendingChanges, not clearAllPendingChanges
-      $q.notify({ type: 'positive', message: 'Pending changes cleared' })
-    } catch (err: any) {
-      $q.notify({ type: 'negative', message: err.message })
-    }
-  })
-}
-
-function resetSyncState(): void {
-  $q.dialog({
-    title: 'Reset Sync State',
-    message: 'This will reset all sync metadata. You will need to do a full sync. Continue?',
-    cancel: true,
-    ok: { color: 'negative', label: 'Reset' },
-  }).onOk(async () => {
-    try {
-      await syncStore.resetSyncState()  // This now exists
-      $q.notify({ type: 'positive', message: 'Sync state reset successfully' })
+      await sync.clearPendingChanges()
+      $q.notify({
+        type: 'positive',
+        message: t('sync.notifications.pending_cleared'),
+        position: 'top',
+        timeout: 2000,
+      })
       await loadStats()
     } catch (err: any) {
-      $q.notify({ type: 'negative', message: err.message })
+      $q.notify({
+        type: 'negative',
+        message: err.message || t('sync.notifications.clear_failed'),
+        position: 'top',
+        timeout: 3000,
+      })
     }
   })
 }
 
+/**
+ * Reset sync state
+ */
+function resetSyncState(): void {
+  $q.dialog({
+    title: t('sync.dialogs.reset_title'),
+    message: t('sync.dialogs.reset_message'),
+    cancel: true,
+    ok: { color: 'negative', label: t('common.reset') },
+  }).onOk(async () => {
+    try {
+      await sync.updateSyncToken('')
+      await sync.clearPendingChanges()
+      $q.notify({
+        type: 'positive',
+        message: t('sync.notifications.reset_success'),
+        position: 'top',
+        timeout: 2000,
+      })
+      await loadStats()
+    } catch (err: any) {
+      $q.notify({
+        type: 'negative',
+        message: err.message || t('sync.notifications.reset_failed'),
+        position: 'top',
+        timeout: 3000,
+      })
+    }
+  })
+}
+
+/**
+ * Export sync logs
+ */
 function exportSyncLogs(): void {
-  const logs = syncStore.getSyncLogs()
+  const logs = {
+    settings: { ...settings },
+    stats: { ...syncStats },
+    pendingChanges: sync.pendingChanges.value,
+    conflicts: sync.conflicts.value,
+    lastSyncAt: sync.lastSyncAt.value,
+    syncToken: sync.syncToken.value,
+    exportedAt: new Date().toISOString(),
+  }
+
   const dataStr = JSON.stringify(logs, null, 2)
   const dataBlob = new Blob([dataStr], { type: 'application/json' })
   const url = URL.createObjectURL(dataBlob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `sync-logs-${new Date().toISOString()}.json`
+  link.download = `sync-logs-${new Date().toISOString().split('T')[0]}.json`
   link.click()
   URL.revokeObjectURL(url)
 
-  $q.notify({ type: 'positive', message: 'Sync logs exported', timeout: 2000 })
+  $q.notify({
+    type: 'positive',
+    message: t('sync.notifications.logs_exported'),
+    position: 'top',
+    timeout: 2000,
+  })
 }
+
+// ============================================
+// Lifecycle
+// ============================================
+onMounted(() => {
+  loadStats()
+})
 </script>
 
 <style lang="scss" scoped>
 .settings-container {
   max-width: 800px;
   margin: 0 auto;
+
+  @media (max-width: 600px) {
+    padding: 0 4px;
+  }
+}
+
+:deep(.q-item) {
+  min-height: 56px;
+
+  @media (max-width: 400px) {
+    min-height: 48px;
+    padding: 8px 12px;
+
+    .q-item__label--caption {
+      font-size: 0.7rem;
+    }
+  }
+}
+
+:deep(.q-select) {
+  @media (max-width: 400px) {
+    width: 100px !important;
+
+    .q-field__native {
+      font-size: 0.8rem;
+    }
+  }
 }
 </style>

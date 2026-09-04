@@ -18,7 +18,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "clean": "quasar clean && rm -rf node_modules android dist logs package-lock.json yarn.lock deploy*.* izingcweti-bcm-app*.* izingcweti-bcm-app*.* izingcweti-bcm-app*.* izingcweti_bcm_app*.* izingcweti_bcm_app*.* izingcweti_bcm_app*.* izingcweti-app*.* izingcweti_app*.* bcm-app*.* bcm_app*.* izingcweti_bcm_app*.* dev-app*.* uat-app*.* sit-app*.* stg-app*.* dr-app*.* prod-app*.* dev_app*.* uat_app*.* sit_app*.* stg_app*.* dr_app*.* prod_app*.* devapp*.* uatapp*.* sitapp*.* stgapp*.* drapp*.* prodapp*.*",
+    "clean": "rm -rf node_modules android dist logs package-lock.json yarn.lock deploy*.* izingcweti-bcm-app*.* izingcweti-bcm-app*.* izingcweti-bcm-app*.* izingcweti_bcm_app*.* izingcweti_bcm_app*.* izingcweti_bcm_app*.* izingcweti-app*.* izingcweti_app*.* bcm-app*.* bcm_app*.* izingcweti_bcm_app*.* dev-app*.* uat-app*.* sit-app*.* stg-app*.* dr-app*.* prod-app*.* dev_app*.* uat_app*.* sit_app*.* stg_app*.* dr_app*.* prod_app*.* devapp*.* uatapp*.* sitapp*.* stgapp*.* drapp*.* prodapp*.*",
     "lint": "eslint --ext .js,.ts,.vue ./",
     "format": "prettier --write \"**/*.{js,ts,vue,scss,html,md,json}\" --ignore-path .gitignore",
     "test": "echo \"No test specified\" && exit 0",
@@ -43,7 +43,7 @@
     "clean:build": "yarn clean && yarn && yarn build",
     "sync:run:android:app": "npx cap add android && npx cap sync android && npx cap run android",
     "dev:chrome": "cp -f .env_files/.env.local .env && quasar dev -m spa --open --browser chrome",
-    "clean:build:chrome": "cp -f .env_files/.env.local .env && yarn clean && yarn && yarn build && yarn dev:chrome",
+    "clean:build:chrome": "cp -f .env_files/.env.local .env && yarn clean:build && yarn dev:chrome",
     "build:serve": "cp -f .env_files/.env.local .env && yarn build && npx serve dist/spa"
   },
   "dependencies": {

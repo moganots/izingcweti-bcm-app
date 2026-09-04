@@ -1,5 +1,5 @@
 // ============================================
-// Business Continuity Management System - Consolidated Theme
+// BCM App - Modern Responsive Theme
 // ============================================
 
 @use 'sass:math';
@@ -7,8 +7,9 @@
 @import 'mixins';
 
 // ============================================
-// Color Palette
+// CSS Variables - Modern Theming
 // ============================================
+
 :root {
   // Primary Brand Colors
   --primary: #1a73e8;
@@ -27,30 +28,30 @@
   --accent-dark: #c43e00;
 
   // Status Colors
-  --success: #4caf50;
-  --success-light: #c8e6c9;
-  --success-dark: #2e7d32;
-  --warning: #ff9800;
-  --warning-light: #ffe0b2;
-  --warning-dark: #e65100;
-  --error: #f44336;
-  --error-light: #ffcdd2;
-  --error-dark: #c62828;
-  --info: #2196f3;
-  --info-light: #bbdefb;
-  --info-dark: #0d47a1;
+  --success: #06d6a0;
+  --success-light: #d1fae5;
+  --success-dark: #059669;
+  --warning: #ffd166;
+  --warning-light: #fef3c7;
+  --warning-dark: #d97706;
+  --error: #ef476f;
+  --error-light: #fce4ec;
+  --error-dark: #dc2626;
+  --info: #118ab2;
+  --info-light: #e0f2fe;
+  --info-dark: #0891b2;
 
   // Neutral Colors
-  --grey-1: #fafafa;
-  --grey-2: #f5f5f5;
-  --grey-3: #eeeeee;
-  --grey-4: #e0e0e0;
-  --grey-5: #bdbdbd;
-  --grey-6: #9e9e9e;
-  --grey-7: #757575;
-  --grey-8: #616161;
-  --grey-9: #424242;
-  --grey-10: #212121;
+  --gray-50: #f8f9fa;
+  --gray-100: #f1f3f5;
+  --gray-200: #e9ecef;
+  --gray-300: #dee2e6;
+  --gray-400: #ced4da;
+  --gray-500: #adb5bd;
+  --gray-600: #6c757d;
+  --gray-700: #495057;
+  --gray-800: #343a40;
+  --gray-900: #212529;
 
   // Background Colors
   --bg-page: #f5f7fa;
@@ -58,41 +59,43 @@
   --bg-sidebar: #1a1f36;
 
   // Text Colors
-  --text-primary: #212121;
-  --text-secondary: #757575;
-  --text-muted: #9e9e9e;
+  --text-primary: #212529;
+  --text-secondary: #495057;
+  --text-muted: #6c757d;
   --text-on-primary: #ffffff;
   --text-on-dark: #ffffff;
 
   // Border Colors
-  --border-color: #e0e0e0;
-  --border-light: #f0f0f0;
+  --border-color: #e9ecef;
+  --border-light: #f1f3f5;
 
-  // Shadow
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.16);
+  // Shadows
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 10px 15px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 20px 25px rgba(0, 0, 0, 0.1);
+  --shadow-xl: 0 25px 50px rgba(0, 0, 0, 0.15);
 
   // Border Radius
-  --radius-sm: 4px;
+  --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
   --radius-xl: 16px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 
   // Layout
   --header-height: 56px;
   --footer-height: 56px;
   --drawer-width: 280px;
-  --max-content-width: 1200px;
+  --max-content-width: 1440px;
 
   // Transitions
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
   --transition-slow: 350ms ease;
 
-  // Z-Index Scale
+  // Z-Index
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;
@@ -105,16 +108,20 @@
 // ============================================
 // Global Reset & Base Styles
 // ============================================
+
 *,
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
   font-size: 16px;
   -webkit-text-size-adjust: 100%;
   -webkit-tap-highlight-color: transparent;
+  scroll-behavior: smooth;
 
   @include respond-below('sm') {
     font-size: 15px;
@@ -127,8 +134,8 @@ html {
 
 body {
   font-family: $font-family-base;
-  font-size: map-get($font-sizes-mobile, 'base');
-  line-height: $line-height-mobile;
+  font-size: $font-size-base;
+  line-height: $line-height-normal;
   color: var(--text-primary);
   background-color: var(--bg-page);
   margin: 0;
@@ -137,53 +144,34 @@ body {
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
 
-  @include respond-above('md') {
-    font-size: map-get($font-sizes-tablet, 'base');
-    line-height: $line-height-tablet;
-  }
-
-  @include respond-above('lg') {
-    font-size: map-get($font-sizes-desktop, 'base');
-    line-height: $line-height-desktop;
-  }
-}
-
-a {
-  color: var(--primary);
-  text-decoration: none;
-
-  &:hover {
-    text-decoration: underline;
-  }
-
   @include respond-below('sm') {
-    padding: $spacing-1 0;
+    line-height: $line-height-mobile;
   }
 }
 
-img {
-  @include responsive-image;
-}
-
 // ============================================
-// Responsive Typography
+// Modern Responsive Typography
 // ============================================
 
-// Headings with responsive sizing
-h1, .h1 { @include heading-size(1); }
-h2, .h2 { @include heading-size(2); }
-h3, .h3 { @include heading-size(3); }
-h4, .h4 { @include heading-size(4); }
-h5, .h5 { @include heading-size(5); }
-h6, .h6 { @include heading-size(6); }
+// Headings - Fluid and Responsive
+h1, .h1 { @include heading(1); }
+h2, .h2 { @include heading(2); }
+h3, .h3 { @include heading(3); }
+h4, .h4 { @include heading(4); }
+h5, .h5 { @include heading(5); }
+h6, .h6 { @include heading(6); }
 
-// Paragraphs with responsive spacing
+// Paragraphs
 p {
-  margin-bottom: $spacing-3;
+  margin-bottom: $spacing-4;
   max-width: 70ch;
+  font-size: $font-size-base;
+  line-height: $line-height-relaxed;
 
   @include respond-below('sm') {
-    margin-bottom: $spacing-2;
+    margin-bottom: $spacing-3;
+    font-size: $font-size-sm;
+    line-height: $line-height-mobile;
   }
 }
 
@@ -191,43 +179,17 @@ p {
 // Responsive Text Utilities
 // ============================================
 
-// Using the new font-size-map mixin
-.text-xs { @include font-size-map('xs'); }
-.text-sm { @include font-size-map('sm'); }
-.text-base { @include font-size-map('base'); }
-.text-md { @include font-size-map('md'); }
-.text-lg { @include font-size-map('lg'); }
-.text-xl { @include font-size-map('xl'); }
-.text-2xl { @include font-size-map('2xl'); }
-.text-3xl { @include font-size-map('3xl'); }
-.text-4xl { @include font-size-map('4xl'); }
+// Fluid text sizes
+.text-xs { font-size: $font-size-xs; }
+.text-sm { font-size: $font-size-sm; }
+.text-base { font-size: $font-size-base; }
+.text-lg { font-size: $font-size-lg; }
+.text-xl { font-size: $font-size-xl; }
+.text-2xl { font-size: $font-size-2xl; }
+.text-3xl { font-size: $font-size-3xl; }
+.text-4xl { font-size: $font-size-4xl; }
 
-// Fluid text utilities
-.text-fluid-sm { @include font-size-fluid(0.875rem, 1rem); }
-.text-fluid-base { @include font-size-fluid(1rem, 1.125rem); }
-.text-fluid-lg { @include font-size-fluid(1.125rem, 1.25rem); }
-.text-fluid-xl { @include font-size-fluid(1.25rem, 1.5rem); }
-.text-fluid-2xl { @include font-size-fluid(1.5rem, 1.875rem); }
-.text-fluid-3xl { @include font-size-fluid(1.875rem, 2.25rem); }
-.text-fluid-4xl { @include font-size-fluid(2.25rem, 3rem); }
-
-// Line height utilities
-.line-height-tight { line-height: $line-height-tight; }
-.line-height-normal { line-height: $line-height-normal; }
-.line-height-relaxed { line-height: $line-height-relaxed; }
-.line-height-loose { line-height: $line-height-loose; }
-
-// ============================================
-// Color & Weight Utilities
-// ============================================
-.text-primary { color: var(--primary) !important; }
-.text-secondary { color: var(--text-secondary) !important; }
-.text-muted { color: var(--text-muted) !important; }
-.text-success { color: var(--success) !important; }
-.text-warning { color: var(--warning) !important; }
-.text-error { color: var(--error) !important; }
-.text-info { color: var(--info) !important; }
-
+// Font weights
 .font-light { font-weight: $font-weight-light; }
 .font-normal { font-weight: $font-weight-normal; }
 .font-medium { font-weight: $font-weight-medium; }
@@ -235,141 +197,213 @@ p {
 .font-bold { font-weight: $font-weight-bold; }
 .font-extrabold { font-weight: $font-weight-extrabold; }
 
+// Text alignment
 .text-center { text-align: center; }
 .text-left { text-align: left; }
 .text-right { text-align: right; }
+
+// Text transforms
 .text-uppercase { text-transform: uppercase; }
 .text-capitalize { text-transform: capitalize; }
+.text-truncate { @include truncate(1); }
+
+// Line heights
+.line-height-tight { line-height: $line-height-tight; }
+.line-height-normal { line-height: $line-height-normal; }
+.line-height-relaxed { line-height: $line-height-relaxed; }
+.line-height-loose { line-height: $line-height-loose; }
+
+// Colors
+.text-primary { color: var(--primary) !important; }
+.text-secondary { color: var(--text-secondary) !important; }
+.text-muted { color: var(--text-muted) !important; }
+.text-success { color: var(--success) !important; }
+.text-warning { color: var(--warning) !important; }
+.text-error { color: var(--error) !important; }
+.text-info { color: var(--info) !important; }
+.text-white { color: $white !important; }
 
 // ============================================
 // Responsive Layout Utilities
 // ============================================
+
 .container {
   @include container;
 }
 
-// Responsive Flex Utilities
+// Responsive Flex
 .flex { display: flex; }
 .flex-center { @include flex-center; }
 .flex-between { @include flex-between; }
-.flex-column { @include flex-column; }
+.flex-column { flex-direction: column; }
 .flex-wrap { flex-wrap: wrap; }
 .flex-1 { flex: 1; }
+.gap-2 { gap: $spacing-2; }
+.gap-3 { gap: $spacing-3; }
+.gap-4 { gap: $spacing-4; }
 
 // Responsive Grid
-.grid-2 { @include grid-responsive-breakpoints(1, 2, 2); }
-.grid-3 { @include grid-responsive-breakpoints(1, 2, 3); }
-.grid-4 { @include grid-responsive-breakpoints(1, 2, 4); }
+.grid-2 { @include grid-responsive(1, 2, 2, 3); }
+.grid-3 { @include grid-responsive(1, 2, 3, 4); }
+.grid-4 { @include grid-responsive(1, 2, 4, 4); }
+.grid-auto { @include grid-auto(250px); }
 
-// ============================================
-// Responsive Spacing Utilities
-// ============================================
-@each $size in (0, 1, 2, 3, 4, 5, 6, 7, 8) {
+// Responsive Spacing
+@each $size in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10) {
   .m-#{$size} { margin: #{$size * 0.25}rem; }
   .mt-#{$size} { margin-top: #{$size * 0.25}rem; }
   .mr-#{$size} { margin-right: #{$size * 0.25}rem; }
   .mb-#{$size} { margin-bottom: #{$size * 0.25}rem; }
   .ml-#{$size} { margin-left: #{$size * 0.25}rem; }
+  .mx-#{$size} { margin-left: #{$size * 0.25}rem; margin-right: #{$size * 0.25}rem; }
+  .my-#{$size} { margin-top: #{$size * 0.25}rem; margin-bottom: #{$size * 0.25}rem; }
   .p-#{$size} { padding: #{$size * 0.25}rem; }
   .pt-#{$size} { padding-top: #{$size * 0.25}rem; }
   .pr-#{$size} { padding-right: #{$size * 0.25}rem; }
   .pb-#{$size} { padding-bottom: #{$size * 0.25}rem; }
   .pl-#{$size} { padding-left: #{$size * 0.25}rem; }
+  .px-#{$size} { padding-left: #{$size * 0.25}rem; padding-right: #{$size * 0.25}rem; }
+  .py-#{$size} { padding-top: #{$size * 0.25}rem; padding-bottom: #{$size * 0.25}rem; }
 }
 
 // ============================================
 // Responsive Visibility
 // ============================================
+
 .hide-on-mobile {
-  @include respond-below('sm') {
-    display: none !important;
-  }
+  @include respond-below('sm') { display: none !important; }
 }
 
 .hide-on-tablet {
-  @include respond-between('sm', 'lg') {
-    display: none !important;
-  }
+  @include respond-between('sm', 'lg') { display: none !important; }
 }
 
 .hide-on-desktop {
-  @include respond-above('lg') {
-    display: none !important;
-  }
+  @include respond-above('lg') { display: none !important; }
 }
 
 .show-on-mobile {
-  @include respond-above('sm') {
-    display: none !important;
-  }
+  @include respond-above('sm') { display: none !important; }
 }
 
 .show-on-tablet {
-  @include respond-between('sm', 'lg') {
-    display: none !important;
-  }
+  @include respond-between('sm', 'lg') { display: none !important; }
 }
 
 .show-on-desktop {
-  @include respond-below('lg') {
-    display: none !important;
-  }
+  @include respond-below('lg') { display: none !important; }
 }
 
 // ============================================
-// Card Styles
+// Modern Card Styles
 // ============================================
-.card {
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
-  transition: box-shadow var(--transition-normal);
-  @include responsive-padding($spacing-3, $spacing-4);
 
-  &:hover {
-    box-shadow: var(--shadow-md);
-  }
+.card {
+  @include card-base;
+  padding: clamp(16px, 3vw, 32px);
 }
 
 .card-interactive {
-  @extend .card;
-  cursor: pointer;
-  transition: all var(--transition-normal);
-
-  &:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-lg);
-  }
+  @include card-interactive;
+  padding: clamp(16px, 3vw, 32px);
 }
 
 .card-bordered {
-  @extend .card;
+  @include card-base;
   border: 1px solid var(--border-color);
+  padding: clamp(16px, 3vw, 32px);
+}
+
+.card-hover {
+  @include card-interactive;
+  padding: clamp(16px, 3vw, 32px);
 }
 
 // ============================================
-// Button Styles
+// Modern Button Styles
 // ============================================
+
 .btn {
   @include button-base;
 }
 
-.btn-primary { @include button-variant-css(var(--primary)); }
-.btn-secondary { @include button-variant-css(var(--secondary)); }
-.btn-success { @include button-variant-css(var(--success)); }
-.btn-warning { @include button-variant-css(var(--warning)); }
-.btn-error { @include button-variant-css(var(--error)); }
-.btn-outline { @include button-outline(var(--primary)); }
+.btn-primary {
+  background: var(--primary);
+  color: $white;
+  border-color: var(--primary);
+
+  &:hover:not(:disabled) {
+    background: var(--primary-dark);
+    border-color: var(--primary-dark);
+  }
+}
+
+.btn-secondary {
+  background: var(--secondary);
+  color: $white;
+  border-color: var(--secondary);
+
+  &:hover:not(:disabled) {
+    background: var(--secondary-dark);
+    border-color: var(--secondary-dark);
+  }
+}
+
+.btn-success {
+  background: var(--success);
+  color: $white;
+  border-color: var(--success);
+
+  &:hover:not(:disabled) {
+    background: var(--success-dark);
+    border-color: var(--success-dark);
+  }
+}
+
+.btn-warning {
+  background: var(--warning);
+  color: $gray-900;
+  border-color: var(--warning);
+
+  &:hover:not(:disabled) {
+    background: var(--warning-dark);
+    border-color: var(--warning-dark);
+  }
+}
+
+.btn-error {
+  background: var(--error);
+  color: $white;
+  border-color: var(--error);
+
+  &:hover:not(:disabled) {
+    background: var(--error-dark);
+    border-color: var(--error-dark);
+  }
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--primary);
+  border-color: var(--primary);
+
+  &:hover:not(:disabled) {
+    background: var(--primary);
+    color: $white;
+  }
+}
 
 .btn-ghost {
   background: transparent;
   color: var(--primary);
+  border-color: transparent;
 
   &:hover:not(:disabled) {
     background: rgba(26, 115, 232, 0.1);
   }
 }
 
+// Button sizes
 .btn-sm {
   padding: $spacing-1 $spacing-2;
   font-size: $font-size-sm;
@@ -385,11 +419,13 @@ p {
 
 .btn-block {
   width: 100%;
+  justify-content: center;
 }
 
 // ============================================
-// Badge Styles
+// Modern Badge Styles
 // ============================================
+
 .badge {
   display: inline-flex;
   align-items: center;
@@ -399,51 +435,34 @@ p {
   font-weight: $font-weight-medium;
   gap: $spacing-1;
   line-height: 1.2;
+
+  @include respond-below('sm') {
+    font-size: 0.6rem;
+    padding: 2px 8px;
+  }
 }
 
-.badge-primary {
-  background: rgba(26, 115, 232, 0.1);
-  color: var(--primary);
-}
-
-.badge-success {
-  background: var(--success-light);
-  color: var(--success-dark);
-}
-
-.badge-warning {
-  background: var(--warning-light);
-  color: var(--warning-dark);
-}
-
-.badge-error {
-  background: var(--error-light);
-  color: var(--error-dark);
-}
-
-.badge-info {
-  background: var(--info-light);
-  color: var(--info-dark);
-}
-
-.badge-neutral {
-  background: var(--grey-2);
-  color: var(--grey-7);
-}
+.badge-primary { background: rgba(26, 115, 232, 0.1); color: var(--primary); }
+.badge-success { background: var(--success-light); color: var(--success-dark); }
+.badge-warning { background: var(--warning-light); color: var(--warning-dark); }
+.badge-error { background: var(--error-light); color: var(--error-dark); }
+.badge-info { background: var(--info-light); color: var(--info-dark); }
+.badge-neutral { background: var(--gray-100); color: var(--gray-700); }
 
 // ============================================
-// Responsive Typography for Components
+// Component-Specific Responsive Styles
 // ============================================
 
-// Dashboard Page
+// Dashboard
 .dashboard-page {
   .kpi-value {
-    @include font-size-fluid(1.5rem, 2.5rem);
+    @include font-fluid-rem(1.5rem, 2.5rem);
     font-weight: $font-weight-bold;
   }
 
   .kpi-label {
     font-size: $font-size-sm;
+    color: var(--text-muted);
 
     @include respond-below('sm') {
       font-size: $font-size-xs;
@@ -451,19 +470,20 @@ p {
   }
 
   .section-title {
-    @include font-size-fluid(1.125rem, 1.5rem);
+    @include font-fluid-rem(1.125rem, 1.5rem);
     font-weight: $font-weight-semibold;
   }
 }
 
-// BCM Page
+// BCM Pages
 .bcm-page {
   .page-title {
-    @include heading-size(1);
+    @include heading(1);
   }
 
   .page-subtitle {
     font-size: $font-size-sm;
+    color: var(--text-muted);
 
     @include respond-below('sm') {
       font-size: $font-size-xs;
@@ -472,11 +492,12 @@ p {
 
   .entity-title {
     font-weight: $font-weight-semibold;
-    @include font-size-fluid(1rem, 1.125rem);
+    @include font-fluid-rem(1rem, 1.125rem);
   }
 
   .entity-meta {
     font-size: $font-size-sm;
+    color: var(--text-muted);
 
     @include respond-below('sm') {
       font-size: $font-size-xs;
@@ -484,29 +505,33 @@ p {
   }
 
   .stat-value {
-    @include font-size-fluid(1.25rem, 1.75rem);
+    @include font-fluid-rem(1.25rem, 1.75rem);
     font-weight: $font-weight-bold;
   }
 
   .stat-label {
     font-size: $font-size-xs;
+    color: var(--text-muted);
 
     @include respond-below('sm') {
-      font-size: 0.6875rem;
+      font-size: 0.6rem;
     }
   }
 }
 
-// Incident Page
+// Incident Pages
 .incident-page {
   .incident-card {
+    @include card-interactive;
+
     .incident-title {
-      @include font-size-fluid(1rem, 1.25rem);
+      @include font-fluid-rem(1rem, 1.25rem);
       font-weight: $font-weight-semibold;
     }
 
     .incident-meta {
       font-size: $font-size-sm;
+      color: var(--text-muted);
 
       @include respond-below('sm') {
         font-size: $font-size-xs;
@@ -515,11 +540,13 @@ p {
   }
 }
 
-// Workflow Page
+// Workflow Pages
 .workflow-page {
   .workflow-card {
+    @include card-interactive;
+
     .workflow-title {
-      @include font-size-fluid(1rem, 1.125rem);
+      @include font-fluid-rem(1rem, 1.125rem);
       font-weight: $font-weight-semibold;
     }
 
@@ -530,65 +557,54 @@ p {
       letter-spacing: $letter-spacing-wide;
 
       @include respond-below('sm') {
-        font-size: 0.6875rem;
+        font-size: 0.6rem;
       }
     }
   }
 }
 
 // ============================================
-// Responsive Table Styles
+// Responsive Tables
 // ============================================
+
 .table-responsive {
-  width: 100%;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-
-  table {
-    width: 100%;
-    min-width: 600px;
-    border-collapse: collapse;
-
-    th,
-    td {
-      padding: $spacing-2 $spacing-3;
-      text-align: left;
-      border-bottom: 1px solid var(--border-light);
-
-      @include respond-below('sm') {
-        padding: $spacing-1 $spacing-2;
-        font-size: $font-size-sm;
-      }
-    }
-
-    th {
-      font-weight: $font-weight-semibold;
-      background: var(--grey-1);
-    }
-  }
+  @include table-responsive;
 }
 
 // ============================================
-// Responsive Modal Styles
+// Responsive Modals
 // ============================================
+
 .modal-content {
-  width: 100%;
-  max-width: 640px;
-  margin: $spacing-4 auto;
-  background: var(--bg-card);
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-xl);
-  @include responsive-padding($spacing-3, $spacing-5);
+  @include modal-responsive;
+}
+
+.modal-header {
+  @include flex-between;
+  padding-bottom: $spacing-4;
+  border-bottom: 1px solid var(--border-color);
 
   @include respond-below('sm') {
-    margin: $spacing-2;
-    border-radius: var(--radius-md);
+    padding-bottom: $spacing-3;
+  }
+}
+
+.modal-footer {
+  @include flex-between;
+  padding-top: $spacing-4;
+  border-top: 1px solid var(--border-color);
+  gap: $spacing-2;
+
+  @include respond-below('sm') {
+    flex-direction: column;
+    padding-top: $spacing-3;
   }
 }
 
 // ============================================
-// Responsive Form Styles
+// Responsive Forms
 // ============================================
+
 .form-group {
   margin-bottom: $spacing-4;
 
@@ -601,6 +617,7 @@ p {
     margin-bottom: $spacing-1;
     font-weight: $font-weight-medium;
     font-size: $font-size-sm;
+    color: var(--text-secondary);
 
     @include respond-below('sm') {
       font-size: $font-size-xs;
@@ -619,8 +636,70 @@ p {
 }
 
 // ============================================
+// Responsive Empty State
+// ============================================
+
+.empty-state {
+  text-align: center;
+  padding: clamp(32px, 8vw, 64px);
+
+  .empty-icon {
+    @include font-fluid-rem(3rem, 5rem);
+    color: var(--gray-400);
+    margin-bottom: $spacing-4;
+  }
+
+  .empty-title {
+    @include heading(2);
+    color: var(--text-secondary);
+    margin-bottom: $spacing-2;
+  }
+
+  .empty-description {
+    color: var(--text-muted);
+    max-width: 480px;
+    margin: 0 auto $spacing-4;
+    font-size: $font-size-base;
+
+    @include respond-below('sm') {
+      font-size: $font-size-sm;
+    }
+  }
+}
+
+// ============================================
+// Responsive Loading States
+// ============================================
+
+.loading-container {
+  @include flex-center;
+  padding: $spacing-6;
+
+  @include respond-below('sm') {
+    padding: $spacing-4;
+  }
+}
+
+// ============================================
+// Skeleton Loading
+// ============================================
+
+.skeleton {
+  background: linear-gradient(90deg, var(--gray-200) 25%, var(--gray-100) 50%, var(--gray-200) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+  border-radius: var(--radius-sm);
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+// ============================================
 // Animations
 // ============================================
+
 @keyframes fadeIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -663,80 +742,17 @@ p {
   50% { transform: scale(1.05); }
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-@keyframes bounce {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
 .animate-fade-in { animation: fadeIn var(--transition-normal); }
 .animate-fade-up { animation: fadeInUp var(--transition-normal); }
 .animate-fade-down { animation: fadeInDown var(--transition-normal); }
 .animate-slide-right { animation: slideInRight var(--transition-normal); }
 .animate-slide-left { animation: slideInLeft var(--transition-normal); }
-.animate-pulse { animation: pulse 2s infinite; }
-.animate-spin { animation: spin 1s linear infinite; }
-.animate-bounce { animation: bounce 1s infinite; }
+.animate-pulse { animation: pulse 2s ease-in-out infinite; }
 
 // ============================================
-// Responsive Loading States
+// Dark Mode
 // ============================================
-.loading-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: $spacing-6;
 
-  @include respond-below('sm') {
-    padding: $spacing-4;
-  }
-}
-
-.skeleton {
-  background: linear-gradient(90deg, var(--grey-3) 25%, var(--grey-2) 50%, var(--grey-3) 75%);
-  background-size: 200% 100%;
-  animation: skeleton-loading 1.5s infinite;
-  border-radius: var(--radius-sm);
-}
-
-@keyframes skeleton-loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
-}
-
-// ============================================
-// Responsive Empty State
-// ============================================
-.empty-state {
-  text-align: center;
-  @include responsive-padding($spacing-6, $spacing-8);
-
-  .empty-icon {
-    @include font-size-fluid(48px, 64px);
-    color: var(--grey-4);
-    margin-bottom: $spacing-4;
-  }
-
-  .empty-title {
-    @include heading-size(3);
-    color: var(--text-secondary);
-    margin-bottom: $spacing-2;
-  }
-
-  .empty-description {
-    color: var(--text-muted);
-    max-width: 480px;
-    margin: 0 auto $spacing-4;
-  }
-}
-
-// ============================================
-// Dark Mode Overrides
-// ============================================
 .body--dark {
   --bg-page: #121212;
   --bg-card: #1e1e1e;
@@ -745,10 +761,17 @@ p {
   --text-muted: #808080;
   --border-color: #333333;
   --border-light: #2a2a2a;
+  --gray-100: #2a2a2a;
+  --gray-200: #333333;
+  --gray-300: #444444;
+  --gray-400: #555555;
+  --gray-500: #666666;
+  --gray-600: #888888;
 
   .card,
   .card-interactive,
-  .card-bordered {
+  .card-bordered,
+  .card-hover {
     background: var(--bg-card);
     border-color: var(--border-color);
   }
@@ -757,13 +780,49 @@ p {
     background: linear-gradient(90deg, #2a2a2a 25%, #333333 50%, #2a2a2a 75%);
     background-size: 200% 100%;
   }
+
+  .badge-neutral {
+    background: var(--gray-200);
+    color: var(--gray-500);
+  }
 }
 
 // ============================================
 // Print Styles
 // ============================================
+
 @media print {
   .no-print { display: none !important; }
-  body { background: white; }
-  .q-header, .q-footer, .q-drawer { display: none !important; }
+  body { background: $white; color: $black; }
+  .card, .card-interactive, .card-bordered {
+    box-shadow: none !important;
+    border: 1px solid $gray-300 !important;
+  }
+  a { text-decoration: underline; }
+}
+
+// ============================================
+// Accessibility
+// ============================================
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
