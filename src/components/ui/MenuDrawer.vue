@@ -1,12 +1,6 @@
 <template>
-  <q-drawer
-    v-model="drawerOpen"
-    side="right"
-    :width="280"
-    :breakpoint="768"
-    bordered
-    :class="{ 'bg-dark text-white': isDarkMode }"
-  >
+  <q-drawer v-model="drawerOpen" side="right" :width="280" :breakpoint="768" bordered
+    :class="{ 'bg-dark text-white': isDarkMode }">
     <!-- Drawer Header -->
     <div class="drawer-header q-pa-md">
       <div class="row items-center">
@@ -16,14 +10,14 @@
         <div>
           <div class="text-h6 text-white">Izingcweti BCM</div>
           <div class="text-caption text-grey-4">
-            {{ userRoleDisplay || 'User' }}
+            {{ userRole || 'User' }}
           </div>
         </div>
       </div>
 
       <!-- User Info -->
       <div class="q-mt-sm">
-        <div class="text-subtitle2 text-white">{{ fullName }}</div>
+        <div class="text-subtitle2 text-white">{{ userFullName }}</div>
         <div class="text-caption text-grey-4">{{ userEmail }}</div>
       </div>
 
@@ -41,51 +35,76 @@
     <!-- Navigation Menu -->
     <q-scroll-area class="fit">
       <q-list padding>
-        <!-- Menu Groups -->
-        <template v-for="group in menuGroups" :key="group.label">
-          <q-item-label
-            v-if="group.items.length > 0"
-            header
-            :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'"
-          >
-            {{ group.label }}
+        <!-- Main Navigation Items by BCM Phase -->
+        <template v-for="phase in menuPhases" :key="phase.id">
+          <q-item-label v-if="phase.items && phase.items.length > 0" header
+            :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
+            <div class="row items-center q-gutter-xs">
+              <q-icon :name="phase.icon" size="16px" />
+              <span>{{ phase.label }}</span>
+            </div>
           </q-item-label>
 
-          <q-item
-            v-for="item in group.items"
-            :key="item.name"
-            clickable
-            v-ripple
-            :to="item.to ? { name: item.name } : undefined"
-            :active="route.name === item.name"
-            exact
-            active-class="text-primary"
-            :disable="item.disabled"
-            @click="handleItemClick(item)"
-          >
+          <q-item v-for="(item, itemIndex) in phase.items" :key="item.routeName ?? `${phase.id}-${itemIndex}`" clickable v-ripple
+            :to="item.routeName ? { name: item.routeName } : undefined" :active="route.name === item.routeName" exact
+            active-class="text-primary" @click="item.action ? item.action() : null">
             <q-item-section avatar>
               <q-icon :name="item.icon" size="20px" />
             </q-item-section>
             <q-item-section>{{ item.label }}</q-item-section>
             <q-item-section v-if="item.badge" side>
-              <q-badge :color="item.badgeColor || 'red'" :label="item.badge" />
+              <q-badge :color="item.badgeColor" :label="item.badge" />
             </q-item-section>
           </q-item>
         </template>
-      </q-list>
-    </q-scroll-area>
 
-    <!-- Footer Actions -->
-    <q-separator />
-    <div class="q-pa-sm">
-      <q-list>
+        <q-separator spaced />
+
+        <!-- Admin Section -->
+        <template v-if="isAdmin">
+          <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
+            Administration
+          </q-item-label>
+
+          <q-item v-for="(item, itemIndex) in adminItems" :key="item.routeName ?? `admin-${itemIndex}`" clickable v-ripple
+            :to="item.routeName ? { name: item.routeName } : undefined"
+            :active="route.name === item.routeName" exact active-class="text-primary">
+            <q-item-section avatar>
+              <q-icon :name="item.icon" />
+            </q-item-section>
+            <q-item-section>{{ item.label }}</q-item-section>
+          </q-item>
+        </template>
+
+        <q-separator spaced />
+
+        <!-- System Section -->
+        <q-item-label header :class="isDarkMode ? 'text-grey-4' : 'text-grey-7'">
+          System
+        </q-item-label>
+
+        <q-item clickable v-ripple :to="{ name: 'Documents' }" :active="route.name === 'Documents'" exact
+          active-class="text-primary">
+          <q-item-section avatar>
+            <q-icon name="folder" />
+          </q-item-section>
+          <q-item-section>Documents</q-item-section>
+        </q-item>
+
+        <q-item clickable v-ripple :to="{ name: 'Settings' }" :active="route.name === 'Settings'" exact
+          active-class="text-primary">
+          <q-item-section avatar>
+            <q-icon name="settings" />
+          </q-item-section>
+          <q-item-section>Settings</q-item-section>
+        </q-item>
+
+        <q-separator spaced />
+
+        <!-- Footer Actions -->
         <q-item clickable v-ripple @click="handleSync">
           <q-item-section avatar>
-            <q-icon
-              name="sync"
-              :color="isSyncing ? 'orange' : 'primary'"
-              :class="{ 'rotate-animation': isSyncing }"
-            />
+            <q-icon name="sync" :color="isSyncing ? 'orange' : 'primary'" :class="{ 'rotate-animation': isSyncing }" />
           </q-item-section>
           <q-item-section>
             {{ isSyncing ? 'Syncing...' : 'Sync Now' }}
@@ -104,7 +123,7 @@
           <q-item-section class="text-negative">Logout</q-item-section>
         </q-item>
       </q-list>
-    </div>
+    </q-scroll-area>
   </q-drawer>
 </template>
 
@@ -112,33 +131,10 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useAuth } from 'src/composables/useAuth'
-import { useSync } from 'src/composables/useSync'
-import { useUiStore } from 'src/stores'
-
-// ============================================
-// Types
-// ============================================
-
-interface MenuItem {
-  name: string
-  label: string
-  icon: string
-  to?: { name: string }
-  badge?: string | number
-  badgeColor?: string
-  disabled?: boolean
-  phase?: 'initiation' | 'risk' | 'strategy' | 'implementation' | 'testing' | 'incident' | 'maintenance'
-  permission?: string
-  action?: () => void
-}
-
-interface MenuGroup {
-  label: string
-  icon?: string
-  phase?: string
-  items: MenuItem[]
-}
+import { useAuth } from '../../composables/useAuth'
+import { useSync } from '../../composables/useSync'
+import { useUi } from '../../composables/useUi'
+import type { MenuItem, MenuPhase } from '../../types/menu.types'
 
 // ============================================
 // Composables
@@ -146,20 +142,12 @@ interface MenuGroup {
 const route = useRoute()
 const router = useRouter()
 const $q = useQuasar()
-
-const { userRole, fullName, userEmail, hasPermission, logout, isAdmin } = useAuth()
-const {
-  pendingCount,
-  hasPendingChanges,
-  isSyncing,
-  lastSyncAt,
-  fullSync,
-  isOnline,
-} = useSync()
-const uiStore = useUiStore()
+const auth = useAuth()
+const sync = useSync()
+const ui = useUi()
 
 // ============================================
-// Props & Emits
+// Props
 // ============================================
 const props = defineProps<{ modelValue: boolean }>()
 const emit = defineEmits<{ 'update:modelValue': [value: boolean] }>()
@@ -172,337 +160,272 @@ const drawerOpen = computed({
   set: (val) => emit('update:modelValue', val),
 })
 
-const isDarkMode = computed(() => uiStore.isDarkMode)
-const userRoleDisplay = computed(() => {
-  if (!userRole.value) return 'User'
-  return String(userRole.value).replace(/_/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())
-})
+const userRole = computed(() => auth.userRole.value)
+const userFullName = computed(() => auth.fullName.value)
+const userEmail = computed(() => auth.userEmail.value)
+const isDarkMode = computed(() => ui.isDarkMode.value)
+const isAdmin = computed(() => auth.isAdmin.value)
+const isSyncing = computed(() => sync.isSyncing.value)
+const hasPendingChanges = computed(() => sync.hasPendingChanges.value)
+const pendingCount = computed(() => sync.pendingCount.value)
+const lastSyncAt = computed(() => sync.lastSyncAt.value)
 
 // ============================================
-// Menu Definitions by BCM Phase
+// Permission Checks
+// ============================================
+const canViewBCM = computed(() => auth.canManageBCM() || auth.isAdmin.value)
+const canViewRisks = computed(() => auth.canManageRisks() || auth.isAdmin.value)
+const canViewIncidents = computed(() => auth.canManageIncidents() || auth.isAdmin.value)
+const canViewCompliance = computed(() => auth.isAdmin.value)
+const canViewWorkflows = computed(() => auth.isAdmin.value)
+const canViewBCP = computed(() => auth.canManageBCM() || auth.isAdmin.value)
+const canViewBIA = computed(() => auth.canManageBCM() || auth.isAdmin.value)
+const canViewRecovery = computed(() => auth.canManageBCM() || auth.isAdmin.value)
+const canViewExercises = computed(() => auth.canManageBCM() || auth.isAdmin.value)
+const canViewUsers = computed(() => auth.canManageUsers() || auth.isAdmin.value)
+const canViewAuditLogs = computed(() => auth.canViewAuditLogs() || auth.isAdmin.value)
+const canViewOrganisations = computed(() => auth.isAdmin.value)
+
+// ============================================
+// Menu Configuration by BCM Phases
 // ============================================
 
 /**
- * Phase 1: Initiation & Governance
+ * BCM Lifecycle Phases with menu items
+ * Based on the standard BCM lifecycle: 
+ * 1. Initiation & Governance
+ * 2. Risk Assessment
+ * 3. Business Impact Analysis (BIA)
+ * 4. Strategy Development
+ * 5. Plan Development
+ * 6. Testing & Exercises
+ * 7. Incident Response
+ * 8. Continuous Improvement
  */
-const initiationItems: MenuItem[] = [
-  {
-    name: 'Dashboard',
-    label: 'Dashboard',
-    icon: 'dashboard',
-    phase: 'initiation',
-  },
-  {
-    name: 'Governance',
-    label: 'Governance',
-    icon: 'gavel',
-    phase: 'initiation',
-    permission: 'VIEW_GOVERNANCE',
-  },
-  {
-    name: 'CriticalFunctions',
-    label: 'Critical Functions',
-    icon: 'business_center',
-    phase: 'initiation',
-    permission: 'VIEW_CRITICAL_FUNCTIONS',
-  },
-  {
-    name: 'BIA',
-    label: 'Business Impact Analysis',
-    icon: 'assessment',
-    phase: 'initiation',
-    permission: 'VIEW_BIA',
-  },
-]
+const menuPhases = computed<MenuPhase[]>(() => {
+  const phases: MenuPhase[] = []
 
-/**
- * Phase 2: Risk Assessment
- */
-const riskItems: MenuItem[] = [
-  {
-    name: 'Risks',
-    label: 'Risk Register',
-    icon: 'crisis_alert',
-    phase: 'risk',
-    permission: 'VIEW_RISKS',
-  },
-]
-
-/**
- * Phase 3: Strategy Development
- */
-const strategyItems: MenuItem[] = [
-  {
-    name: 'BCP',
-    label: 'Continuity Plans',
-    icon: 'assignment',
-    phase: 'strategy',
-    permission: 'VIEW_BCP',
-  },
-  {
-    name: 'RecoveryStrategies',
-    label: 'Recovery Strategies',
-    icon: 'restore',
-    phase: 'strategy',
-    permission: 'VIEW_RECOVERY_STRATEGIES',
-  },
-]
-
-/**
- * Phase 4: Implementation
- */
-const implementationItems: MenuItem[] = [
-  {
-    name: 'Documents',
-    label: 'Documents',
-    icon: 'folder',
-    phase: 'implementation',
-    permission: 'VIEW_DOCUMENTS',
-  },
-  {
-    name: 'Compliance',
-    label: 'Compliance',
-    icon: 'verified_user',
-    phase: 'implementation',
-    permission: 'VIEW_COMPLIANCE',
-  },
-  {
-    name: 'Training',
-    label: 'Training',
-    icon: 'school',
-    phase: 'implementation',
-    permission: 'VIEW_TRAINING',
-  },
-]
-
-/**
- * Phase 5: Testing & Exercises
- */
-const testingItems: MenuItem[] = [
-  {
-    name: 'ExerciseTests',
-    label: 'Exercise Tests',
-    icon: 'playlist_add_check',
-    phase: 'testing',
-    permission: 'VIEW_EXERCISE_TESTS',
-  },
-]
-
-/**
- * Phase 6: Incident Response
- */
-const incidentItems: MenuItem[] = [
-  {
-    name: 'Incidents',
-    label: 'Incidents',
-    icon: 'warning',
-    phase: 'incident',
-    permission: 'VIEW_INCIDENTS',
-    badge: 0, // Will be updated dynamically
-    badgeColor: 'red',
-  },
-  {
-    name: 'Workflows',
-    label: 'Workflows',
-    icon: 'account_tree',
-    phase: 'incident',
-    permission: 'VIEW_WORKFLOWS',
-  },
-]
-
-/**
- * Phase 7: Maintenance & Improvement
- */
-const maintenanceItems: MenuItem[] = [
-  {
-    name: 'Lessons',
-    label: 'Lessons Learned',
-    icon: 'lightbulb',
-    phase: 'maintenance',
-    permission: 'VIEW_LESSONS',
-  },
-  {
-    name: 'Reports',
-    label: 'Reports',
-    icon: 'picture_as_pdf',
-    phase: 'maintenance',
-    permission: 'VIEW_REPORTS',
-  },
-  {
-    name: 'Settings',
-    label: 'Settings',
-    icon: 'settings',
-    phase: 'maintenance',
-  },
-]
-
-/**
- * Administration Items
- */
-const adminItems: MenuItem[] = [
-  {
-    name: 'Users',
-    label: 'User Management',
-    icon: 'people',
-    permission: 'MANAGE_USERS',
-  },
-  {
-    name: 'Organisations',
-    label: 'Organisations',
-    icon: 'business',
-    permission: 'MANAGE_ORGANISATIONS',
-  },
-  {
-    name: 'AuditLogs',
-    label: 'Audit Logs',
-    icon: 'history',
-    permission: 'VIEW_AUDIT_LOGS',
-  },
-  {
-    name: 'FeatureToggles',
-    label: 'Feature Toggles',
-    icon: 'toggle_on',
-    permission: 'MANAGE_SYSTEM',
-  },
-  {
-    name: 'SyncDashboard',
-    label: 'Sync Dashboard',
-    icon: 'sync',
-    permission: 'MANAGE_SYNC',
-  },
-]
-
-// ============================================
-// Menu Groups by BCM Phase
-// ============================================
-
-const menuGroups = computed<MenuGroup[]>(() => {
-  const groups: MenuGroup[] = [
-    {
-      label: 'Initiation & Governance',
-      icon: 'rocket_launch',
+  // Phase 1: Initiation & Governance
+  const governanceItems: MenuItem[] = []
+  if (canViewBCM.value) {
+    governanceItems.push({
+      label: 'Critical Functions',
+      icon: 'functions',
+      routeName: 'CriticalFunctions',
       phase: 'initiation',
-      items: initiationItems,
-    },
-    {
-      label: 'Risk Assessment',
-      icon: 'analytics',
-      phase: 'risk',
-      items: riskItems,
-    },
-    {
-      label: 'Strategy Development',
-      icon: 'strategy',
-      phase: 'strategy',
-      items: strategyItems,
-    },
-    {
-      label: 'Implementation',
-      icon: 'build_circle',
-      phase: 'implementation',
-      items: implementationItems,
-    },
-    {
-      label: 'Testing & Exercises',
-      icon: 'verified',
-      phase: 'testing',
-      items: testingItems,
-    },
-    {
-      label: 'Incident Response',
-      icon: 'emergency',
-      phase: 'incident',
-      items: incidentItems,
-    },
-    {
-      label: 'Maintenance & Improvement',
-      icon: 'update',
-      phase: 'maintenance',
-      items: maintenanceItems,
-    },
-  ]
-
-  // Add Admin section if user is admin
-  if (isAdmin.value) {
-    groups.push({
-      label: 'Administration',
-      icon: 'admin_panel_settings',
-      items: adminItems,
+    })
+  }
+  if (governanceItems.length > 0) {
+    phases.push({
+      id: 'initiation',
+      label: 'Initiation & Governance',
+      icon: 'account_balance',
+      items: governanceItems,
     })
   }
 
-  // Filter items by permissions and filter out empty groups
-  return groups
-    .map((group) => ({
-      ...group,
-      items: filterMenuItems(group.items),
-    }))
-    .filter((group) => group.items.length > 0)
+  // Phase 2: Risk Assessment
+  const riskItems: MenuItem[] = []
+  if (canViewRisks.value) {
+    riskItems.push({
+      label: 'Risk Register',
+      icon: 'warning',
+      routeName: 'Risks',
+      phase: 'risk_assessment',
+    })
+  }
+  if (riskItems.length > 0) {
+    phases.push({
+      id: 'risk_assessment',
+      label: 'Risk Assessment',
+      icon: 'crisis_alert',
+      items: riskItems,
+    })
+  }
+
+  // Phase 3: Business Impact Analysis (BIA)
+  const biaItems: MenuItem[] = []
+  if (canViewBIA.value) {
+    biaItems.push({
+      label: 'Business Impact Analysis',
+      icon: 'assessment',
+      routeName: 'BIA',
+      phase: 'bia',
+    })
+  }
+  if (biaItems.length > 0) {
+    phases.push({
+      id: 'bia',
+      label: 'Business Impact Analysis',
+      icon: 'analytics',
+      items: biaItems,
+    })
+  }
+
+  // Phase 4: Strategy Development
+  const strategyItems: MenuItem[] = []
+  if (canViewRecovery.value) {
+    strategyItems.push({
+      label: 'Recovery Strategies',
+      icon: 'restore',
+      routeName: 'RecoveryStrategies',
+      phase: 'strategy',
+    })
+  }
+  if (strategyItems.length > 0) {
+    phases.push({
+      id: 'strategy',
+      label: 'Strategy Development',
+      icon: 'lightbulb',
+      items: strategyItems,
+    })
+  }
+
+  // Phase 5: Plan Development
+  const planItems: MenuItem[] = []
+  if (canViewBCP.value) {
+    planItems.push({
+      label: 'Continuity Plans (BCP)',
+      icon: 'description',
+      routeName: 'BCP',
+      phase: 'planning',
+    })
+  }
+  if (canViewCompliance.value) {
+    planItems.push({
+      label: 'Compliance',
+      icon: 'verified_user',
+      routeName: 'Compliance',
+      phase: 'planning',
+    })
+  }
+  if (planItems.length > 0) {
+    phases.push({
+      id: 'planning',
+      label: 'Plan Development',
+      icon: 'assignment',
+      items: planItems,
+    })
+  }
+
+  // Phase 6: Testing & Exercises
+  const testItems: MenuItem[] = []
+  if (canViewExercises.value) {
+    testItems.push({
+      label: 'Exercise Tests',
+      icon: 'playlist_add_check',
+      routeName: 'ExerciseTests',
+      phase: 'testing',
+    })
+  }
+  if (testItems.length > 0) {
+    phases.push({
+      id: 'testing',
+      label: 'Testing & Exercises',
+      icon: 'verified',
+      items: testItems,
+    })
+  }
+
+  // Phase 7: Incident Response
+  const incidentItems: MenuItem[] = []
+  if (canViewIncidents.value) {
+    incidentItems.push({
+      label: 'Incidents',
+      icon: 'report',
+      routeName: 'Incidents',
+      phase: 'incident',
+      badge: 0, // Will be updated from store
+      badgeColor: 'red',
+    })
+  }
+  if (incidentItems.length > 0) {
+    phases.push({
+      id: 'incident',
+      label: 'Incident Response',
+      icon: 'emergency',
+      items: incidentItems,
+    })
+  }
+
+  // Phase 8: Continuous Improvement
+  const improvementItems: MenuItem[] = []
+  if (canViewWorkflows.value) {
+    improvementItems.push({
+      label: 'Workflows',
+      icon: 'account_tree',
+      routeName: 'Workflows',
+      phase: 'improvement',
+    })
+  }
+  if (canViewAuditLogs.value) {
+    improvementItems.push({
+      label: 'Audit Logs',
+      icon: 'history',
+      routeName: 'AuditLogs',
+      phase: 'improvement',
+    })
+  }
+  if (improvementItems.length > 0) {
+    phases.push({
+      id: 'improvement',
+      label: 'Continuous Improvement',
+      icon: 'trending_up',
+      items: improvementItems,
+    })
+  }
+
+  return phases
+})
+
+// ============================================
+// Admin Items
+// ============================================
+const adminItems = computed<MenuItem[]>(() => {
+  const items: MenuItem[] = []
+
+  if (canViewUsers.value) {
+    items.push({
+      label: 'User Management',
+      icon: 'people',
+      routeName: 'Users',
+      phase: 'admin',
+    })
+  }
+
+  if (canViewOrganisations.value) {
+    items.push({
+      label: 'Organisations',
+      icon: 'business',
+      routeName: 'Organisations',
+      phase: 'admin',
+    })
+  }
+
+  if (canViewAuditLogs.value) {
+    items.push({
+      label: 'Audit Logs',
+      icon: 'fact_check',
+      routeName: 'AuditLogs',
+      phase: 'admin',
+    })
+  }
+
+  return items
 })
 
 // ============================================
 // Methods
 // ============================================
-
-/**
- * Filter menu items by permissions and conditions
- */
-function filterMenuItems(items: MenuItem[]): MenuItem[] {
-  return items.filter((item) => {
-    // Check permission
-    if (item.permission) {
-      const hasPerm = hasPermission(item.permission)
-      if (!hasPerm) return false
-    }
-
-    // Check if item is disabled
-    if (item.disabled) return false
-
-    return true
-  })
-}
-
-/**
- * Handle menu item click - handles both navigation and custom actions
- */
-function handleItemClick(item: MenuItem): void {
-  // Close drawer on mobile
-  if (drawerOpen.value) {
-    drawerOpen.value = false
-  }
-
-  // Execute custom action if provided
-  if (item.action) {
-    item.action()
-    return
-  }
-
-  // Navigate if route exists
-  if (item.to) {
-    router.push(item.to)
-  }
-}
-
-/**
- * Handle sync action
- */
 async function handleSync(): Promise<void> {
   if (isSyncing.value) return
-  if (!isOnline.value) {
-    $q.notify({
-      type: 'warning',
-      message: 'You are offline. Please connect to sync.',
-      position: 'top',
-    })
-    return
-  }
-
   try {
-    await fullSync()
+    await sync.fullSync()
     $q.notify({
       type: 'positive',
-      message: 'Sync completed successfully',
+      message: 'Sync completed',
       position: 'top',
+      timeout: 2000,
     })
   } catch (error: any) {
     $q.notify({
@@ -513,9 +436,6 @@ async function handleSync(): Promise<void> {
   }
 }
 
-/**
- * Handle logout
- */
 async function handleLogout(): Promise<void> {
   $q.dialog({
     title: 'Logout',
@@ -523,14 +443,11 @@ async function handleLogout(): Promise<void> {
     cancel: true,
     persistent: true,
   }).onOk(async () => {
-    await logout()
+    await auth.logout()
     await router.push('/auth/login')
   })
 }
 
-/**
- * Format time ago
- */
 function formatTimeAgo(date: string | null): string {
   if (!date) return ''
   const seconds = Math.floor((Date.now() - new Date(date).getTime()) / 1000)
@@ -543,11 +460,9 @@ function formatTimeAgo(date: string | null): string {
 
 <style lang="scss" scoped>
 .drawer-header {
-  background: linear-gradient(
-    135deg,
-    var(--q-primary) 0%,
-    color-mix(in srgb, var(--q-primary) 70%, black) 100%
-  );
+  background: linear-gradient(135deg,
+      var(--q-primary) 0%,
+      color-mix(in srgb, var(--q-primary) 70%, black) 100%);
 }
 
 .rotate-animation {
@@ -558,33 +473,9 @@ function formatTimeAgo(date: string | null): string {
   from {
     transform: rotate(0deg);
   }
+
   to {
     transform: rotate(360deg);
-  }
-}
-
-// Mobile optimizations
-@media (max-width: 768px) {
-  :deep(.q-item) {
-    min-height: 44px;
-    padding: 6px 12px;
-
-    .q-item__section--avatar {
-      min-width: 32px;
-    }
-
-    .q-icon {
-      font-size: 18px !important;
-    }
-
-    .q-item__label {
-      font-size: 0.875rem;
-    }
-  }
-
-  .q-item-label--header {
-    font-size: 0.75rem;
-    padding: 8px 12px;
   }
 }
 </style>
