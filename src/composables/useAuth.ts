@@ -375,6 +375,7 @@ export function useAuth(options: UseAuthOptions = {}) {
     hasAllRoles,
 
     // Permission checks
+    hasPermission: storeHasPermission,
     canManageBCM,
     canManageRisks,
     canApprove,

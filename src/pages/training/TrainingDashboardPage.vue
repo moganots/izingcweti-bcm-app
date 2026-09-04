@@ -102,7 +102,7 @@ import { useTraining } from 'src/composables/useTraining'
 import { PageHeader } from 'src/components/.common'
 import { CourseList, CourseForm, CourseDetails } from 'src/components/training'
 import { ConfirmDialog } from 'src/components/.common'
-import { TrainingCourse, CourseFilters, ProgressStatus, AttestationStatus } from 'src/models/entities/training/training.entity'
+import { TrainingCourse, CourseFilters, ProgressStatus } from 'src/models/entities/training/training.entity'
 
 // ============================================
 // Composables
