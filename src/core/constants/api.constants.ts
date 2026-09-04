@@ -478,6 +478,29 @@ export const API_ENDPOINTS = {
   },
 
   // ============================================
+  // Attestation Endpoints (attestation.routes.ts)
+  // ============================================
+  ATTESTATION: {
+    DOCUMENTS: {
+      BASE: '/attestation/documents',
+      BY_ID: (id: string) => `/attestation/documents/${id}`,
+      CREATE: '/attestation/documents',
+      UPDATE: (id: string) => `/attestation/documents/${id}`,
+      DELETE: (id: string) => `/attestation/documents/${id}`,
+    },
+    USER: {
+      BASE: (userId: string) => `/attestation/user/${userId}`,
+      ATTESTATION: (userId: string, attestationId: string) =>
+        `/attestation/user/${userId}/attestation/${attestationId}`,
+    },
+    ACKNOWLEDGE: '/attestation/acknowledge',
+    USER_ATTESTATIONS: {
+      BASE: '/attestation/user-attestations',
+      CREATE: '/attestation/user-attestations',
+    },
+  },
+
+  // ============================================
   // Workflow Endpoints (workflow.routes.ts)
   // ============================================
   WORKFLOWS: {
@@ -865,29 +888,6 @@ export const API_ENDPOINTS = {
     EXECUTION_LOG_BY_ID: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
     EXECUTION_LOG_DELETE: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
     EXECUTION_LOGS_CLEANUP: '/admin/rules/execution-logs/cleanup',
-  },
-
-  // ============================================
-  // Attestation Endpoints (attestation.routes.ts)
-  // ============================================
-  ATTESTATION: {
-    DOCUMENTS: {
-      BASE: '/attestation/documents',
-      BY_ID: (id: string) => `/attestation/documents/${id}`,
-      CREATE: '/attestation/documents',
-      UPDATE: (id: string) => `/attestation/documents/${id}`,
-      DELETE: (id: string) => `/attestation/documents/${id}`,
-    },
-    USER: {
-      BASE: (userId: string) => `/attestation/user/${userId}`,
-      ATTESTATION: (userId: string, attestationId: string) =>
-        `/attestation/user/${userId}/attestation/${attestationId}`,
-    },
-    ACKNOWLEDGE: '/attestation/acknowledge',
-    USER_ATTESTATIONS: {
-      BASE: '/attestation/user-attestations',
-      CREATE: '/attestation/user-attestations',
-    },
   },
 
   // ============================================

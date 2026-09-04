@@ -11,56 +11,45 @@ import type { User } from '../user/user.entity'
 // Enums - Aligned with Backend
 // ============================================
 
-/**
- * Lesson Status Enum
- */
 export enum LessonStatus {
-    DRAFT = 'DRAFT',
-    UNDER_REVIEW = 'UNDER_REVIEW',
-    ACTION_PLANNED = 'ACTION_PLANNED',
-    IMPLEMENTED = 'IMPLEMENTED',
-    CLOSED = 'CLOSED',
-    REJECTED = 'REJECTED',
+    DRAFT = "Draft",
+    UNDER_REVIEW = "Under Review",
+    ACTION_PLANNED = "Action Planned",
+    IMPLEMENTED = "Implemented",
+    CLOSED = "Closed",
+    REJECTED = "Rejected",
 }
 
-/**
- * Lesson Source Enum
- */
 export enum LessonSource {
-    INCIDENT = 'INCIDENT',
-    EXERCISE = 'EXERCISE',
-    AUDIT = 'AUDIT',
-    EXTERNAL_BENCHMARK = 'EXTERNAL_BENCHMARK',
-    AFTER_ACTION_REVIEW = 'AFTER_ACTION_REVIEW',
-    STAKEHOLDER_FEEDBACK = 'STAKEHOLDER_FEEDBACK',
-    OTHER = 'OTHER',
+    INCIDENT = "Incident",
+    EXERCISE = "Exercise",
+    AUDIT = "Audit",
+    EXTERNAL_BENCHMARK = "External Benchmark",
+    AFTER_ACTION_REVIEW = "After Action Review",
+    STAKEHOLDER_FEEDBACK = "Stakeholder Feedback",
+    OTHER = "Other",
 }
 
-/**
- * Lesson Priority Enum
- */
 export enum LessonPriority {
-    LOW = 'LOW',
-    MEDIUM = 'MEDIUM',
-    HIGH = 'HIGH',
-    CRITICAL = 'CRITICAL',
+    LOW = "Low",
+    MEDIUM = "Medium",
+    HIGH = "High",
+    CRITICAL = "Critical",
 }
 
-/**
- * Lesson Category Enum
- */
 export enum LessonCategory {
-    PROCESS = 'PROCESS',
-    TECHNOLOGY = 'TECHNOLOGY',
-    PEOPLE = 'PEOPLE',
-    COMMUNICATION = 'COMMUNICATION',
-    LEADERSHIP = 'LEADERSHIP',
-    TRAINING = 'TRAINING',
-    CULTURE = 'CULTURE',
-    RESOURCES = 'RESOURCES',
-    COMPLIANCE = 'COMPLIANCE',
-    OTHER = 'OTHER',
+    PROCESS = "Process",
+    TECHNOLOGY = "Technology",
+    PEOPLE = "People",
+    COMMUNICATION = "Communication",
+    LEADERSHIP = "Leadership",
+    TRAINING = "Training",
+    CULTURE = "Culture",
+    RESOURCES = "Resources",
+    COMPLIANCE = "Compliance",
+    OTHER = "Other",
 }
+
 
 // ============================================
 // Entity Interface

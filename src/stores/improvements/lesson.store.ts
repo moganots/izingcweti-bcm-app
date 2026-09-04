@@ -5,13 +5,15 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { lessonService } from '../../services/api/improvements/LessonService'
-import type {
-    Lesson,
-    LessonStats,
-    LessonFilters,
-    CreateLessonRequest,
-    UpdateLessonRequest,
-    BulkLessonAction,
+import {
+    type Lesson,
+    type LessonStats,
+    type LessonFilters,
+    type CreateLessonRequest,
+    type UpdateLessonRequest,
+    type BulkLessonAction,
+    LessonStatus,
+    LessonPriority,
 } from '../../models/entities/improvements/lesson.entity'
 
 export const useLessonStore = defineStore('lesson', () => {
@@ -39,31 +41,31 @@ export const useLessonStore = defineStore('lesson', () => {
     const hasLessons = computed(() => lessons.value.length > 0)
 
     const draftLessons = computed(() =>
-        lessons.value.filter((l) => l.status === 'DRAFT')
+        lessons.value.filter((l) => l.status === LessonStatus.DRAFT)
     )
 
     const underReviewLessons = computed(() =>
-        lessons.value.filter((l) => l.status === 'UNDER_REVIEW')
+        lessons.value.filter((l) => l.status === LessonStatus.UNDER_REVIEW)
     )
 
     const implementedLessons = computed(() =>
-        lessons.value.filter((l) => l.status === 'IMPLEMENTED')
+        lessons.value.filter((l) => l.status === LessonStatus.IMPLEMENTED)
     )
 
     const closedLessons = computed(() =>
-        lessons.value.filter((l) => l.status === 'CLOSED')
+        lessons.value.filter((l) => l.status ===  LessonStatus.CLOSED)
     )
 
     const rejectedLessons = computed(() =>
-        lessons.value.filter((l) => l.status === 'REJECTED')
+        lessons.value.filter((l) => l.status === LessonStatus.REJECTED)
     )
 
     const criticalPriorityLessons = computed(() =>
-        lessons.value.filter((l) => l.priority === 'CRITICAL')
+        lessons.value.filter((l) => l.priority ===  LessonPriority.CRITICAL)
     )
 
     const highPriorityLessons = computed(() =>
-        lessons.value.filter((l) => l.priority === 'HIGH')
+        lessons.value.filter((l) => l.priority === LessonPriority.HIGH)
     )
 
     const lessonsWithActions = computed(() =>
