@@ -6,12 +6,13 @@
         <!-- Home Tab -->
         <q-tab name="home" icon="home" label="Home" />
 
-        <!-- Dashboard Tab (BCM Overview) -->
+        <!-- Dashboard Tab (BCM Overview)
         <q-tab name="dashboard" icon="dashboard" label="Overview">
           <q-badge v-if="hasPendingChanges" color="orange" floating>
             {{ pendingCount > 99 ? '99+' : pendingCount }}
           </q-badge>
         </q-tab>
+         -->
 
         <!-- Sync Tab -->
         <q-tab name="sync" icon="sync" label="Sync">
