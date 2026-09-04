@@ -1,5 +1,5 @@
 import { BaseService } from './../../BaseService'
-import { API_ENDPOINTS } from '../../../core/constants/api.constants'
+import { API_ENDPOINTS } from './../../../core/constants/api.constants'
 import {
   IncidentSeverity,
   type Incident,
@@ -20,6 +20,7 @@ import {
   type IncidentStats,
 } from './../../../models/entities/incident/incident.entity'
 import { PaginatedResponse } from './../../../shared/types/common.types'
+import { formatISO } from 'src/utils/date.utils'
 
 /**
  * Incident Service - Aligned with Backend DTOs (camelCase)
@@ -38,7 +39,7 @@ export class IncidentService extends BaseService {
       params as Record<string, any>
     )
     return {
-      data: response.data || [],
+      data: response.data ?? [],
       total: response.total || 0,
       page: response.page || 1,
       limit: response.limit || 10,
@@ -246,7 +247,7 @@ export class IncidentService extends BaseService {
     const format = params?.format || 'csv'
     await this.download(
       `/incidents/export/${organisationId}`,
-      `incidents_export_${new Date().toISOString().split('T')[0]}.${format}`,
+      `incidents_export_${formatISO(new Date())}.${format}`,
       { params: params as Record<string, any> }
     )
   }

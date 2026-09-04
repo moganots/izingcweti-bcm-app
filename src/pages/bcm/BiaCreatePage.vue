@@ -185,7 +185,7 @@ const preSelectedFunction = ref('')
 
 const form = reactive({
   function_id: '',
-  assessed_date: new Date().toISOString().split('T')[0],
+  assessed_date: formatISO(new Date()),
   financial_impact_per_day: 0,
   operational_impact: '',
   regulatory_impact: '',

@@ -256,7 +256,7 @@ export class SettingsService extends BaseService {
     const format = options.format || 'json'
     await this.download(
       '/settings/export',
-      `settings_export_${new Date().toISOString().split('T')[0]}.${format}`,
+      `settings_export_${formatISO(new Date())}.${format}`,
       { params: options as Record<string, any> }
     )
   }

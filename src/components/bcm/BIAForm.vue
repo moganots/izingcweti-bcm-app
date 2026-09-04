@@ -183,6 +183,7 @@
 </template>
 
 <script setup lang="ts">
+import { formatISO } from 'src/utils/date.utils';
 import { reactive, computed, watch } from 'vue'
 
 const props = withDefaults(
@@ -224,7 +225,7 @@ const form = reactive({
   reputational_impact_description: '',
   regulatory_impact: 'Medium',
   regulatory_impact_description: '',
-  assessed_date: new Date().toISOString().split('T')[0],
+  assessed_date: formatISO(new Date()),
   assessed_by: '',
   additional_notes: '',
 })

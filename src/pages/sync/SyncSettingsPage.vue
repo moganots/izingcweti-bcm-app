@@ -487,7 +487,7 @@ function exportSyncLogs(): void {
   const url = URL.createObjectURL(dataBlob)
   const link = document.createElement('a')
   link.href = url
-  link.download = `sync-logs-${new Date().toISOString().split('T')[0]}.json`
+  link.download = `sync-logs-${formatISO(new Date())}.json`
   link.click()
   URL.revokeObjectURL(url)
 

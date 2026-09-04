@@ -456,7 +456,7 @@ async function handleUpdate(data: any): Promise<void> {
 
 function openStatusDialog(): void {
   statusForm.compliance_status = record.value?.compliance_status || ''
-  statusForm.last_audit_date = new Date().toISOString().split('T')[0]!
+  statusForm.last_audit_date = formatISO(new Date())!
   showStatusDialog.value = true
 }
 async function handleStatusUpdate(): Promise<void> {

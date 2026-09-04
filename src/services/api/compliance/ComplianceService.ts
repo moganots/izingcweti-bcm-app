@@ -300,7 +300,7 @@ export class ComplianceService extends BaseService {
     const format = params?.format || 'csv'
     await this.download(
       '/compliance/export',
-      `compliance_export_${new Date().toISOString().split('T')[0]}.${format}`,
+      `compliance_export_${formatISO(new Date())}.${format}`,
       { params: params as Record<string, any> }
     )
   }

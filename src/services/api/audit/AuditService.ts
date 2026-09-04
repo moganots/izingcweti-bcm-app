@@ -72,7 +72,7 @@ export class AuditService extends BaseService {
 
   async exportLogs(data: ExportAuditRequest): Promise<void> {
     const format = data.format || 'csv'
-    const filename = `audit_export_${new Date().toISOString().split('T')[0]}.${format}`
+    const filename = `audit_export_${formatISO(new Date())}.${format}`
     await this.download(API_ENDPOINTS.AUDIT.EXPORT, filename, {
       params: data as Record<string, any>,
     })

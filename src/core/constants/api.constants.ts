@@ -450,6 +450,34 @@ export const API_ENDPOINTS = {
   },
 
   // ============================================
+  // Training Endpoints (training.routes.ts)
+  // ============================================
+  TRAINING: {
+    BASE: '/training',
+    COURSES: {
+      BASE: '/training/courses',
+      BY_ID: (id: string) => `/training/courses/${id}`,
+      CREATE: '/training/courses',
+      UPDATE: (id: string) => `/training/courses/${id}`,
+      DELETE: (id: string) => `/training/courses/${id}`,
+    },
+    PROGRESS: {
+      BASE: '/training/progress',
+      BY_USER_AND_COURSE: (userId: string, courseId: string) =>
+        `/training/progress/user/${userId}/course/${courseId}`,
+      ENROLL: '/training/enroll',
+      UPDATE: (progressId: string) => `/training/progress/${progressId}`,
+    },
+    CERTIFICATIONS: {
+      BASE: '/training/certifications',
+      BY_USER: (userId: string) => `/training/certifications/user/${userId}`,
+      CREATE: '/training/certifications',
+      UPDATE: (id: string) => `/training/certifications/${id}`,
+      DELETE: (id: string) => `/training/certifications/${id}`,
+    },
+  },
+
+  // ============================================
   // Workflow Endpoints (workflow.routes.ts)
   // ============================================
   WORKFLOWS: {
@@ -682,6 +710,10 @@ export const API_ENDPOINTS = {
         `/admin/rules/${ruleId}/execution-logs`,
       EXECUTION_STATS: (ruleId: string) =>
         `/admin/rules/${ruleId}/execution-logs/stats`,
+      EXECUTION_SUMMARY: (ruleId: string) =>
+        `/admin/rules/${ruleId}/execution-logs/summary`,
+      EXECUTION_LOG_BY_ID: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
+      EXECUTION_LOG_DELETE: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
       EXECUTION_LOGS_CLEANUP: '/admin/rules/execution-logs/cleanup',
     },
     CACHE: {
@@ -755,56 +787,6 @@ export const API_ENDPOINTS = {
     SYNC_PROGRESS: '/sync/metadata/sync-progress',
     METADATA_MAP: '/sync/metadata/map',
     METADATA_STATS: '/sync/metadata/stats',
-  },
-
-  // ============================================
-  // Training Endpoints (training.routes.ts)
-  // ============================================
-  TRAINING: {
-    COURSES: {
-      BASE: '/training/courses',
-      BY_ID: (id: string) => `/training/courses/${id}`,
-      CREATE: '/training/courses',
-      UPDATE: (id: string) => `/training/courses/${id}`,
-      DELETE: (id: string) => `/training/courses/${id}`,
-    },
-    PROGRESS: {
-      BASE: '/training/progress',
-      BY_USER_AND_COURSE: (userId: string, courseId: string) =>
-        `/training/progress/user/${userId}/course/${courseId}`,
-      ENROLL: '/training/enroll',
-      UPDATE: (progressId: string) => `/training/progress/${progressId}`,
-    },
-    CERTIFICATIONS: {
-      BASE: '/training/certifications',
-      BY_USER: (userId: string) => `/training/certifications/user/${userId}`,
-      CREATE: '/training/certifications',
-      UPDATE: (id: string) => `/training/certifications/${id}`,
-      DELETE: (id: string) => `/training/certifications/${id}`,
-    },
-  },
-
-  // ============================================
-  // Attestation Endpoints (attestation.routes.ts)
-  // ============================================
-  ATTESTATION: {
-    DOCUMENTS: {
-      BASE: '/attestation/documents',
-      BY_ID: (id: string) => `/attestation/documents/${id}`,
-      CREATE: '/attestation/documents',
-      UPDATE: (id: string) => `/attestation/documents/${id}`,
-      DELETE: (id: string) => `/attestation/documents/${id}`,
-    },
-    USER: {
-      BASE: (userId: string) => `/attestation/user/${userId}`,
-      ATTESTATION: (userId: string, attestationId: string) =>
-        `/attestation/user/${userId}/attestation/${attestationId}`,
-    },
-    ACKNOWLEDGE: '/attestation/acknowledge',
-    USER_ATTESTATIONS: {
-      BASE: '/attestation/user-attestations',
-      CREATE: '/attestation/user-attestations',
-    },
   },
 
   // ============================================
@@ -898,11 +880,37 @@ export const API_ENDPOINTS = {
       `/admin/rules/stats/organisation/${organisationId}`,
     TEST_DEFINITION: '/admin/rules/test-rule',
     VALIDATE: '/admin/rules/validate',
-    EXECUTION_LOGS: (ruleId: string) => `/admin/rules/${ruleId}/execution-logs`,
-    EXECUTION_STATS: (ruleId: string) => `/admin/rules/${ruleId}/execution-logs/stats`,
-    EXECUTION_SUMMARY: (ruleId: string) => `/admin/rules/${ruleId}/execution-logs/summary`,
+    EXECUTION_LOGS: (ruleId: string) =>
+      `/admin/rules/${ruleId}/execution-logs`,
+    EXECUTION_STATS: (ruleId: string) =>
+      `/admin/rules/${ruleId}/execution-logs/stats`,
+    EXECUTION_SUMMARY: (ruleId: string) =>
+      `/admin/rules/${ruleId}/execution-logs/summary`,
     EXECUTION_LOG_BY_ID: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
     EXECUTION_LOG_DELETE: (uuid: string) => `/admin/rules/execution-logs/${uuid}`,
     EXECUTION_LOGS_CLEANUP: '/admin/rules/execution-logs/cleanup',
+  },
+
+  // ============================================
+  // Attestation Endpoints (attestation.routes.ts)
+  // ============================================
+  ATTESTATION: {
+    DOCUMENTS: {
+      BASE: '/attestation/documents',
+      BY_ID: (id: string) => `/attestation/documents/${id}`,
+      CREATE: '/attestation/documents',
+      UPDATE: (id: string) => `/attestation/documents/${id}`,
+      DELETE: (id: string) => `/attestation/documents/${id}`,
+    },
+    USER: {
+      BASE: (userId: string) => `/attestation/user/${userId}`,
+      ATTESTATION: (userId: string, attestationId: string) =>
+        `/attestation/user/${userId}/attestation/${attestationId}`,
+    },
+    ACKNOWLEDGE: '/attestation/acknowledge',
+    USER_ATTESTATIONS: {
+      BASE: '/attestation/user-attestations',
+      CREATE: '/attestation/user-attestations',
+    },
   },
 } as const

@@ -363,7 +363,6 @@ async function handlePush(): Promise<void> {
  */
 async function handlePull(): Promise<void> {
   try {
-    const result = await sync.pullChanges()
     $q.notify({
       type: 'positive',
       message: t('sync.notifications.pull_success'),
@@ -456,7 +455,7 @@ async function handlePushSingle(change: PendingChange): Promise<void> {
 /**
  * Handle retry single change
  */
-async function handleRetrySingle(change: PendingChange): Promise<void> {
+async function handleRetrySingle(_change: PendingChange): Promise<void> {
   try {
     const count = await sync.retryFailedChanges()
     $q.notify({

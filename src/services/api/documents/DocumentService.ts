@@ -309,7 +309,7 @@ export class DocumentService extends BaseService {
   async bulkDownload(docIds: string[]): Promise<void> {
     await this.download(
       '/documents/bulk-download',
-      `documents_bulk_${new Date().toISOString().split('T')[0]}.zip`,
+      `documents_bulk_${formatISO(new Date())}.zip`,
       { params: { ids: docIds.join(',') } }
     )
   }

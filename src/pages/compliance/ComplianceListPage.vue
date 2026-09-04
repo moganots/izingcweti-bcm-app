@@ -346,7 +346,7 @@ async function handleSave(data: any): Promise<void> {
 function openStatusDialog(record: any): void {
   statusRecord.value = record
   statusForm.compliance_status = record.compliance_status || ''
-  statusForm.last_audit_date = new Date().toISOString().split('T')[0]!
+  statusForm.last_audit_date = formatISO(new Date())!
   showStatusDialog.value = true
 }
 

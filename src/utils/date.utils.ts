@@ -9,7 +9,6 @@ import {
   isAfter,
   isBefore,
   addDays,
-  addMonths,
   startOfDay,
   endOfDay,
 } from 'date-fns'
@@ -58,7 +57,7 @@ export function formatISO(date: string | Date | null | undefined): string {
   if (!date) return ''
   try {
     const dateObj = typeof date === 'string' ? parseISO(date) : date
-    return isValid(dateObj) ? dateObj.toISOString() : ''
+    return isValid(dateObj) ? dateObj?.toISOString()?.split('T')[0]! : ''
   } catch {
     return ''
   }

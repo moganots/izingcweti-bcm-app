@@ -225,7 +225,7 @@ export class BCPRepository extends BaseRepository<BusinessContinuityPlan> {
    * Find BCPs that are overdue for review
    */
   async findOverdue(): Promise<BusinessContinuityPlan[]> {
-    const today = new Date().toISOString().split('T')[0] ?? ''
+    const today = formatISO(new Date()) ?? ''
     return this.findDueForReview(today!)
   }
 
@@ -448,7 +448,7 @@ export class ExerciseTestRepository extends BaseRepository<ExerciseTest> {
    * Find upcoming tests (scheduled date is today or in the future, not yet passed)
    */
   async findUpcoming(): Promise<ExerciseTest[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = formatISO(new Date())
     return this.table
       .filter((test) => {
         const scheduledDate = test.scheduledDate
@@ -469,7 +469,7 @@ export class ExerciseTestRepository extends BaseRepository<ExerciseTest> {
    * Find overdue tests (scheduled date is in the past, not yet passed)
    */
   async findOverdue(): Promise<ExerciseTest[]> {
-    const today = new Date().toISOString().split('T')[0]
+    const today = formatISO(new Date())
     return this.table
       .filter((test) => {
         const scheduledDate = test.scheduledDate
@@ -536,7 +536,7 @@ export class ExerciseTestRepository extends BaseRepository<ExerciseTest> {
       [ExerciseTestType.SIMULATION]: 0,
     }
 
-    const today = new Date().toISOString().split('T')[0] ?? ''
+    const today = formatISO(new Date()) ?? ''
 
     let upcoming = 0
     let overdue = 0
@@ -704,7 +704,7 @@ export class ComplianceRecordRepository extends BaseRepository<ComplianceRecord>
       stats.rate = stats.total > 0 ? Math.round((stats.compliant / stats.total) * 100) : 0
     }
 
-    const today = new Date().toISOString().split('T')[0] ?? ''
+    const today = formatISO(new Date()) ?? ''
     const futureDate = new Date()
     futureDate.setDate(futureDate.getDate() + 30)
     const futureStr = futureDate.toISOString().split('T')[0] ?? ''

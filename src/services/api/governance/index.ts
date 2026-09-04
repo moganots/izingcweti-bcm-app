@@ -1,0 +1,1 @@
+export { GovernanceService, governanceService } from './GovernanceService'
