@@ -10,34 +10,206 @@ import type {
   SyncPushResponse,
   SyncChange,
   NetworkInfo,
+} from '../../models/entities/sync/sync.entity'
+import {
+  SyncPriority,
+  OperationType,
+  SyncStatus,
   ConflictResolutionStrategy,
-} from './../../models/entities'
-import { SyncPriority, OperationType, SyncStatus } from './../../models/entities'
-import { API_ENDPOINTS } from 'src/core/constants/api.constants'
+  PendingChangeStatus,
+} from '../../types/sync.types'
+import { API_ENDPOINTS, STORAGE_KEYS } from '../../core/constants/api.constants'
+
+// ============================================
+// Local Types
+// ============================================
+
+export interface ProcessChangeResult {
+  success: boolean
+  operationType: OperationType
+  entityType: string
+  entityId: string
+  serverResponse?: any
+  error?: string
+}
+
+export interface SyncEngineStats {
+  pendingChanges: number
+  conflicts: number
+  unresolvedConflicts: number
+  lastSyncTime: string | null
+  lastSyncToken: string | null
+  isOnline: boolean
+  syncInProgress: boolean
+  deviceId: string
+}
+
+export interface FullSyncResult {
+  pushResult: SyncPushResponse
+  pullResult: SyncPullResponse | null
+  durationMs: number
+}
 
 /**
  * Sync Engine Service
- * Core synchronization engine for offline-first data management
- * Aligned with backend sync routes from API_ENDPOINTS.SYNC
+ * Core synchronization engine for offline-first data management.
+ *
+ * Backend contract: `src/routes/sync.routes.ts` (mounted at `${baseUrl}/sync`).
+ * Frontend contract: `src/core/constants/api.constants.ts` → `API_ENDPOINTS.SYNC.*`
+ *
+ * IMPORTANT:
+ *  - All entity field names use camelCase to match frontend entity definitions.
+ *  - All endpoints are resolved from `API_ENDPOINTS` — no hardcoded paths.
+ *  - `pendingChanges` rows carry `entityType` as the LOCAL Dexie table name
+ *    (e.g. `businessUnits`, `criticalFunctions`). The `getEndpointForEntityType`
+ *    map translates that to the correct REST base path.
  */
 export class SyncEngine {
   private db: BCMDatabase
   private networkMonitor: NetworkMonitor
   private conflictResolver: ConflictResolver
-  private maxRetries: number = 5
-  private batchSize: number
+  private readonly maxRetries: number
+  private readonly batchSize: number
   private syncInProgress: boolean = false
+
+  // ============================================
+  // Entity → Endpoint Map (covers ALL domains)
+  // ============================================
+
+  /**
+   * Maps local Dexie table names (used by `pendingChanges.entityType`)
+   * to the backend REST base path (no trailing slash).
+   *
+   * NOTE: Keys are the LOCAL TABLE NAMES, values are the endpoint bases
+   *       as defined in API_ENDPOINTS.
+   */
+  private static readonly ENTITY_ENDPOINT_MAP: Readonly<Record<string, string>> = {
+    // ---- Organisation ----
+    organisations: API_ENDPOINTS.ORGANISATIONS.BASE,
+    businessUnits: API_ENDPOINTS.BUSINESS_UNITS.BASE,
+    departments: API_ENDPOINTS.DEPARTMENTS.BASE,
+    tenants: API_ENDPOINTS.TENANTS.BASE,
+
+    // ---- BCM ----
+    criticalFunctions: API_ENDPOINTS.CRITICAL_FUNCTIONS.BASE,
+    businessImpactAssessments: API_ENDPOINTS.BIA.BASE,
+    businessContinuityPlans: API_ENDPOINTS.BCP.BASE,
+    bcpTemplates: API_ENDPOINTS.BCP_TEMPLATES.BASE,
+    recoveryStrategies: API_ENDPOINTS.RECOVERY_STRATEGIES.BASE,
+    exerciseTests: API_ENDPOINTS.EXERCISE_TESTS.BASE,
+    incidents: API_ENDPOINTS.INCIDENTS.BASE,
+
+    // ---- Risk & Compliance ----
+    risks: API_ENDPOINTS.RISKS.BASE,
+    complianceRecords: API_ENDPOINTS.COMPLIANCE.RECORDS,
+
+    // ---- Governance ----
+    governancePolicies: API_ENDPOINTS.GOVERNANCE.POLICIES.BASE,
+    maturityAssessments: API_ENDPOINTS.GOVERNANCE.MATURITY.BASE,
+    governanceActivities: API_ENDPOINTS.GOVERNANCE.ACTIVITIES.BASE,
+
+    // ---- Documents ----
+    documents: API_ENDPOINTS.DOCUMENTS.BASE,
+    documentTemplates: `${API_ENDPOINTS.DOCUMENTS.BASE}/templates`,
+
+    // ---- Workflows ----
+    workflows: API_ENDPOINTS.WORKFLOWS.BASE,
+
+    // ---- Notifications ----
+    notifications: API_ENDPOINTS.NOTIFICATIONS.BASE,
+    notificationPreferences: API_ENDPOINTS.NOTIFICATIONS.PREFERENCES,
+    notificationTemplates: API_ENDPOINTS.NOTIFICATIONS.TEMPLATES.BASE,
+
+    // ---- Reports / Dashboards ----
+    reports: API_ENDPOINTS.REPORTS.BASE,
+    dashboardConfigs: API_ENDPOINTS.DASHBOARD.CONFIGS,
+
+    // ---- Audit ----
+    auditLogs: API_ENDPOINTS.AUDIT.BASE,
+    auditRetentionPolicies: API_ENDPOINTS.AUDIT.RETENTION_POLICIES.BASE,
+    activityHistory: `${API_ENDPOINTS.AUDIT.BASE}/activity-history`,
+    attachments: `${API_ENDPOINTS.AUDIT.BASE}/attachments`,
+    comments: `${API_ENDPOINTS.AUDIT.BASE}/comments`,
+
+    // ---- Rules / Feature Toggles / Cache ----
+    rules: API_ENDPOINTS.RULES.BASE,
+    ruleExecutionLogs: `${API_ENDPOINTS.RULES.BASE}/execution-logs`,
+    featureToggles: API_ENDPOINTS.FEATURE_TOGGLES.BASE,
+    featureToggleOverrides: API_ENDPOINTS.FEATURE_TOGGLES.OVERRIDES.BASE,
+    featureToggleAuditLogs: `${API_ENDPOINTS.FEATURE_TOGGLES.BASE}/audit-logs`,
+
+    // ---- Training & Attestation ----
+    trainingCourses: API_ENDPOINTS.TRAINING.COURSES.BASE,
+    userCourseProgress: API_ENDPOINTS.TRAINING.PROGRESS.BASE,
+    certifications: API_ENDPOINTS.TRAINING.CERTIFICATIONS.BASE,
+    attestationDocuments: API_ENDPOINTS.ATTESTATION.DOCUMENTS.BASE,
+    userAttestations: API_ENDPOINTS.ATTESTATION.USER_ATTESTATIONS.BASE,
+
+    // ---- Improvements ----
+    lessons: API_ENDPOINTS.IMPROVEMENTS.LESSONS.BASE,
+
+    // ---- Sync-managed tables (do NOT sync via push/pull — handled separately) ----
+    pendingChanges: '',
+    syncConflicts: API_ENDPOINTS.SYNC.CONFLICTS,
+    syncMetadata: API_ENDPOINTS.SYNC.METADATA,
+  }
+
+  /**
+   * Normalizes a singular/plural entityType string to its canonical Dexie table name.
+   */
+  private static readonly ENTITY_NORMALIZATION_MAP: Readonly<Record<string, string>> = {
+    organisation: 'organisations',
+    businessUnit: 'businessUnits',
+    department: 'departments',
+    tenant: 'tenants',
+    criticalFunction: 'criticalFunctions',
+    businessImpactAssessment: 'businessImpactAssessments',
+    businessContinuityPlan: 'businessContinuityPlans',
+    bcpTemplate: 'bcpTemplates',
+    recoveryStrategy: 'recoveryStrategies',
+    exerciseTest: 'exerciseTests',
+    incident: 'incidents',
+    risk: 'risks',
+    complianceRecord: 'complianceRecords',
+    governancePolicy: 'governancePolicies',
+    maturityAssessment: 'maturityAssessments',
+    governanceActivity: 'governanceActivities',
+    document: 'documents',
+    documentTemplate: 'documentTemplates',
+    workflow: 'workflows',
+    notification: 'notifications',
+    notificationPreference: 'notificationPreferences',
+    notificationTemplate: 'notificationTemplates',
+    report: 'reports',
+    dashboardConfig: 'dashboardConfigs',
+    auditLog: 'auditLogs',
+    auditRetentionPolicy: 'auditRetentionPolicies',
+    activityHistory: 'activityHistory',
+    attachment: 'attachments',
+    comment: 'comments',
+    rule: 'rules',
+    ruleExecutionLog: 'ruleExecutionLogs',
+    featureToggle: 'featureToggles',
+    featureToggleOverride: 'featureToggleOverrides',
+    featureToggleAuditLog: 'featureToggleAuditLogs',
+    trainingCourse: 'trainingCourses',
+    userCourseProgress: 'userCourseProgress',
+    certification: 'certifications',
+    attestationDocument: 'attestationDocuments',
+    userAttestation: 'userAttestations',
+    lesson: 'lessons',
+  }
 
   constructor(db?: BCMDatabase) {
     this.db = db || BCMDatabase.getInstance()
     this.networkMonitor = NetworkMonitor.getInstance()
     this.conflictResolver = new ConflictResolver()
-    this.maxRetries = parseInt(import.meta.env.VITE_SYNC_MAX_RETRIES || '5')
-    this.batchSize = parseInt(import.meta.env.VITE_SYNC_BATCH_SIZE || '50')
+    this.maxRetries = parseInt(import.meta.env.VITE_SYNC_MAX_RETRIES || '5', 10)
+    this.batchSize = parseInt(import.meta.env.VITE_SYNC_BATCH_SIZE || '50', 10)
   }
 
   // ============================================
-  // Initialization
+  // Lifecycle
   // ============================================
 
   async initialize(): Promise<void> {
@@ -64,7 +236,14 @@ export class SyncEngine {
 
   async getPendingChanges(): Promise<PendingChange[]> {
     const repo = this.db.getRepository('pendingChanges')
-    return repo.getOrderedByPriority()
+    if (!repo) {
+      console.warn('[SyncEngine] pendingChanges table not found')
+      return []
+    }
+    const ordered = repo.getOrderedByPriority
+      ? await repo.getOrderedByPriority()
+      : await repo.findAll()
+    return (ordered || []) as PendingChange[]
   }
 
   async addPendingChange(change: {
@@ -75,34 +254,64 @@ export class SyncEngine {
     priority?: SyncPriority
   }): Promise<void> {
     const repo = this.db.getRepository('pendingChanges')
+    if (!repo) throw new Error('pendingChanges table not found')
+
     const now = new Date().toISOString()
+    const entityType = this.normalizeEntityType(change.entityType)
 
     await repo.create({
-      uuid: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-      entity_type: change.entityType,
-      entity_id: change.entityId,
-      operation_type: change.operationType,
+      uuid: this.generateUuid(),
+      entityType,
+      entityId: change.entityId,
+      operationType: change.operationType,
       data: change.data,
-      priority: change.priority || SyncPriority.MEDIUM,
+      priority: change.priority ?? SyncPriority.MEDIUM,
       attempts: 0,
-      sync_status: SyncStatus.PENDING,
-      created_at: now,
-      updated_at: now,
+      status: PendingChangeStatus.PENDING,
+      createdBy: 'system',
+      createdAt: now,
+      updatedBy: 'system',
+      updatedAt: now,
+      version: 1,
+      syncStatus: SyncStatus.PENDING,
     })
   }
 
   async removePendingChange(id: string): Promise<void> {
     const repo = this.db.getRepository('pendingChanges')
+    if (!repo) return
     await repo.delete(id)
   }
 
   async incrementAttempts(id: string): Promise<void> {
     const repo = this.db.getRepository('pendingChanges')
+    if (!repo?.incrementAttempts) return
     await repo.incrementAttempts(id)
+  }
+
+  async resetAttempts(id: string): Promise<void> {
+    const repo = this.db.getRepository('pendingChanges')
+    if (!repo) return
+    await repo.update(id, {
+      attempts: 0,
+      status: PendingChangeStatus.PENDING,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  async markFailed(id: string, errorMessage: string): Promise<void> {
+    const repo = this.db.getRepository('pendingChanges')
+    if (!repo) return
+    await repo.update(id, {
+      status: PendingChangeStatus.FAILED,
+      errorMessage,
+      updatedAt: new Date().toISOString(),
+    })
   }
 
   async clearPendingChanges(): Promise<void> {
     const repo = this.db.getRepository('pendingChanges')
+    if (!repo) return
     await repo.clearAll()
   }
 
@@ -111,20 +320,14 @@ export class SyncEngine {
   // ============================================
 
   /**
-   * Push local pending changes to server
-   * Uses API_ENDPOINTS.SYNC.PUSH
+   * Push all pending local changes to the server.
+   * Uses `POST ${baseUrl}/sync/push`.
    */
   async pushChanges(): Promise<SyncPushResponse> {
-    if (this.syncInProgress) {
-      throw new Error('Sync already in progress')
-    }
-
-    if (!this.networkMonitor.isOnline) {
-      throw new Error('Cannot sync while offline')
-    }
+    this.assertNotSyncing()
+    this.assertOnline()
 
     this.syncInProgress = true
-
     try {
       const pendingChanges = await this.getPendingChanges()
 
@@ -137,15 +340,26 @@ export class SyncEngine {
         }
       }
 
-      const sorted = pendingChanges.sort((a, b) => a.priority - b.priority)
+      const sorted = [...pendingChanges].sort(
+        (a, b) => (a.priority ?? 3) - (b.priority ?? 3),
+      )
       const batches = this.createBatches(sorted, this.batchSize)
+
       let appliedChanges = 0
       const allConflicts: SyncConflict[] = []
 
       for (const batch of batches) {
-        const result = await this.pushBatch(batch)
-        appliedChanges += result.appliedChanges
-        allConflicts.push(...result.conflicts)
+        try {
+          const result = await this.pushBatch(batch)
+          appliedChanges += result.appliedChanges
+          allConflicts.push(...result.conflicts)
+        } catch (err: any) {
+          // Isolate batch failure: mark all items in the batch as failed
+          console.error('[SyncEngine] Batch push failed:', err?.message)
+          for (const item of batch) {
+            await this.markFailed(item.uuid, err?.message || 'Batch push failed')
+          }
+        }
       }
 
       return {
@@ -160,8 +374,7 @@ export class SyncEngine {
   }
 
   /**
-   * Push a batch of changes to the server
-   * Uses API_ENDPOINTS.SYNC.PUSH endpoint
+   * Push a single batch of changes.
    */
   private async pushBatch(batch: PendingChange[]): Promise<{
     appliedChanges: number
@@ -169,61 +382,88 @@ export class SyncEngine {
   }> {
     const response = await apiClient.post(API_ENDPOINTS.SYNC.PUSH, {
       changes: batch.map((c) => ({
-        entityType: c.entity_type,
-        entityId: c.entity_id,
-        operationType: c.operation_type,
+        entityType: c.entityType,
+        entityId: c.entityId,
+        operationType: c.operationType,
         data: c.data,
         version: c.version,
+        clientTimestamp: c.updatedAt,
       })),
       lastSyncToken: await this.getSyncToken(),
+      deviceId: this.getDeviceId(),
     })
 
-    const result = response.data
+    const result = response.data ?? {}
     const conflicts: SyncConflict[] = []
 
-    if (result.appliedIds) {
+    // Server returns appliedIds → remove those from local queue
+    if (Array.isArray(result.appliedIds)) {
       for (const id of result.appliedIds) {
         await this.removePendingChange(id)
       }
     }
 
-    if (result.conflicts) {
+    // Server returns conflicts → save & surface
+    if (Array.isArray(result.conflicts)) {
       for (const conflict of result.conflicts) {
         const saved = await this.saveConflict(conflict)
         conflicts.push(saved)
       }
     }
 
-    if (result.failedIds) {
+    // Server returns failedIds → bump attempt counter
+    if (Array.isArray(result.failedIds)) {
       for (const id of result.failedIds) {
         await this.incrementAttempts(id)
       }
     }
 
     return {
-      appliedChanges: result.appliedIds?.length || 0,
+      appliedChanges: result.appliedIds?.length ?? 0,
       conflicts,
     }
   }
 
   /**
-   * Process a single change (for retry or manual sync)
+   * Process a single change directly (used for retries / manual sync).
+   * Routes to the correct endpoint via `getEndpointForEntityType`.
    */
-  async processChange(change: PendingChange): Promise<void> {
-    const { entity_type, entity_id, operation_type, data } = change
+  async processChange(change: PendingChange): Promise<ProcessChangeResult> {
+    const { entityType, entityId, operationType, data } = change
+    const endpoint = this.getEndpointForEntityType(entityType)
 
-    switch (operation_type) {
-      case OperationType.CREATE:
-        await apiClient.post(`/${entity_type}`, data)
-        break
-      case OperationType.UPDATE:
-        await apiClient.put(`/${entity_type}/${entity_id}`, data)
-        break
-      case OperationType.DELETE:
-        await apiClient.delete(`/${entity_type}/${entity_id}`)
-        break
-      default:
-        throw new Error(`Unknown operation type: ${operation_type}`)
+    try {
+      let serverResponse: any = null
+
+      switch (operationType) {
+        case OperationType.CREATE:
+          serverResponse = (await apiClient.post(endpoint, data)).data
+          break
+        case OperationType.UPDATE:
+          serverResponse = (await apiClient.put(`${endpoint}/${entityId}`, data)).data
+          break
+        case OperationType.DELETE:
+          serverResponse = (await apiClient.delete(`${endpoint}/${entityId}`)).data
+          break
+        default:
+          throw new Error(`Unknown operation type: ${operationType}`)
+      }
+
+      return {
+        success: true,
+        operationType,
+        entityType,
+        entityId,
+        serverResponse,
+      }
+    } catch (err: any) {
+      return {
+        success: false,
+        operationType,
+        entityType,
+        entityId,
+        error: err?.message || 'Unknown error',
+      }
     }
   }
 
@@ -232,108 +472,125 @@ export class SyncEngine {
   // ============================================
 
   /**
-   * Pull changes from server
-   * Uses API_ENDPOINTS.SYNC.PULL endpoint
+   * Pull changes from server.
+   * Uses `GET ${baseUrl}/sync/pull`.
    */
   async pullChanges(since?: string | null): Promise<SyncPullResponse> {
-    if (!this.networkMonitor.isOnline) {
-      throw new Error('Cannot sync while offline')
+    this.assertOnline()
+
+    const syncToken = since ?? (await this.getSyncToken())
+
+    const response = await apiClient.get(API_ENDPOINTS.SYNC.PULL, {
+      params: {
+        since: syncToken,
+        limit: this.batchSize,
+      },
+    })
+
+    const result: SyncPullResponse = response.data ?? {
+      success: false,
+      changes: [],
+      syncToken: syncToken || '',
+      hasMore: false,
     }
 
-    try {
-      const syncToken = since || (await this.getSyncToken())
-
-      const response = await apiClient.get(API_ENDPOINTS.SYNC.PULL, {
-        params: {
-          since: syncToken,
-          limit: this.batchSize,
-        },
-      })
-
-      const result: SyncPullResponse = response.data
-
-      if (result.changes && result.changes.length > 0) {
-        for (const change of result.changes) {
-          await this.applyRemoteChange(change)
-        }
+    if (Array.isArray(result.changes)) {
+      for (const change of result.changes) {
+        await this.applyRemoteChange(change)
       }
-
-      if (result.syncToken) {
-        await this.setSyncToken(result.syncToken)
-      }
-
-      return result
-    } catch (error) {
-      console.error('Pull changes failed:', error)
-      throw error
     }
+
+    if (result.syncToken) {
+      await this.setSyncToken(result.syncToken)
+    }
+
+    return result
   }
 
   /**
-   * Apply a remote change to local database
+   * Apply a single remote change to the local Dexie DB.
    */
   async applyRemoteChange(change: SyncChange): Promise<void> {
+    const entityType = this.normalizeEntityType(change.entityType)
+    const repository = this.db.getRepository(entityType)
+
+    if (!repository) {
+      console.warn(`[SyncEngine] No repository for entity type: ${entityType}`)
+      return
+    }
+
     try {
-      const repository = this.db.getRepository(change.entityType)
-
-      if (!repository) {
-        console.warn(`No repository found for entity type: ${change.entityType}`)
-        return
-      }
-
       switch (change.operationType) {
         case OperationType.CREATE:
         case OperationType.UPDATE: {
           const existing = await repository.findById(change.entityId)
 
-          if (existing && existing.sync_status === 'PENDING') {
+          // Local pending change + remote mutation = potential conflict
+          if (existing && (existing as any).syncStatus === SyncStatus.PENDING) {
             await this.handlePotentialConflict(existing, change)
-          } else {
-            await repository.upsert({
-              uuid: change.entityId,
-              ...change.data,
-              sync_status: SyncStatus.SYNCED,
-            })
+            return
           }
+
+          await repository.upsert({
+            uuid: change.entityId,
+            ...change.data,
+            syncStatus: SyncStatus.SYNCED,
+            updatedAt: new Date().toISOString(),
+          })
           break
         }
 
         case OperationType.DELETE:
           await repository.delete(change.entityId)
           break
+
+        default:
+          console.warn(
+            `[SyncEngine] Unknown operationType: ${change.operationType}`,
+          )
       }
-    } catch (error) {
+    } catch (err) {
       console.error(
-        `Failed to apply remote change for ${change.entityType}/${change.entityId}:`,
-        error
+        `[SyncEngine] Failed to apply remote change for ${entityType}/${change.entityId}:`,
+        err,
       )
-      throw error
+      throw err
     }
   }
 
-  /**
-   * Handle potential conflict between local and remote changes
-   */
-  private async handlePotentialConflict(localData: any, remoteChange: SyncChange): Promise<void> {
-    const conflictType = this.conflictResolver.detectConflict(localData, remoteChange.data)
+  private async handlePotentialConflict(
+    localData: any,
+    remoteChange: SyncChange,
+  ): Promise<void> {
+    const conflictType = this.conflictResolver.detectConflict(
+      localData,
+      remoteChange.data,
+    )
 
     if (conflictType) {
       await this.saveConflict({
-        entity_id: remoteChange.entityId,
-        entity_type: remoteChange.entityType,
-        client_version: localData,
-        server_version: remoteChange.data,
-        conflict_type: conflictType,
-        detected_at: new Date().toISOString(),
+        entityId: remoteChange.entityId,
+        entityType: remoteChange.entityType,
+        clientVersion: localData,
+        serverVersion: remoteChange.data,
+        conflictType,
+        detectedAt: new Date().toISOString(),
         resolved: false,
-      })
+        autoResolvable: false,
+        autoResolved: false,
+      } as any)
     } else {
-      const repository = this.db.getRepository(remoteChange.entityType)
-      await repository.upsert({
-        uuid: remoteChange.entityId,
-        ...remoteChange.data,
-        sync_status: SyncStatus.SYNCED,
-      })
+      const repository = this.db.getRepository(
+        this.normalizeEntityType(remoteChange.entityType),
+      )
+      if (repository) {
+        await repository.upsert({
+          uuid: remoteChange.entityId,
+          ...remoteChange.data,
+          syncStatus: SyncStatus.SYNCED,
+          updatedAt: new Date().toISOString(),
+        })
+      }
     }
   }
 
@@ -341,270 +598,384 @@ export class SyncEngine {
   // Conflict Management
   // ============================================
 
-  /**
-   * Save a conflict record
-   * Uses API_ENDPOINTS.SYNC.CONFLICTS for server sync
-   */
-  async saveConflict(conflictData: Partial<SyncConflict>): Promise<SyncConflict> {
+  async saveConflict(
+    conflictData: Partial<SyncConflict>,
+  ): Promise<SyncConflict> {
     const conflictRepo = this.db.getRepository('syncConflicts')
-    const conflict = await conflictRepo.create({
-      uuid: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-      ...conflictData,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      sync_status: SyncStatus.CONFLICT,
-    })
+    if (!conflictRepo) throw new Error('syncConflicts table not found')
 
-    // If online, sync conflict to server immediately
+    const now = new Date().toISOString()
+    const conflict = (await conflictRepo.create({
+      uuid: this.generateUuid(),
+      ...conflictData,
+      createdBy: 'system',
+      createdAt: now,
+      updatedBy: 'system',
+      updatedAt: now,
+      version: 1,
+      syncStatus: SyncStatus.CONFLICT,
+    })) as SyncConflict
+
+    // Push conflict to server so admins can see it centrally
     if (this.networkMonitor.isOnline) {
       try {
         await apiClient.post(API_ENDPOINTS.SYNC.CONFLICTS, conflict)
-      } catch (error) {
-        console.warn('Failed to sync conflict to server:', error)
+      } catch (err) {
+        console.warn('[SyncEngine] Failed to sync conflict to server:', err)
       }
     }
 
     return conflict
   }
 
-  /**
-   * Get all conflicts from local database
-   */
   async getConflicts(): Promise<SyncConflict[]> {
     const conflictRepo = this.db.getRepository('syncConflicts')
-    return conflictRepo.findAll()
+    if (!conflictRepo) return []
+    return ((await conflictRepo.findAll()) || []) as SyncConflict[]
   }
 
-  /**
-   * Get unresolved conflicts only
-   */
   async getUnresolvedConflicts(): Promise<SyncConflict[]> {
-    const conflictRepo = this.db.getRepository('syncConflicts')
-    const all = await conflictRepo.findAll()
-    return all.filter((c: SyncConflict) => !c.resolved)
+    const all = await this.getConflicts()
+    return all.filter((c) => !c.resolved)
   }
 
-  /**
-   * Resolve a conflict
-   * Uses API_ENDPOINTS.SYNC.RESOLVE_CONFLICT
-   */
   async resolveConflict(
     conflictId: string,
     resolution: {
-      strategy: 'client-wins' | 'server-wins' | 'custom'
+      strategy: ConflictResolutionStrategy
       resolvedData?: Record<string, any>
       userId?: string
       notes?: string
-    }
+    },
   ): Promise<void> {
-    // Resolve locally first
+    // 1. Resolve locally
     await this.conflictResolver.resolve(conflictId, {
-      strategy: resolution.strategy as ConflictResolutionStrategy,
+      strategy: resolution.strategy,
       resolvedData: resolution.resolvedData,
       userId: resolution.userId || 'system',
       notes: resolution.notes,
-    } as any)
+    })
 
-    // If online, sync resolution to server
+    // 2. Sync resolution to server (best-effort)
     if (this.networkMonitor.isOnline) {
       try {
-        await apiClient.post(API_ENDPOINTS.SYNC.CONFLICT_RESOLVE(conflictId), {
-          strategy: resolution.strategy,
-          resolvedData: resolution.resolvedData,
-          userId: resolution.userId || 'system',
-          notes: resolution.notes,
-        })
-      } catch (error) {
-        console.warn('Failed to sync conflict resolution to server:', error)
+        await apiClient.post(
+          API_ENDPOINTS.SYNC.CONFLICT_RESOLVE(conflictId),
+          {
+            strategy: resolution.strategy,
+            resolvedData: resolution.resolvedData,
+            userId: resolution.userId || 'system',
+            notes: resolution.notes,
+          },
+        )
+      } catch (err) {
+        console.warn(
+          '[SyncEngine] Failed to sync conflict resolution to server:',
+          err,
+        )
       }
     }
   }
 
   // ============================================
-  // Sync Token Management
+  // Sync Token / Metadata
   // ============================================
 
   /**
-   * Get current sync token
-   * Uses API_ENDPOINTS.SYNC.METADATA for server sync
+   * Get the last sync token, falling back to the server if the local
+   * cache is empty and we're online.
    */
   async getSyncToken(): Promise<string | null> {
     const metadataRepo = this.db.getRepository('syncMetadata')
-    return metadataRepo.getLastSyncToken()
+    const local =
+      metadataRepo?.getLastSyncToken
+        ? await metadataRepo.getLastSyncToken()
+        : null
+    if (local) return local
+
+    if (!this.networkMonitor.isOnline) return null
+
+    try {
+      const response = await apiClient.get(API_ENDPOINTS.SYNC.LAST_SYNC_TOKEN)
+      const token = response.data?.token ?? response.data?.value ?? null
+      if (token && metadataRepo?.setLastSyncToken) {
+        await metadataRepo.setLastSyncToken(token)
+      }
+      return token
+    } catch {
+      return null
+    }
   }
 
-  /**
-   * Set sync token
-   */
   async setSyncToken(token: string): Promise<void> {
     const metadataRepo = this.db.getRepository('syncMetadata')
-    await metadataRepo.setLastSyncToken(token)
+    if (metadataRepo?.setLastSyncToken) {
+      await metadataRepo.setLastSyncToken(token)
+    }
 
-    // If online, sync token to server
-    if (this.networkMonitor.isOnline) {
-      try {
-        await apiClient.post(API_ENDPOINTS.SYNC.METADATA, {
-          key: 'last_sync_token',
-          value: token,
-        })
-      } catch (error) {
-        console.warn('Failed to sync token to server:', error)
-      }
+    if (!this.networkMonitor.isOnline) return
+
+    try {
+      await apiClient.patch(API_ENDPOINTS.SYNC.METADATA_UPDATE_TOKEN, { token })
+    } catch (err) {
+      console.warn('[SyncEngine] Failed to sync token to server:', err)
     }
   }
 
-  /**
-   * Get sync metadata by key
-   */
   async getSyncMetadata(key?: string): Promise<SyncMetadata | null> {
     const metadataRepo = this.db.getRepository('syncMetadata')
+    if (!metadataRepo) return null
 
-    if (key) {
-      return metadataRepo.getByKey(key)
+    if (key && metadataRepo.getByKey) {
+      return (await metadataRepo.getByKey(key)) ?? null
     }
 
-    const token = await metadataRepo.getLastSyncToken()
-    const time = await metadataRepo.getLastSyncTime()
+    const token = metadataRepo.getLastSyncToken
+      ? await metadataRepo.getLastSyncToken()
+      : null
+    const time = metadataRepo.getLastSyncTime
+      ? await metadataRepo.getLastSyncTime()
+      : null
 
-    if (token || time) {
-      return {
-        key: 'sync_state',
-        value: JSON.stringify({ token, lastSyncTime: time }),
-        uuid: 'sync_metadata',
-        created_by: 'system',
-        created_at: new Date().toISOString(),
-        updated_by: 'system',
-        updated_at: new Date().toISOString(),
-        version: 1,
-        sync_status: SyncStatus.SYNCED,
-      }
+    if (!token && !time) return null
+
+    return {
+      key: 'sync_state',
+      value: JSON.stringify({ token, lastSyncTime: time }),
+      uuid: 'sync_metadata',
+      createdBy: 'system',
+      createdAt: new Date().toISOString(),
+      updatedBy: 'system',
+      updatedAt: new Date().toISOString(),
+      version: 1,
+      syncStatus: SyncStatus.SYNCED,
     }
-
-    return null
   }
 
-  /**
-   * Update sync metadata
-   */
   async updateSyncMetadata(key: string, value: string): Promise<void> {
     const metadataRepo = this.db.getRepository('syncMetadata')
-    const existing = await metadataRepo.getByKey(key)
+    if (!metadataRepo) return
+
+    const existing = metadataRepo.getByKey
+      ? await metadataRepo.getByKey(key)
+      : null
 
     if (existing) {
-      await metadataRepo.update(existing.uuid, { value, updated_at: new Date().toISOString() })
+      await metadataRepo.update(existing.uuid, {
+        value,
+        updatedAt: new Date().toISOString(),
+      })
     } else {
       await metadataRepo.create({
         key,
         value,
-        uuid: crypto.randomUUID?.() || `${Date.now()}-${Math.random()}`,
-        created_by: 'system',
-        created_at: new Date().toISOString(),
-        updated_by: 'system',
-        updated_at: new Date().toISOString(),
+        uuid: this.generateUuid(),
+        createdBy: 'system',
+        createdAt: new Date().toISOString(),
+        updatedBy: 'system',
+        updatedAt: new Date().toISOString(),
         version: 1,
-        sync_status: SyncStatus.SYNCED,
+        syncStatus: SyncStatus.SYNCED,
       })
     }
 
-    // If online, sync metadata to server
-    if (this.networkMonitor.isOnline) {
-      try {
-        await apiClient.post(API_ENDPOINTS.SYNC.METADATA, { key, value })
-      } catch (error) {
-        console.warn('Failed to sync metadata to server:', error)
-      }
+    if (!this.networkMonitor.isOnline) return
+
+    try {
+      await apiClient.put(API_ENDPOINTS.SYNC.METADATA_UPSERT(key), { value })
+    } catch (err) {
+      console.warn('[SyncEngine] Failed to sync metadata to server:', err)
     }
   }
 
   /**
-   * Get sync status from server
-   * Uses API_ENDPOINTS.SYNC.STATUS
+   * Get aggregate sync state from the server.
+   * Composed from `METADATA_MAP` + `SYNC_PROGRESS` since no single
+   * `GET /sync/status` route exists in the backend.
    */
   async getServerSyncStatus(): Promise<{
     lastSyncToken: string | null
     lastSyncTime: string | null
     pendingServerChanges: number
   } | null> {
-    if (!this.networkMonitor.isOnline) {
-      return null
-    }
+    if (!this.networkMonitor.isOnline) return null
 
     try {
-      const response = await apiClient.get(API_ENDPOINTS.SYNC.STATUS)
-      return response.data
-    } catch (error) {
-      console.error('Failed to get server sync status:', error)
+      const [progressRes, mapRes] = await Promise.all([
+        apiClient.get(API_ENDPOINTS.SYNC.SYNC_PROGRESS),
+        apiClient.get(API_ENDPOINTS.SYNC.METADATA_MAP),
+      ])
+
+      const progress = progressRes.data ?? {}
+      const map = mapRes.data ?? {}
+
+      return {
+        lastSyncToken:
+          progress.lastSyncToken ?? map.last_sync_token ?? null,
+        lastSyncTime: progress.lastSyncTime ?? map.last_sync_time ?? null,
+        pendingServerChanges:
+          progress.pendingItems ??
+          progress.pendingServerChanges ??
+          0,
+      }
+    } catch (err) {
+      console.error('[SyncEngine] Failed to get server sync status:', err)
       return null
     }
   }
 
   // ============================================
-  // Full Sync Operations
+  // Full Sync
   // ============================================
 
   /**
-   * Perform a full sync (push then pull)
+   * Full bidirectional sync: push local → pull remote.
    */
-  async fullSync(): Promise<{
-    pushResult: SyncPushResponse
-    pullResult: SyncPullResponse | null
-  }> {
-    if (this.syncInProgress) {
-      throw new Error('Sync already in progress')
-    }
-
-    if (!this.networkMonitor.isOnline) {
-      throw new Error('Cannot sync while offline')
-    }
+  async fullSync(): Promise<FullSyncResult> {
+    this.assertNotSyncing()
+    this.assertOnline()
 
     this.syncInProgress = true
+    const start = Date.now()
 
     try {
-      // First push local changes
       const pushResult = await this.pushChanges()
+      const pullResult = await this.pullChanges()
 
-      // Then pull remote changes
-      let pullResult: SyncPullResponse | null = null
-      if (pushResult.success) {
-        pullResult = await this.pullChanges()
-      } else {
-        // If push had conflicts, still try to pull
-        pullResult = await this.pullChanges()
+      await this.updateSyncMetadata(
+        'last_sync_time',
+        new Date().toISOString(),
+      )
+
+      return {
+        pushResult,
+        pullResult,
+        durationMs: Date.now() - start,
       }
-
-      // Update last sync time
-      await this.updateSyncMetadata('last_sync_time', new Date().toISOString())
-
-      return { pushResult, pullResult }
     } finally {
       this.syncInProgress = false
     }
   }
 
   /**
-   * Clear all pending changes (use with caution)
-   * Uses API_ENDPOINTS.SYNC.CLEAR_PENDING
+   * Wipe the local queue and request server-side cleanup.
+   * Server-first: if cleanup succeeds, we trust the server state.
    */
   async clearAllPendingChanges(): Promise<void> {
-    await this.clearPendingChanges()
-
     if (this.networkMonitor.isOnline) {
       try {
-        await apiClient.post(API_ENDPOINTS.SYNC.PENDING_CHANGES_CLEANUP)
-      } catch (error) {
-        console.warn('Failed to clear pending changes on server:', error)
+        await apiClient.delete(API_ENDPOINTS.SYNC.PENDING_CHANGES_CLEANUP)
+      } catch (err) {
+        console.warn(
+          '[SyncEngine] Server pending-changes cleanup failed:',
+          err,
+        )
       }
     }
+    await this.clearPendingChanges()
   }
 
   // ============================================
-  // Helpers
+  // Stats & Retries
+  // ============================================
+
+  async getStats(): Promise<SyncEngineStats> {
+    const pendingRepo = this.db.getRepository('pendingChanges')
+    const conflictRepo = this.db.getRepository('syncConflicts')
+    const metadataRepo = this.db.getRepository('syncMetadata')
+
+    const [pendingCount, conflictsRaw, token, lastTime] = await Promise.all([
+      pendingRepo?.getPendingCount?.() ?? Promise.resolve(0),
+      conflictRepo?.findAll?.() ?? Promise.resolve([] as any[]),
+      metadataRepo?.getLastSyncToken?.() ?? Promise.resolve(null),
+      metadataRepo?.getLastSyncTime?.() ?? Promise.resolve(null),
+    ])
+
+    const conflicts = (conflictsRaw || []) as SyncConflict[]
+
+    return {
+      pendingChanges: pendingCount,
+      conflicts: conflicts.length,
+      unresolvedConflicts: conflicts.filter((c) => !c.resolved).length,
+      lastSyncTime: lastTime,
+      lastSyncToken: token,
+      isOnline: this.networkMonitor.isOnline,
+      syncInProgress: this.syncInProgress,
+      deviceId: this.getDeviceId(),
+    }
+  }
+
+  async retryFailedSyncs(): Promise<number> {
+    const pendingRepo = this.db.getRepository('pendingChanges')
+    if (!pendingRepo?.getFailedChanges) return 0
+
+    const failedChanges = (await pendingRepo.getFailedChanges()) || []
+    if (failedChanges.length === 0) return 0
+
+    // Reset attempts for all failed items so the next push picks them up
+    for (const change of failedChanges) {
+      await this.resetAttempts(change.uuid)
+    }
+
+    // Try a batched push first
+    if (this.networkMonitor.isOnline) {
+      try {
+        const result = await this.pushChanges()
+        if (result.success) return failedChanges.length
+      } catch {
+        // fall through to per-item retry
+      }
+    }
+
+    // Per-item fallback
+    let retried = 0
+    for (const change of failedChanges) {
+      const result = await this.processChange(change)
+      if (result.success) {
+        await this.removePendingChange(change.uuid)
+        retried++
+      } else {
+        await this.incrementAttempts(change.uuid)
+      }
+    }
+    return retried
+  }
+
+  // ============================================
+  // Private Helpers
   // ============================================
 
   /**
-   * Create batches from array of items
+   * Resolve the REST base path for a given entity type.
+   * Normalizes singular/plural forms and falls back gracefully.
    */
+  getEndpointForEntityType(entityType: string): string {
+    const normalized = this.normalizeEntityType(entityType)
+    const mapped = SyncEngine.ENTITY_ENDPOINT_MAP[normalized]
+    if (mapped) return mapped
+
+    // Fallback: derive from normalised name (best-effort)
+    console.warn(
+      `[SyncEngine] No explicit endpoint mapping for entityType="${entityType}" (normalized="${normalized}"). Using fallback /${normalized}.`,
+    )
+    return `/${normalized}`
+  }
+
+  /**
+   * Normalize an entityType to its canonical Dexie table name.
+   */
+  normalizeEntityType(entityType: string): string {
+    if (!entityType) return entityType
+    // Already plural and known?
+    if (SyncEngine.ENTITY_ENDPOINT_MAP[entityType] !== undefined) {
+      return entityType
+    }
+    // Try singular → plural map
+    return SyncEngine.ENTITY_NORMALIZATION_MAP[entityType] ?? entityType
+  }
+
   private createBatches<T>(items: T[], batchSize: number): T[][] {
+    if (batchSize <= 0) return [items]
     const batches: T[][] = []
     for (let i = 0; i < items.length; i += batchSize) {
       batches.push(items.slice(i, i + batchSize))
@@ -613,62 +984,42 @@ export class SyncEngine {
   }
 
   /**
-   * Get sync statistics
+   * Stable per-install device identifier, persisted in localStorage.
    */
-  async getStats(): Promise<{
-    pendingChanges: number
-    conflicts: number
-    unresolvedConflicts: number
-    lastSyncTime: string | null
-    lastSyncToken: string | null
-    isOnline: boolean
-    syncInProgress: boolean
-  }> {
-    const pendingRepo = this.db.getRepository('pendingChanges')
-    const conflictRepo = this.db.getRepository('syncConflicts')
-    const metadataRepo = this.db.getRepository('syncMetadata')
+  private getDeviceId(): string {
+    // SSR-safe guard
+    if (typeof window === 'undefined' || !('localStorage' in window)) {
+      return 'server-side'
+    }
+    let deviceId = localStorage.getItem(STORAGE_KEYS.DEVICE_ID)
+    if (!deviceId) {
+      deviceId = this.generateUuid()
+      localStorage.setItem(STORAGE_KEYS.DEVICE_ID, deviceId)
+    }
+    return deviceId
+  }
 
-    const [pendingCount, conflicts, token, lastTime] = await Promise.all([
-      pendingRepo.getPendingCount(),
-      conflictRepo.findAll(),
-      metadataRepo.getLastSyncToken(),
-      metadataRepo.getLastSyncTime(),
-    ])
+  private generateUuid(): string {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID()
+    }
+    // RFC4122 v4-ish fallback for older runtimes / SSR
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0
+      const v = c === 'x' ? r : (r & 0x3) | 0x8
+      return v.toString(16)
+    })
+  }
 
-    return {
-      pendingChanges: pendingCount,
-      conflicts: conflicts.length,
-      unresolvedConflicts: conflicts.filter((c: SyncConflict) => !c.resolved).length,
-      lastSyncTime: lastTime,
-      lastSyncToken: token,
-      isOnline: this.networkMonitor.isOnline,
-      syncInProgress: this.syncInProgress,
+  private assertNotSyncing(): void {
+    if (this.syncInProgress) {
+      throw new Error('Sync already in progress')
     }
   }
 
-  /**
-   * Retry failed sync operations
-   */
-  async retryFailedSyncs(): Promise<number> {
-    const pendingRepo = this.db.getRepository('pendingChanges')
-    const failedChanges = await pendingRepo.getFailedChanges()
-
-    if (failedChanges.length === 0) {
-      return 0
+  private assertOnline(): void {
+    if (!this.networkMonitor.isOnline) {
+      throw new Error('Cannot sync while offline')
     }
-
-    let retried = 0
-    for (const change of failedChanges) {
-      try {
-        await this.processChange(change)
-        await this.removePendingChange(change.uuid)
-        retried++
-      } catch (error) {
-        console.error(`Failed to retry change ${change.uuid}:`, error)
-        await this.incrementAttempts(change.uuid)
-      }
-    }
-
-    return retried
   }
 }

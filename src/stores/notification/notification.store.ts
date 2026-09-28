@@ -1,658 +1,355 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { notificationService } from './../../services/api/notification/NotificationService';
-import { useAuth } from './../../composables/useAuth';
+// src/stores/notification/notification.store.ts
+
+import { defineStore } from 'pinia'
+import { ref, computed } from 'vue'
 import type {
   Notification,
   NotificationPreference,
   NotificationTemplate,
-  CreateNotificationRequest,
-  NotificationQueryParams,
   NotificationCountResponse,
-  NotificationStats,
-  TemplateStats,
-} from './../../models/entities/notification/notification.entity';
-import { NotificationStatus } from './../../models/entities/notification/notification.entity';
+} from '../../models/notification/notification.entity'
+import {
+  NotificationStatus,
+  NotificationPriority,
+} from '../../models/notification/notification.entity'
+import { createOfflineCrudStore } from '../.base/offline-crud.store'
+import { notificationService } from '../../services/api/notification/NotificationService'
+import { useAuthStore } from '../auth/auth.store'
 
+// ============================================
+// Offline-First CRUD Stores
+// ============================================
+export const useNotificationItemStore = createOfflineCrudStore<Notification>({
+  storeId: 'notifications',
+  tableName: 'notifications',
+})
+
+export const useNotificationPreferenceStore = createOfflineCrudStore<NotificationPreference>({
+  storeId: 'notification-preferences',
+  tableName: 'notificationPreferences',
+})
+
+export const useNotificationTemplateStore = createOfflineCrudStore<NotificationTemplate>({
+  storeId: 'notification-templates',
+  tableName: 'notificationTemplates',
+})
+
+// ============================================
+// Main Notification Store (Facade)
+// ============================================
 export const useNotificationStore = defineStore('notification', () => {
-  // ============================================
-  // Dependencies
-  // ============================================
-  const { isAuthenticated, isAdmin, isBCMManager } = useAuth();
+  const notificationStore = useNotificationItemStore()
+  const preferenceStore = useNotificationPreferenceStore()
+  const templateStore = useNotificationTemplateStore()
+  const authStore = useAuthStore()
+
+  const counts = ref<NotificationCountResponse | null>(null)
+  const isSaving = ref(false)
+  const isPolling = ref(false)
+  const isInitialized = ref(false)
+  let pollingInterval: ReturnType<typeof setInterval> | null = null
+
+  const notifications = notificationStore.items
+  const preferences = preferenceStore.items
+  const templates = templateStore.items
 
   // ============================================
-  // State
+  // Getters - Unread / Read / Archived
   // ============================================
-
-  // Notifications
-  const notifications = ref<Notification[]>([]);
-  const selectedNotification = ref<Notification | null>(null);
-
-  // Preferences
-  const preferences = ref<NotificationPreference[]>([]);
-
-  // Templates
-  const templates = ref<NotificationTemplate[]>([]);
-  const selectedTemplate = ref<NotificationTemplate | null>(null);
-
-  // Counts & Stats
-  const counts = ref<NotificationCountResponse | null>(null);
-  const stats = ref<NotificationStats | null>(null);
-  const templateStats = ref<TemplateStats | null>(null);
-
-  // UI State
-  const isLoading = ref(false);
-  const isSaving = ref(false);
-  const error = ref<string | null>(null);
-
-  // Pagination
-  const pagination = ref({
-    currentPage: 1,
-    totalPages: 0,
-    totalItems: 0,
-    itemsPerPage: 20,
-  });
-
-  // Polling
-  const pollingInterval = ref<ReturnType<typeof setInterval> | null>(null);
-  const isPolling = ref(false);
-
-  // ============================================
-  // Getters
-  // ============================================
-
   const unreadNotifications = computed(() =>
-    notifications.value.filter((n) => !n.isRead && n.status === NotificationStatus.UNREAD)
-  );
+    notifications?.filter(
+      (n: Notification) => !n.isRead && n.status === NotificationStatus.UNREAD
+    )
+  )
 
-  const unreadCount = computed(() => unreadNotifications.value.length);
+  const unreadCount = computed(() => unreadNotifications?.value?.length)
 
   const readNotifications = computed(() =>
-    notifications.value.filter((n) => n.isRead)
-  );
+    notifications?.filter(
+      (n: Notification) => n.status === NotificationStatus.READ
+    )
+  )
 
   const archivedNotifications = computed(() =>
-    notifications.value.filter((n) => n.status === NotificationStatus.ARCHIVED)
-  );
-
-  const highPriorityUnread = computed(() =>
-    unreadNotifications.value.filter(
-      (n) => n.priority === 'HIGH' || n.priority === 'URGENT'
+    notifications?.filter(
+      (n: Notification) => n.status === NotificationStatus.ARCHIVED
     )
-  );
+  )
 
+  const urgentNotifications = computed(() =>
+    notifications?.filter(
+      (n: Notification) =>
+        n.priority === NotificationPriority.URGENT ||
+        n.priority === NotificationPriority.CRITICAL
+    )
+  )
+
+  // ============================================
+  // Getters - Priority
+  // ============================================
+  const highPriorityUnread = computed(() =>
+    unreadNotifications?.value?.filter(
+      (n: Notification) =>
+        n.priority === NotificationPriority.HIGH ||
+        n.priority === NotificationPriority.URGENT ||
+        n.priority === NotificationPriority.CRITICAL
+    )
+  )
+
+  // ============================================
+  // Getters - Groupings
+  // ============================================
   const notificationsByType = computed(() => {
-    const grouped: Record<string, Notification[]> = {};
-    notifications.value.forEach((n) => {
-      const type = n.notificationType || 'Unknown';
-      if (!grouped[type]) grouped[type] = [];
-      grouped[type].push(n);
-    });
-    return grouped;
-  });
+    const grouped: Record<string, Notification[]> = {}
+    notifications?.forEach((n: Notification) => {
+      const type = n.notificationType || 'Unknown'
+      if (!grouped[type]) grouped[type] = []
+      grouped[type].push(n)
+    })
+    return grouped
+  })
 
   const activeTemplates = computed(() =>
-    templates.value.filter((t) => t.isActive)
-  );
-
-  const inactiveTemplates = computed(() =>
-    templates.value.filter((t) => !t.isActive)
-  );
+    templates?.filter((t: NotificationTemplate) => t.isActive)
+  )
 
   // ============================================
-  // Actions - Notifications
+  // Getters - Preferences
   // ============================================
+  const getPreferenceForType = (
+    type: string
+  ): NotificationPreference | null =>
+    preferences?.find(
+      (p: NotificationPreference) => p.notificationType === type
+    ) || null
 
-  async function fetchNotifications(params?: NotificationQueryParams) {
-    // Only fetch if authenticated
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return null;
+  // ============================================
+  // Getters - Counts
+  // ============================================
+  const displayCounts = computed<NotificationCountResponse>(() => {
+    if (counts.value) return counts.value
+    return {
+      total: notifications?.length,
+      unread: unreadNotifications?.value?.length,
+      read: readNotifications?.value?.length,
+      archived: archivedNotifications?.value?.length,
+      dismissed: notifications?.filter(
+        (n: Notification) => n.status === NotificationStatus.DISMISSED
+      ).length,
+      highPriorityUnread: highPriorityUnread?.value?.length,
+      urgentCount: urgentNotifications?.value?.length,
     }
+  })
 
-    isLoading.value = true;
-    error.value = null;
+  const hasUnread = computed(() => unreadCount.value > 0)
+
+  const hasUrgent = computed(() => urgentNotifications?.value?.length > 0)
+
+  // ============================================
+  // Actions
+  // ============================================
+  async function initialize(): Promise<void> {
+    if (isInitialized.value) return
+    await Promise.all([
+      notificationStore.initialize(),
+      preferenceStore.initialize(),
+    ])
+    await fetchCounts()
+    isInitialized.value = true
+  }
+
+  async function fetchCounts(): Promise<void> {
     try {
-      const response = await notificationService.getMyNotifications(params);
-      notifications.value = response.data || [];
-      pagination.value = {
-        currentPage: response.page || 1,
-        totalPages: response.totalPages || 0,
-        totalItems: response.total || 0,
-        itemsPerPage: response.limit || 20,
-      };
-      return response;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch notifications';
-      throw err;
-    } finally {
-      isLoading.value = false;
+      counts.value = await notificationService.getNotificationCounts()
+    } catch (err) {
+      console.error('Failed to fetch notification counts:', err)
     }
   }
 
-  async function fetchNotificationById(uuid: string) {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return null;
-    }
+  async function markAsRead(id: string): Promise<Notification | null> {
+    const updated = await notificationStore.update(id, {
+      isRead: true,
+      status: NotificationStatus.READ,
+      readAt: new Date(),
+    } as Partial<Notification>)
 
-    isLoading.value = true;
-    error.value = null;
-    try {
-      const notification = await notificationService.getNotificationById(uuid);
-      selectedNotification.value = notification;
-      return notification;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch notification';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  async function fetchUnreadCount(): Promise<number> {
-    if (!isAuthenticated.value) return 0;
-
-    try {
-      const result = await notificationService.getUnreadCount();
-      return result.count || 0;
-    } catch (err: any) {
-      console.error('Failed to fetch unread count:', err);
-      return 0;
-    }
-  }
-
-  async function fetchCounts(): Promise<NotificationCountResponse | null> {
-    if (!isAuthenticated.value) return null;
-
-    try {
-      counts.value = await notificationService.getNotificationCounts();
-      return counts.value;
-    } catch (err: any) {
-      console.error('Failed to fetch counts:', err);
-      throw err;
-    }
-  }
-
-  async function createNotification(data: CreateNotificationRequest): Promise<Notification | null> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return null;
-    }
-
-    isLoading.value = true;
-    error.value = null;
-    try {
-      const notification = await notificationService.createNotification(data);
-      notifications.value.unshift(notification);
-      return notification;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to create notification';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
-  }
-
-  async function markAsRead(uuid: string): Promise<void> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return;
-    }
-
-    try {
-      await notificationService.markAsRead(uuid);
-      const notification = notifications.value.find((n) => n.uuid === uuid);
-      if (notification) {
-        notification.isRead = true;
-        notification.status = NotificationStatus.READ;
-        notification.readAt = new Date();
-      }
-      if (selectedNotification.value?.uuid === uuid) {
-        selectedNotification.value.isRead = true;
-        selectedNotification.value.status = NotificationStatus.READ;
-        selectedNotification.value.readAt = new Date();
-      }
-      if (counts.value && counts.value.unread > 0) {
-        counts.value = { ...counts.value, unread: counts.value.unread - 1 };
-      }
-    } catch (err: any) {
-      console.error('Failed to mark as read:', err);
-      throw err;
-    }
+    await fetchCounts()
+    return updated
   }
 
   async function markAllAsRead(): Promise<number> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return 0;
+    const unread = unreadNotifications.value
+    for (const n of unread) {
+      await notificationStore.update(n.uuid, {
+        isRead: true,
+        status: NotificationStatus.READ,
+        readAt: new Date(),
+      } as Partial<Notification>)
     }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const result = await notificationService.markAllAsRead();
-      notifications.value.forEach((n) => {
-        if (!n.isRead) {
-          n.isRead = true;
-          n.status = NotificationStatus.READ;
-          n.readAt = new Date();
-        }
-      });
-      if (counts.value) {
-        counts.value = { ...counts.value, unread: 0 };
-      }
-      return result.count || 0;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to mark all as read';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
+    await fetchCounts()
+    return unread.length
   }
 
-  async function archiveNotification(uuid: string): Promise<Notification | null> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return null;
-    }
+  async function markAsUnread(id: string): Promise<Notification | null> {
+    const updated = await notificationStore.update(id, {
+      isRead: false,
+      status: NotificationStatus.UNREAD,
+      readAt: undefined,
+    } as unknown as Partial<Notification>)
 
-    try {
-      const notification = await notificationService.archiveNotification(uuid);
-      const index = notifications.value.findIndex((n) => n.uuid === uuid);
-      if (index !== -1) {
-        notifications.value[index] = notification;
-      }
-      if (selectedNotification.value?.uuid === uuid) {
-        selectedNotification.value = notification;
-      }
-      return notification;
-    } catch (err: any) {
-      console.error('Failed to archive notification:', err);
-      throw err;
-    }
+    await fetchCounts()
+    return updated
   }
 
-  async function deleteNotification(uuid: string): Promise<void> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return;
-    }
-
-    try {
-      await notificationService.deleteNotification(uuid);
-      notifications.value = notifications.value.filter((n) => n.uuid !== uuid);
-      if (selectedNotification.value?.uuid === uuid) {
-        selectedNotification.value = null;
-      }
-    } catch (err: any) {
-      console.error('Failed to delete notification:', err);
-      throw err;
-    }
+  async function archiveNotification(id: string): Promise<Notification | null> {
+    return notificationStore.update(id, {
+      status: NotificationStatus.ARCHIVED,
+    } as Partial<Notification>)
   }
 
-  // ============================================
-  // Actions - Preferences
-  // ============================================
-
-  async function fetchPreferences(): Promise<NotificationPreference[]> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return [];
-    }
-
-    isLoading.value = true;
-    error.value = null;
-    try {
-      preferences.value = await notificationService.getPreferences();
-      return preferences.value;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch preferences';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+  async function dismissNotification(id: string): Promise<Notification | null> {
+    return notificationStore.update(id, {
+      status: NotificationStatus.DISMISSED,
+    } as Partial<Notification>)
   }
 
-  async function upsertPreference(data: {
-    notificationType: string;
-    emailEnabled?: boolean;
-    smsEnabled?: boolean;
-    pushEnabled?: boolean;
-    inAppEnabled?: boolean;
-  }): Promise<NotificationPreference | null> {
-    if (!isAuthenticated.value) {
-      error.value = 'User not authenticated';
-      return null;
-    }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const updated = await notificationService.upsertPreference(data);
-      const index = preferences.value.findIndex(
-        (p) => p.notificationType === data.notificationType
-      );
-      if (index !== -1) {
-        preferences.value[index] = updated;
-      } else {
-        preferences.value.push(updated);
-      }
-      return updated;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to update preference';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
+  async function acknowledgeNotification(id: string): Promise<Notification | null> {
+    return notificationStore.update(id, {
+      isAcknowledged: true,
+      acknowledgedAt: new Date(),
+    } as Partial<Notification>)
   }
 
-  // ============================================
-  // Actions - Templates (Admin Only)
-  // ============================================
-
-  async function fetchTemplates(params?: { page?: number; limit?: number }) {
-    // Only admins and BCM managers can access templates
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
-    }
-
-    isLoading.value = true;
-    error.value = null;
-    try {
-      const response = await notificationService.getTemplates(params);
-      templates.value = response.data || [];
-      pagination.value = {
-        currentPage: response.page || 1,
-        totalPages: response.totalPages || 0,
-        totalItems: response.total || 0,
-        itemsPerPage: response.limit || 20,
-      };
-      return response;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch templates';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+  async function deleteNotification(id: string): Promise<boolean> {
+    return notificationStore.remove(id)
   }
 
-  async function fetchTemplateById(uuid: string): Promise<NotificationTemplate | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
+  async function clearAllRead(): Promise<number> {
+    const read = readNotifications.value
+    for (const n of read) {
+      await notificationStore.remove(n.uuid)
     }
-
-    isLoading.value = true;
-    error.value = null;
-    try {
-      const template = await notificationService.getTemplateById(uuid);
-      selectedTemplate.value = template;
-      return template;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to fetch template';
-      throw err;
-    } finally {
-      isLoading.value = false;
-    }
+    await fetchCounts()
+    return read.length
   }
 
-  async function createTemplate(data: {
-    notificationType: string;
-    titleTemplate: string;
-    messageTemplate: string;
-    isActive?: boolean;
-  }): Promise<NotificationTemplate | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
+  async function upsertPreference(
+    data: Partial<NotificationPreference>
+  ): Promise<NotificationPreference | null> {
+    const existing = preferences?.find(
+      (p: NotificationPreference) => p.notificationType === data.notificationType
+    )
+    if (existing) {
+      return preferenceStore.update(existing.uuid, data)
     }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const template = await notificationService.createTemplate(data);
-      templates.value.unshift(template);
-      return template;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to create template';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
+    return preferenceStore.create({
+      userId: authStore.userId,
+      ...data,
+    } as Partial<NotificationPreference>)
   }
 
-  async function updateTemplate(
-    uuid: string,
-    data: Partial<{
-      titleTemplate: string;
-      messageTemplate: string;
-      isActive: boolean;
-    }>
-  ): Promise<NotificationTemplate | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
-    }
+  function startPolling(intervalMs: number = 30000): void {
+    if (isPolling.value) return
+    stopPolling()
 
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const template = await notificationService.updateTemplate(uuid, data);
-      const index = templates.value.findIndex((t) => t.uuid === uuid);
-      if (index !== -1) {
-        templates.value[index] = template;
-      }
-      if (selectedTemplate.value?.uuid === uuid) {
-        selectedTemplate.value = template;
-      }
-      return template;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to update template';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  async function activateTemplate(uuid: string): Promise<NotificationTemplate | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
-    }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const template = await notificationService.activateTemplate(uuid);
-      const index = templates.value.findIndex((t) => t.uuid === uuid);
-      if (index !== -1) {
-        templates.value[index] = template;
-      }
-      return template;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to activate template';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  async function deactivateTemplate(uuid: string): Promise<NotificationTemplate | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
-    }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      const template = await notificationService.deactivateTemplate(uuid);
-      const index = templates.value.findIndex((t) => t.uuid === uuid);
-      if (index !== -1) {
-        templates.value[index] = template;
-      }
-      return template;
-    } catch (err: any) {
-      error.value = err.message || 'Failed to deactivate template';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  async function deleteTemplate(uuid: string): Promise<void> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return;
-    }
-
-    isSaving.value = true;
-    error.value = null;
-    try {
-      await notificationService.deleteTemplate(uuid);
-      templates.value = templates.value.filter((t) => t.uuid !== uuid);
-      if (selectedTemplate.value?.uuid === uuid) {
-        selectedTemplate.value = null;
-      }
-    } catch (err: any) {
-      error.value = err.message || 'Failed to delete template';
-      throw err;
-    } finally {
-      isSaving.value = false;
-    }
-  }
-
-  async function fetchTemplateStats(): Promise<TemplateStats | null> {
-    if (!isAdmin.value && !isBCMManager.value) {
-      error.value = 'Insufficient permissions';
-      return null;
-    }
-
-    try {
-      templateStats.value = await notificationService.getTemplateStats();
-      return templateStats.value;
-    } catch (err: any) {
-      console.error('Failed to fetch template stats:', err);
-      throw err;
-    }
-  }
-
-  // ============================================
-  // Actions - Polling
-  // ============================================
-
-  function startPolling(intervalMs: number = 30000) {
-    if (isPolling.value || !isAuthenticated.value) return;
-    stopPolling();
-    isPolling.value = true;
-    pollingInterval.value = setInterval(async () => {
+    isPolling.value = true
+    pollingInterval = setInterval(async () => {
       try {
-        const newCounts = await fetchCounts();
-        if (newCounts && counts.value && newCounts.unread !== counts.value.unread) {
-          await fetchNotifications();
+        await fetchCounts()
+        if (counts.value && counts?.value?.unread > 0) {
+          await notificationStore.loadAll()
         }
       } catch {
         // Ignore polling errors
       }
-    }, intervalMs);
+    }, intervalMs)
   }
 
-  function stopPolling() {
-    if (pollingInterval.value) {
-      clearInterval(pollingInterval.value);
-      pollingInterval.value = null;
+  function stopPolling(): void {
+    if (pollingInterval) {
+      clearInterval(pollingInterval)
+      pollingInterval = null
     }
-    isPolling.value = false;
+    isPolling.value = false
+  }
+
+  function clearError(): void {
+    notificationStore.clearError()
+  }
+
+  function reset(): void {
+    notificationStore.reset()
+    preferenceStore.reset()
+    templateStore.reset()
+    counts.value = null
+    isSaving.value = false
+    isInitialized.value = false
+    stopPolling()
+  }
+
+  function cleanup(): void {
+    stopPolling()
+    isInitialized.value = false
   }
 
   // ============================================
-  // Actions - Utilities
+  // Return Store Interface
   // ============================================
-
-  function clearError() {
-    error.value = null;
-  }
-
-  function resetState() {
-    stopPolling();
-    notifications.value = [];
-    selectedNotification.value = null;
-    preferences.value = [];
-    templates.value = [];
-    selectedTemplate.value = null;
-    counts.value = null;
-    stats.value = null;
-    templateStats.value = null;
-    isLoading.value = false;
-    isSaving.value = false;
-    error.value = null;
-    pagination.value = {
-      currentPage: 1,
-      totalPages: 0,
-      totalItems: 0,
-      itemsPerPage: 20,
-    };
-  }
-
   return {
     // State
     notifications,
-    selectedNotification,
     preferences,
     templates,
-    selectedTemplate,
     counts,
-    stats,
-    templateStats,
-    isLoading,
+    isLoading: notificationStore.loading,
     isSaving,
-    error,
-    pagination,
     isPolling,
+    isInitialized,
+    error: notificationStore.error,
 
-    // Getters
+    // Getters - Unread / Read / Archived
     unreadNotifications,
     unreadCount,
     readNotifications,
     archivedNotifications,
+    urgentNotifications,
+
+    // Getters - Priority
     highPriorityUnread,
+
+    // Getters - Groupings
     notificationsByType,
     activeTemplates,
-    inactiveTemplates,
 
-    // Notification Actions
-    fetchNotifications,
-    fetchNotificationById,
-    fetchUnreadCount,
+    // Getters - Preferences
+    getPreferenceForType,
+
+    // Getters - Counts
+    displayCounts,
+    hasUnread,
+    hasUrgent,
+
+    // Actions
+    initialize,
     fetchCounts,
-    createNotification,
     markAsRead,
     markAllAsRead,
+    markAsUnread,
     archiveNotification,
+    dismissNotification,
+    acknowledgeNotification,
     deleteNotification,
-
-    // Preference Actions
-    fetchPreferences,
+    clearAllRead,
     upsertPreference,
-
-    // Template Actions
-    fetchTemplates,
-    fetchTemplateById,
-    createTemplate,
-    updateTemplate,
-    activateTemplate,
-    deactivateTemplate,
-    deleteTemplate,
-    fetchTemplateStats,
-
-    // Polling
     startPolling,
     stopPolling,
-
-    // Utilities
     clearError,
-    resetState,
-  };
-});
+    reset,
+    cleanup,
+
+    // Sub-stores
+    notificationStore,
+    preferenceStore,
+    templateStore,
+  }
+})

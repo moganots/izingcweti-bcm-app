@@ -1,68 +1,96 @@
-import { ref, onMounted, onUnmounted, computed } from 'vue'
+import { onMounted, onUnmounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useNetworkStore } from '../stores/network/network.store'
 
-export function useNetwork() {
-  const isOnline = ref(navigator.onLine)
-  const connectionType = ref('unknown')
-  const signalStrength = ref(0)
-  const isMetered = ref(false)
+export interface UseNetworkOptions {
+  /** Auto-initialize monitoring on mount */
+  autoInit?: boolean
+  /** Poll interval for connectivity checks (0 = disabled) */
+  pollIntervalMs?: number
+}
 
-  function updateNetworkStatus() {
-    isOnline.value = navigator.onLine
+/**
+ * Unified network status + connectivity composable
+ * Aligned with useNetworkStore
+ */
+export function useNetwork(options: UseNetworkOptions = {}) {
+  const { autoInit = true, pollIntervalMs = 0 } = options
 
-    if ('connection' in navigator) {
-      const connection = (navigator as any).connection
-      if (connection) {
-        connectionType.value = connection.effectiveType || connection.type || 'unknown'
-        isMetered.value = connection.metered || false
+  const networkStore = useNetworkStore()
 
-        // Estimate signal strength based on connection type
-        if (connectionType.value === '4g') signalStrength.value = 80
-        else if (connectionType.value === '3g') signalStrength.value = 50
-        else if (connectionType.value === '2g') signalStrength.value = 20
-        else if (connectionType.value === 'wifi') signalStrength.value = 100
-        else signalStrength.value = 0
-      }
-    }
+  const {
+    isOnline,
+    connectionType,
+    signalStrength,
+    isMetered,
+    lastChecked,
+    connectionLabel,
+    isHighBandwidth,
+    isOffline,
+    isSlowConnection,
+  } = storeToRefs(networkStore)
+
+  let pollIntervalId: ReturnType<typeof setInterval> | null = null
+
+  // ============================================
+  // Actions
+  // ============================================
+  async function init(): Promise<void> {
+    await networkStore.init()
   }
 
-  function handleOnline() {
-    isOnline.value = true
-    updateNetworkStatus()
+  async function check(): Promise<boolean> {
+    return networkStore.check()
   }
 
-  function handleOffline() {
-    isOnline.value = false
+  async function getQuality() {
+    return networkStore.getQuality()
   }
 
-  onMounted(() => {
-    updateNetworkStatus()
-    window.addEventListener('online', handleOnline)
-    window.addEventListener('offline', handleOffline)
+  async function isSyncSafe(): Promise<boolean> {
+    return networkStore.isSyncSafe()
+  }
 
-    if ('connection' in navigator) {
-      const connection = (navigator as any).connection
-      if (connection) {
-        connection.addEventListener('change', updateNetworkStatus)
-      }
+  // ============================================
+  // Lifecycle
+  // ============================================
+  onMounted(async () => {
+    if (autoInit) await networkStore.init()
+
+    if (pollIntervalMs > 0) {
+      pollIntervalId = setInterval(() => {
+        networkStore.check().catch(console.error)
+      }, pollIntervalMs)
     }
   })
 
   onUnmounted(() => {
-    window.removeEventListener('online', handleOnline)
-    window.removeEventListener('offline', handleOffline)
-
-    if ('connection' in navigator) {
-      const connection = (navigator as any).connection
-      if (connection) {
-        connection.removeEventListener('change', updateNetworkStatus)
-      }
+    if (pollIntervalId) {
+      clearInterval(pollIntervalId)
+      pollIntervalId = null
     }
   })
 
   return {
-    isOnline: computed(() => isOnline.value),
-    connectionType: computed(() => connectionType.value),
-    signalStrength: computed(() => signalStrength.value),
-    isMetered: computed(() => isMetered.value),
+    // State
+    isOnline,
+    connectionType,
+    signalStrength,
+    isMetered,
+    lastChecked,
+
+    // Getters
+    connectionLabel,
+    isHighBandwidth,
+    isOffline,
+    isSlowConnection,
+
+    // Actions
+    init,
+    check,
+    getQuality,
+    isSyncSafe,
   }
 }
+
+export default useNetwork

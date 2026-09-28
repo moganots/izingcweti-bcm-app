@@ -1,4 +1,4 @@
-import { BusinessUnit, Department } from '../models/entities'
+import { BusinessUnit, Department } from '../models'
 
 export interface CreateOrganisationRequest {
     name: string

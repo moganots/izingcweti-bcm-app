@@ -8,18 +8,16 @@ import type {
   ChangePasswordRequest,
   ForgotPasswordRequest,
   ResetPasswordRequest,
-  AuthToken,
-  SessionInfo,
   UpdateUserRequest,
-} from './../../models/entities/user/user.entity'
-import {
-  UserRole,
-} from './../../models/entities/user/user.entity'
-import { authService } from './../../services/api/auth/AuthService'
-import { StorageUtils } from './../../utils/storage.utils'
+} from '../../models/user/user.entity'
+import { UserRole } from '../../models/user/user.entity'
+import { authService } from '../../services/api/auth/AuthService'
+import { StorageUtils } from '../../utils/storage.utils'
 
 export const useAuthStore = defineStore('auth', () => {
+  // ============================================
   // State
+  // ============================================
   const user = ref<User | null>(null)
   const tokens = ref<AuthTokens | null>(null)
   const isInitialized = ref(false)
@@ -29,11 +27,10 @@ export const useAuthStore = defineStore('auth', () => {
   // ============================================
   // Getters
   // ============================================
-
   const isAuthenticated = computed(() => !!tokens.value?.accessToken && !!user.value)
   const userId = computed(() => user.value?.uuid || '')
   const userEmail = computed(() => user.value?.email || '')
-  const userRole = computed(() => user.value?.role || '')
+  const userRole = computed(() => user.value?.role || UserRole.GENERAL)
   const userOrganisationId = computed(() => user.value?.organisationId || '')
   const userDepartmentId = computed(() => user.value?.departmentId || '')
   const isActive = computed(() => user.value?.isActive ?? false)
@@ -51,39 +48,34 @@ export const useAuthStore = defineStore('auth', () => {
     return 'User'
   })
 
-  // Role-based computed properties
-  const isGlobalAdmin = computed(() => { return UserRole.SUPER_ADMIN === userRole.value as UserRole || UserRole.SYSTEM_ADMINISTRATOR === userRole.value as UserRole })
-  
-  const isSuperAdmin = computed(() => { return UserRole.SUPER_ADMIN === userRole.value as UserRole })
-  
-  const isSystemAdmin = computed(() => { return UserRole.SYSTEM_ADMINISTRATOR === userRole.value as UserRole })
+  // Role checks
+  const isGlobalAdmin = computed(
+    () =>
+      userRole.value === UserRole.SUPER_ADMIN ||
+      userRole.value === UserRole.SYSTEM_ADMINISTRATOR
+  )
 
-  const isAdmin = computed(() => {
-    const adminRoles = [
-      UserRole.SYSTEM_ADMINISTRATOR,
-      UserRole.SUPER_ADMIN,
-    ]
-    return adminRoles.includes(userRole.value as UserRole)
-  })
+  const isSuperAdmin = computed(() => userRole.value === UserRole.SUPER_ADMIN)
+  const isSystemAdmin = computed(() => userRole.value === UserRole.SYSTEM_ADMINISTRATOR)
 
-  const isBCMManager = computed(() => {
-    const managerRoles = [
-      UserRole.BCM_MANAGER,
-    ]
-    return managerRoles.includes(userRole.value as UserRole)
-  })
+  const isAdmin = computed(
+    () =>
+      userRole.value === UserRole.SYSTEM_ADMINISTRATOR ||
+      userRole.value === UserRole.SUPER_ADMIN
+  )
 
-  const isRiskOwner = computed(() => {
-    return userRole.value === UserRole.RISK_OWNER
-  })
+  const isOrgAdmin = computed(
+    () =>
+      isAdmin.value ||
+      userRole.value === UserRole.BCM_MANAGER
+  )
 
-  const isProcessOwner = computed(() => {
-    return userRole.value === UserRole.PROCESS_OWNER
-  })
-
-  const isBCMCoordinator = computed(() => {
-    return userRole.value === UserRole.BCM_COORDINATOR
-  })
+  const isBCMManager = computed(() => userRole.value === UserRole.BCM_MANAGER)
+  const isRiskOwner = computed(() => userRole.value === UserRole.RISK_OWNER)
+  const isProcessOwner = computed(() => userRole.value === UserRole.PROCESS_OWNER)
+  const isBCMCoordinator = computed(() => userRole.value === UserRole.BCM_COORDINATOR)
+  const isApprover = computed(() => userRole.value === UserRole.APPROVER)
+  const isAuditor = computed(() => userRole.value === UserRole.AUDITOR)
 
   const isAccountLocked = computed(() => {
     if (!user.value?.lockedUntil) return false
@@ -102,9 +94,6 @@ export const useAuthStore = defineStore('auth', () => {
   // Actions
   // ============================================
 
-  /**
-   * Initialize auth state from localStorage
-   */
   async function initialize(): Promise<void> {
     if (isInitialized.value) return
 
@@ -134,9 +123,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Check authentication status
-   */
   async function checkAuth(): Promise<boolean> {
     if (!isInitialized.value) {
       await initialize()
@@ -144,9 +130,6 @@ export const useAuthStore = defineStore('auth', () => {
     return isAuthenticated.value
   }
 
-  /**
-   * Login user
-   */
   async function login(credentials: LoginCredentials): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -172,12 +155,6 @@ export const useAuthStore = defineStore('auth', () => {
       } else {
         StorageUtils.clearRememberedEmail()
       }
-
-      console.log('Login successful:', {
-        userId: response.user.uuid,
-        email: response.user.email,
-        role: response.user.role,
-      })
     } catch (err: any) {
       console.error('Login error:', err)
       const message = err.response?.data?.message || err.message || 'Login failed'
@@ -188,16 +165,12 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Register new user
-   */
   async function register(registrationData: RegistrationData): Promise<User> {
     isLoading.value = true
     error.value = null
 
     try {
-      const user = await authService.register(registrationData)
-      return user
+      return await authService.register(registrationData)
     } catch (err: any) {
       const message = err.response?.data?.message || err.message || 'Registration failed'
       error.value = message
@@ -207,9 +180,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Fetch user profile
-   */
   async function fetchProfile(): Promise<void> {
     try {
       const profile = await authService.getProfile()
@@ -224,9 +194,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Refresh access token
-   */
   async function refreshToken(): Promise<void> {
     if (!tokens.value?.refreshToken) {
       throw new Error('No refresh token available')
@@ -253,9 +220,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Refresh token if needed (expires in < 5 minutes)
-   */
   async function refreshTokenIfNeeded(): Promise<boolean> {
     if (!tokens.value?.accessToken) return false
 
@@ -275,17 +239,14 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Change password
-   */
   async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
     isLoading.value = true
     error.value = null
 
     try {
       const request: ChangePasswordRequest = {
-        currentPassword: currentPassword,
-        newPassword: newPassword,
+        currentPassword,
+        newPassword,
         confirmPassword: newPassword,
       }
       await authService.changePassword(request)
@@ -298,9 +259,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Forgot password - send reset email
-   */
   async function forgotPassword(email: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -317,9 +275,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Reset password with token
-   */
   async function resetPassword(token: string, newPassword: string): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -327,7 +282,7 @@ export const useAuthStore = defineStore('auth', () => {
     try {
       const request: ResetPasswordRequest = {
         token,
-        newPassword: newPassword,
+        newPassword,
         confirmPassword: newPassword,
       }
       await authService.resetPassword(request)
@@ -340,9 +295,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Logout user
-   */
   async function logout(): Promise<void> {
     try {
       await authService.logout().catch(() => { })
@@ -355,9 +307,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Logout from all devices
-   */
   async function logoutAllDevices(): Promise<void> {
     try {
       await authService.logoutAllDevices()
@@ -370,9 +319,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Update user profile
-   */
   async function updateProfile(data: UpdateUserRequest): Promise<void> {
     isLoading.value = true
     error.value = null
@@ -390,108 +336,35 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Get active sessions
-   */
-  async function getSessions(): Promise<SessionInfo[]> {
-    try {
-      return await authService.getSessions()
-    } catch (err: any) {
-      console.error('Failed to get sessions:', err)
-      throw err
-    }
-  }
-
-  /**
-   * Revoke a session
-   */
-  async function revokeSession(sessionId: string): Promise<void> {
-    try {
-      await authService.revokeSession(sessionId)
-    } catch (err: any) {
-      console.error('Failed to revoke session:', err)
-      throw err
-    }
-  }
-
-  /**
-   * Get user tokens
-   */
-  async function getUserTokens(userId: string): Promise<AuthToken[]> {
-    try {
-      return await authService.getUserTokens(userId)
-    } catch (err: any) {
-      console.error('Failed to get user tokens:', err)
-      throw err
-    }
-  }
-
-  /**
-   * Revoke a token
-   */
-  async function revokeToken(tokenId: string): Promise<void> {
-    try {
-      await authService.revokeToken(tokenId)
-    } catch (err: any) {
-      console.error('Failed to revoke token:', err)
-      throw err
-    }
-  }
-
-  /**
-   * Check if user has a specific role
-   */
-  function hasRole(role: string | string[]): boolean {
+  function hasRole(role: UserRole | UserRole[]): boolean {
     if (!user.value) return false
     const roles = Array.isArray(role) ? role : [role]
-    const normalizedUserRole = userRole.value.toUpperCase()
-    return roles.some((r) => r.toUpperCase() === normalizedUserRole)
+    return roles.includes(userRole.value)
   }
 
-  /**
-   * Check if user has permission
-   */
   function hasPermission(permission: string): boolean {
     if (!user.value) return false
 
-    const permissions: Record<string, string[]> = {
-      admin: [
-        UserRole.SYSTEM_ADMINISTRATOR,
-        UserRole.SUPER_ADMIN,
-      ],
-      bcm_manager: [
-        UserRole.BCM_MANAGER,
-      ],
-      risk_owner: [
-        UserRole.RISK_OWNER,
-      ],
-      process_owner: [
-        UserRole.PROCESS_OWNER,
-      ],
-      bcm_coordinator: [
-        UserRole.BCM_COORDINATOR,
-      ],
-      auditor: [
-        UserRole.AUDITOR,
-      ],
-      approver: [
-        UserRole.APPROVER,
-      ],
+    const permissions: Record<string, UserRole[]> = {
+      admin: [UserRole.SYSTEM_ADMINISTRATOR, UserRole.SUPER_ADMIN],
+      bcm_manager: [UserRole.BCM_MANAGER],
+      risk_owner: [UserRole.RISK_OWNER],
+      process_owner: [UserRole.PROCESS_OWNER],
+      bcm_coordinator: [UserRole.BCM_COORDINATOR],
+      auditor: [UserRole.AUDITOR],
+      approver: [UserRole.APPROVER],
     }
 
     const allowedRoles = permissions[permission] || []
-    return allowedRoles.includes(userRole.value as string)
+    return allowedRoles.includes(userRole.value)
   }
 
-  /**
-   * Parse JWT token
-   */
   function parseJWT(token: string): Record<string, any> | null {
     try {
       const parts = token.split('.')
       if (parts.length !== 3) return null
-      const base64Url = parts[1]
-      const base64 = base64Url?.replace(/-/g, '+').replace(/_/g, '/') || ''
+      const base64Url = parts[1]!
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/')
       const jsonPayload = decodeURIComponent(
         window
           .atob(base64)
@@ -505,9 +378,6 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  /**
-   * Reset auth state
-   */
   function reset(): void {
     user.value = null
     tokens.value = null
@@ -539,10 +409,13 @@ export const useAuthStore = defineStore('auth', () => {
     isSuperAdmin,
     isSystemAdmin,
     isAdmin,
+    isOrgAdmin,
     isBCMManager,
     isRiskOwner,
     isProcessOwner,
     isBCMCoordinator,
+    isApprover,
+    isAuditor,
     isAccountLocked,
     lockRemainingTime,
 
@@ -560,10 +433,6 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     logoutAllDevices,
     updateProfile,
-    getSessions,
-    revokeSession,
-    getUserTokens,
-    revokeToken,
     hasRole,
     hasPermission,
     reset,

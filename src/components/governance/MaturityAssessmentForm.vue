@@ -86,12 +86,12 @@ import type {
     MaturityAssessment,
     CreateMaturityAssessmentRequest,
     UpdateMaturityAssessmentRequest,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import {
     getMaturityLevelLabel,
     getMaturityLevelRange,
     MaturityLevel,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import { formatISO } from 'src/utils/date.utils';
 
 // ============================================

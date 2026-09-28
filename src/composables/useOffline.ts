@@ -1,18 +1,19 @@
-import { computed } from 'vue';
-import { useNetwork } from './useNetwork';
-import { useSyncStore } from './../stores';
-import { db } from '../services/db/Database';
+import { computed } from 'vue'
+import { useNetwork } from './useNetwork'
+import { useSyncStore } from '../stores/sync/sync.store'
+import { db } from '../services/db/Database'
 
 /**
  * Composable for offline-first operations
+ * Aligned with useSyncStore + BCMDatabase.getRepository
  */
 export function useOffline() {
-  const { isOnline } = useNetwork();
-  const syncStore = useSyncStore();
+  const { isOnline } = useNetwork()
+  const syncStore = useSyncStore()
 
-  const isOfflineMode = computed(() => !isOnline.value);
-  const pendingChangesCount = computed(() => syncStore.pendingCount);
-  const hasPendingChanges = computed(() => syncStore.hasPendingChanges);
+  const isOfflineMode = computed(() => !isOnline.value)
+  const pendingChangesCount = computed(() => syncStore.pendingCount)
+  const hasPendingChanges = computed(() => syncStore.hasPending)
 
   /**
    * Save data locally and queue for sync
@@ -20,57 +21,40 @@ export function useOffline() {
   async function saveOffline<T extends { uuid: string }>(
     entityType: string,
     data: T,
-    operation: 'CREATE' | 'UPDATE' | 'DELETE' = 'UPDATE',
+    operation: 'CREATE' | 'UPDATE' | 'DELETE' = 'UPDATE'
   ): Promise<void> {
-    // Save to local database
-    const repository = db.getRepository(entityType);
+    const repository = db.getRepository(entityType)
+    if (!repository) throw new Error(`Repository not found: ${entityType}`)
 
     if (operation === 'DELETE') {
-      await repository.softDelete(data.uuid, 'offline-user');
+      await repository.softDelete(data.uuid, 'offline-user')
     } else {
-      await repository.upsert(data);
+      await repository.upsert(data)
     }
-
-    // Queue for sync
-    await syncStore.addPendingChange({
-      entityType,
-      entityId: data.uuid,
-      operationType: operation,
-      data: data as unknown as Record<string, unknown>,
-    });
   }
 
-  /**
-   * Get data from local database
-   */
   async function getOfflineData<T>(entityType: string, id: string): Promise<T | undefined> {
-    const repository = db.getRepository(entityType);
-    return repository.findById(id);
+    const repository = db.getRepository(entityType)
+    if (!repository) return undefined
+    return (await repository.findById(id)) as T | undefined
   }
 
-  /**
-   * Get all local data for an entity type
-   */
   async function getAllOfflineData<T>(entityType: string): Promise<T[]> {
-    const repository = db.getRepository(entityType);
-    return repository.findAll();
+    const repository = db.getRepository(entityType)
+    if (!repository) return []
+    return (await repository.findAll()) as T[]
   }
 
-  /**
-   * Sync when coming back online
-   */
   async function syncWhenOnline(): Promise<void> {
     if (isOnline.value && hasPendingChanges.value) {
-      await syncStore.fullSync();
+      await syncStore.sync()
     }
   }
 
-  /**
-   * Check if entity exists locally
-   */
   async function existsLocally(entityType: string, id: string): Promise<boolean> {
-    const repository = db.getRepository(entityType);
-    return repository.exists(id);
+    const repository = db.getRepository(entityType)
+    if (!repository) return false
+    return repository.exists(id)
   }
 
   return {
@@ -82,5 +66,7 @@ export function useOffline() {
     getAllOfflineData,
     syncWhenOnline,
     existsLocally,
-  };
+  }
 }
+
+export default useOffline

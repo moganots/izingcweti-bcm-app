@@ -9,7 +9,7 @@ import {
   RecoveryStrategy,
   ExerciseTest,
   ComplianceRecord,
-} from 'src/models/entities'
+} from 'src/models'
 import { QueryParams } from 'src/shared/types/common.types'
 
 // ============================================

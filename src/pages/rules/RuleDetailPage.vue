@@ -220,7 +220,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useQuasar } from 'quasar'
-import { useRuleStore } from '../../stores/rules/rule.store.ts'
+import { useRuleStore } from '../../stores/rule/rule.store.ts'
 import { formatJSON } from '../../utils/formatters'
 import LoadingSpinner from '../../components/.common/LoadingSpinner.vue'
 import RuleBuilder from '../../components/rules/RuleBuilder.vue'

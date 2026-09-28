@@ -2,153 +2,128 @@ import { computed, watch, onMounted, ref } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useFeatureToggleStore } from '../stores/feature-toggle/feature-toggle.store'
 import { useAuth } from './useAuth'
-import type {
-    FeatureToggle,
-    FeatureToggleOverride,
-    EvaluateFeatureRequest,
-    FeatureEvaluationResponse,
-    BatchFeatureEvaluationRequest,
-    FeatureToggleQueryParams,
-} from '../models/entities/feature-toggle/feature-toggle.entity'
+import type { FeatureEvaluationResponse } from '../models/feature-toggle/feature-toggle.entity'
 import {
     FeatureToggleStatus,
     ToggleEnvironment,
-    FeatureToggleType,
     getFeatureToggleStatusLabel,
     getFeatureToggleStatusColor,
     getToggleEnvironmentLabel,
-    getFeatureToggleTypeLabel,
-} from '../models/entities/feature-toggle/feature-toggle.entity'
+    getToggleEnvironmentColor,
+} from '../models/feature-toggle/feature-toggle.entity'
 
 export interface UseFeatureToggleOptions {
     autoLoad?: boolean
     organisationId?: string
     refreshInterval?: number
-    filterStatus?: FeatureToggleStatus
-    filterEnvironment?: ToggleEnvironment
-    filterType?: FeatureToggleType
 }
 
 /**
- * Composable for Feature Toggle functionality
- * Provides reactive feature toggle state and operations
+ * Feature Toggle composable
+ * Fully aligned with useFeatureToggleStore
  */
 export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
-    const {
-        autoLoad = true,
-        organisationId: defaultOrgId,
-        refreshInterval,
-        filterStatus,
-        filterEnvironment,
-        filterType,
-    } = options
+    const { autoLoad = true, organisationId: defaultOrgId, refreshInterval } = options
 
     const toggleStore = useFeatureToggleStore()
     const { userOrganisationId, isAuthenticated } = useAuth()
 
-    // Store refs for reactivity
+    // ============================================
+    // Store bindings
+    // ============================================
     const {
+        // State
         toggles,
-        selectedToggle,
         overrides,
-        selectedOverride,
         auditLogs,
-        stats,
         evaluationResults,
         isLoading,
         isSaving,
-        isLoadingOverrides,
-        isLoadingAuditLogs,
-        isLoadingStats,
         isEvaluating,
+        isInitialized,
         error,
-        overridesError,
-        auditLogsError,
-        statsError,
-        evaluationError,
-        currentPage,
-        totalPages,
-        totalItems,
-        itemsPerPage,
+
+        // By Status
         activeToggles,
         draftToggles,
         scheduledToggles,
         archivedToggles,
+        inactiveToggles,
+
+        // Groupings
         togglesByEnvironment,
         togglesByType,
         togglesByStatus,
-        hasToggles,
-        isEmpty,
+
+        // Overrides
         activeOverrides,
         expiredOverrides,
+
+        // Metrics
+        totalEvaluations,
+        totalTrueEvaluations,
+        averageTrueRate,
     } = storeToRefs(toggleStore)
 
-    // Store actions
-    const {
-        loadToggles,
-        loadToggle,
-        createToggle,
-        updateToggle,
-        deleteToggle,
-        evaluateFeature,
-        batchEvaluateFeatures,
-        loadOverrides,
-        createOverride,
-        updateOverride,
-        deleteOverride,
-        loadActiveOverrides,
-        deleteExpiredOverrides,
-        loadAuditLogs,
-        loadStats,
-        setPage,
-        setItemsPerPage,
-        clearSelection,
-        clearAll,
-        resetError,
-    } = toggleStore
-
+    // ============================================
     // Local state
+    // ============================================
     const refreshTimer = ref<number | null>(null)
     const isInitialLoad = ref(true)
-    const isReady = ref(false)
-    const currentOrganisationId = computed(() => defaultOrgId || userOrganisationId.value)
+
+    const currentOrganisationId = computed(
+        () => defaultOrgId || userOrganisationId.value
+    )
 
     // ============================================
-    // Computed Getters - Derived Metrics
+    // Actions
     // ============================================
+    async function loadAll(): Promise<void> {
+        await toggleStore.initialize()
+    }
 
-    const totalToggles = computed(() => toggles.value?.length || 0)
+    async function refresh(): Promise<void> {
+        await loadAll()
+    }
 
-    const toggleHealth = computed(() => {
-        const total = totalToggles.value
-        if (total === 0) return 0
+    async function evaluateFeature(
+        featureName: string,
+        context?: Record<string, any>
+    ): Promise<FeatureEvaluationResponse | null> {
+        return toggleStore.evaluateFeature(featureName, {
+            ...context,
+            organisationId: context?.organisationId || currentOrganisationId.value,
+        })
+    }
 
-        const active = activeToggles.value?.length || 0
-        const scheduled = scheduledToggles.value?.length || 0
+    async function evaluateFeatures(
+        featureNames: string[],
+        context?: Record<string, any>
+    ): Promise<Record<string, FeatureEvaluationResponse>> {
+        return toggleStore.evaluateFeatures(featureNames, {
+            ...context,
+            organisationId: context?.organisationId || currentOrganisationId.value,
+        })
+    }
 
-        // Weight: active = 1, scheduled = 0.5
-        const weightedScore = (active * 1) + (scheduled * 0.5)
-        return Math.round((weightedScore / total) * 100)
-    })
+    function startAutoRefresh(intervalMs: number = refreshInterval || 60000): void {
+        stopAutoRefresh()
+        refreshTimer.value = window.setInterval(
+            () => refresh().catch(console.error),
+            intervalMs
+        )
+    }
 
-    const healthStatus = computed(() => {
-        const score = toggleHealth.value
-        if (score >= 80) return { label: 'Healthy', color: 'positive', icon: 'check_circle' }
-        if (score >= 60) return { label: 'Fair', color: 'warning', icon: 'warning' }
-        if (score >= 40) return { label: 'Needs Attention', color: 'orange', icon: 'error_outline' }
-        return { label: 'Critical', color: 'negative', icon: 'dangerous' }
-    })
-
-    const toggleDistribution = computed(() => ({
-        byStatus: togglesByStatus.value,
-        byEnvironment: togglesByEnvironment.value,
-        byType: togglesByType.value,
-    }))
+    function stopAutoRefresh(): void {
+        if (refreshTimer.value) {
+            clearInterval(refreshTimer.value)
+            refreshTimer.value = null
+        }
+    }
 
     // ============================================
-    // Helper Functions
+    // Helpers
     // ============================================
-
     function getStatusLabel(status: string): string {
         return getFeatureToggleStatusLabel(status)
     }
@@ -161,167 +136,27 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
         return getToggleEnvironmentLabel(environment)
     }
 
-    function getTypeLabel(type: string): string {
-        return getFeatureToggleTypeLabel(type)
-    }
-
-    function isToggleActive(toggle: FeatureToggle): boolean {
-        return toggle.status === FeatureToggleStatus.ACTIVE
-    }
-
-    function isToggleScheduled(toggle: FeatureToggle): boolean {
-        return toggle.status === FeatureToggleStatus.SCHEDULED
-    }
-
-    function isOverrideActive(override: FeatureToggleOverride): boolean {
-        if (!override.expiresAt) return true
-        return new Date(override.expiresAt) > new Date()
-    }
-
-    function getOverrideStatus(override: FeatureToggleOverride): string {
-        return isOverrideActive(override) ? 'Active' : 'Expired'
-    }
-
-    // ============================================
-    // Actions
-    // ============================================
-
-    /**
-     * Load all feature toggle data
-     */
-    async function load(): Promise<void> {
-        const orgId = currentOrganisationId.value
-        if (!orgId) {
-            console.warn('No organisation ID available for feature toggle data')
-            return
-        }
-
-        const params: FeatureToggleQueryParams = {
-            organisationId: orgId,
-        }
-        if (filterStatus) params.status = filterStatus
-        if (filterEnvironment) params.environment = filterEnvironment
-        if (filterType) params.toggleType = filterType
-
-        await Promise.all([
-            loadToggles(params),
-            loadStats(orgId),
-            loadActiveOverrides(orgId),
-        ])
-    }
-
-    /**
-     * Refresh all feature toggle data
-     */
-    async function refresh(): Promise<void> {
-        await load()
-    }
-
-    /**
-     * Evaluate a feature
-     */
-    async function evaluate(data: EvaluateFeatureRequest): Promise<FeatureEvaluationResponse> {
-        const result = await evaluateFeature(data)
-        return result
-    }
-
-    /**
-     * Batch evaluate features
-     */
-    async function evaluateBatch(data: BatchFeatureEvaluationRequest): Promise<void> {
-        await batchEvaluateFeatures(data)
-    }
-
-    /**
-     * Get evaluation result for a feature
-     */
-    function getEvaluation(featureName: string): FeatureEvaluationResponse | undefined {
-        return evaluationResults.value?.[featureName]
-    }
-
-    /**
-     * Check if a feature is enabled
-     */
-    async function isFeatureEnabled(featureName: string, context?: Record<string, any>): Promise<boolean> {
-        const orgId = currentOrganisationId.value
-        if (!orgId) return false
-
-        try {
-            const request: EvaluateFeatureRequest = {
-                featureName,
-                organisationId: orgId,
-                ...(context ? { context } : {}),
-            }
-
-            const result = await evaluateFeature(request)
-            return result.enabled
-        } catch {
-            return false
-        }
-    }
-
-    /**
-     * Start auto-refresh timer
-     */
-    function startAutoRefresh(intervalMs: number = refreshInterval || 60000): void {
-        stopAutoRefresh()
-
-        refreshTimer.value = window.setInterval(async () => {
-            if (!isLoading.value && !isSaving.value && !isLoadingOverrides.value) {
-                await refresh()
-            }
-        }, intervalMs)
-    }
-
-    /**
-     * Stop auto-refresh timer
-     */
-    function stopAutoRefresh(): void {
-        if (refreshTimer.value) {
-            clearInterval(refreshTimer.value)
-            refreshTimer.value = null
-        }
-    }
-
-    /**
-     * Clear all feature toggle data
-     */
-    function clear(): void {
-        clearAll()
+    function getEnvironmentColor(environment: string): string {
+        return getToggleEnvironmentColor(environment)
     }
 
     // ============================================
     // Lifecycle
     // ============================================
-
     onMounted(async () => {
-        if (autoLoad && isAuthenticated.value && currentOrganisationId.value) {
-            await load()
+        if (autoLoad && isAuthenticated.value) {
+            await loadAll()
             isInitialLoad.value = false
-            isReady.value = true
-
-            if (refreshInterval) {
-                startAutoRefresh(refreshInterval)
-            }
+            if (refreshInterval) startAutoRefresh(refreshInterval)
         }
     })
 
-    // Watch for organisation changes
-    watch(currentOrganisationId, async (newOrgId, oldOrgId) => {
-        if (newOrgId && newOrgId !== oldOrgId && isAuthenticated.value) {
-            await load()
-        }
-    })
-
-    // Watch for authentication changes
     watch(isAuthenticated, async (auth) => {
-        if (auth && currentOrganisationId.value) {
-            await load()
-            if (refreshInterval) {
-                startAutoRefresh(refreshInterval)
-            }
-        } else if (!auth) {
-            clear()
+        if (auth) {
+            await loadAll()
+            if (refreshInterval) startAutoRefresh(refreshInterval)
+        } else {
+            toggleStore.reset()
             stopAutoRefresh()
         }
     })
@@ -329,100 +164,58 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
     // ============================================
     // Return API
     // ============================================
-
     return {
-        // State - Toggles
+        // State
         toggles,
-        selectedToggle,
+        overrides,
+        auditLogs,
+        evaluationResults,
         isLoading,
         isSaving,
+        isEvaluating,
+        isInitialized,
         error,
 
-        // State - Overrides
-        overrides,
-        selectedOverride,
-        isLoadingOverrides,
-        overridesError,
-
-        // State - Audit Logs
-        auditLogs,
-        isLoadingAuditLogs,
-        auditLogsError,
-
-        // State - Statistics
-        stats,
-        isLoadingStats,
-        statsError,
-
-        // State - Evaluation
-        evaluationResults,
-        isEvaluating,
-        evaluationError,
-
-        // State - Pagination
-        currentPage,
-        totalPages,
-        totalItems,
-        itemsPerPage,
-        isReady,
-        isInitialLoad,
-
-        // Getters - Toggles
+        // Getters - By Status
         activeToggles,
         draftToggles,
         scheduledToggles,
         archivedToggles,
+        inactiveToggles,
+
+        // Getters - Groupings
         togglesByEnvironment,
         togglesByType,
         togglesByStatus,
-        hasToggles,
-        isEmpty,
-        totalToggles,
-        toggleHealth,
-        healthStatus,
-        toggleDistribution,
 
         // Getters - Overrides
         activeOverrides,
         expiredOverrides,
 
-        // Actions - Toggles
-        load,
-        loadToggles,
-        loadToggle,
-        createToggle,
-        updateToggle,
-        deleteToggle,
+        // Getters - Metrics
+        totalEvaluations,
+        totalTrueEvaluations,
+        averageTrueRate,
 
-        // Actions - Evaluation
-        evaluate,
-        evaluateBatch,
-        getEvaluation,
-        isFeatureEnabled,
+        // Getters - Evaluation cache (functions)
+        getEvaluationResult: toggleStore.getEvaluationResult,
+        isFeatureEnabled: toggleStore.isFeatureEnabled,
 
-        // Actions - Overrides
-        loadOverrides,
-        createOverride,
-        updateOverride,
-        deleteOverride,
-        loadActiveOverrides,
-        deleteExpiredOverrides,
-
-        // Actions - Audit Logs
-        loadAuditLogs,
-
-        // Actions - Statistics
-        loadStats,
-
-        // Actions - Pagination
-        setPage,
-        setItemsPerPage,
-
-        // Actions - Utilities
+        // Actions
+        loadAll,
         refresh,
-        clear,
-        clearSelection,
-        resetError,
+        evaluateFeature,
+        evaluateFeatures,
+        clearEvaluationCache: toggleStore.clearEvaluationCache,
+        activateToggle: toggleStore.activateToggle,
+        deactivateToggle: toggleStore.deactivateToggle,
+        archiveToggle: toggleStore.archiveToggle,
+        createOverride: toggleStore.createOverride,
+        removeOverride: toggleStore.removeOverride,
+        deleteExpiredOverrides: toggleStore.deleteExpiredOverrides,
+        reset: toggleStore.reset,
+
+        // Auto-refresh
         startAutoRefresh,
         stopAutoRefresh,
 
@@ -430,14 +223,13 @@ export function useFeatureToggle(options: UseFeatureToggleOptions = {}) {
         getStatusLabel,
         getStatusColor,
         getEnvironmentLabel,
-        getTypeLabel,
-        isToggleActive,
-        isToggleScheduled,
-        isOverrideActive,
-        getOverrideStatus,
+        getEnvironmentColor,
 
         // Utils
+        isInitialLoad,
         currentOrganisationId,
+        FeatureToggleStatus,
+        ToggleEnvironment,
     }
 }
 

@@ -1,1 +1,0 @@
-export { DocumentRepository } from './DocumentRepository'

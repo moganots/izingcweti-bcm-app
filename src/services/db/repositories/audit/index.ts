@@ -1,1 +1,0 @@
-export { AuditLogRepository } from './AuditLogRepository'

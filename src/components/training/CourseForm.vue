@@ -191,11 +191,11 @@ import type {
   CourseStatus,
   CreateTrainingCourseRequest,
   UpdateTrainingCourseRequest,
-} from 'src/models/entities/training/training.entity'
+} from 'src/models/training/training.entity'
 import {
   getCourseLevelLabel,
   getCourseStatusLabel,
-} from 'src/models/entities/training/training.entity'
+} from 'src/models/training/training.entity'
 
 // ============================================
 // Props

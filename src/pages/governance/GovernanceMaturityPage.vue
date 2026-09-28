@@ -148,11 +148,11 @@ import { useGovernance } from 'src/composables/useGovernance'
 import { PageHeader } from 'src/components/.common'
 import { MaturityChart, MaturityAssessmentForm, MaturityAssessmentDetails } from 'src/components/governance'
 import { ConfirmDialog } from 'src/components/.common'
-import type { MaturityAssessment, MaturityLevel } from 'src/models/entities/governance/governance.entity'
+import type { MaturityAssessment, MaturityLevel } from 'src/models/governance/governance.entity'
 import {
     getMaturityLevelLabel,
     getMaturityLevelColor,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import { formatDate } from 'src/utils/date.utils'
 
 // ============================================

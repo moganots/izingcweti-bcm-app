@@ -132,7 +132,7 @@ import { useGovernance } from 'src/composables/useGovernance'
 import { PageHeader } from 'src/components/.common'
 import { PolicyForm } from 'src/components/governance'
 import { formatTimeAgo } from 'src/utils/date.utils'
-import type { ActivityAction } from 'src/models/entities/governance/governance.entity'
+import type { ActivityAction } from 'src/models/governance/governance.entity'
 
 // ============================================
 // Composables

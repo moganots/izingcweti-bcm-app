@@ -1,64 +1,128 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import { auditService } from './../../services/api/audit/AuditService'
+import { computed } from 'vue'
+import type {
+    AuditLog,
+    AuditRetentionPolicy,
+    ActivityHistory,
+    Attachment,
+    Comment,
+} from '../../models/audit/audit.entity'
+import { createOfflineCrudStore } from '../.base/offline-crud.store'
+import { auditService } from '../../services/api/audit/AuditService'
 
+// ============================================
+// Audit Logs Store
+// ============================================
+export const useAuditLogStore = createOfflineCrudStore<AuditLog>({
+    storeId: 'audit-logs',
+    tableName: 'auditLogs',
+})
+
+// ============================================
+// Audit Retention Policies Store
+// ============================================
+export const useAuditRetentionPolicyStore = createOfflineCrudStore<AuditRetentionPolicy>({
+    storeId: 'audit-retention-policies',
+    tableName: 'auditRetentionPolicies',
+})
+
+// ============================================
+// Activity History Store
+// ============================================
+export const useActivityHistoryStore = createOfflineCrudStore<ActivityHistory>({
+    storeId: 'activity-history',
+    tableName: 'activityHistory',
+})
+
+// ============================================
+// Attachments Store
+// ============================================
+export const useAttachmentStore = createOfflineCrudStore<Attachment>({
+    storeId: 'attachments',
+    tableName: 'attachments',
+})
+
+// ============================================
+// Comments Store
+// ============================================
+export const useCommentStore = createOfflineCrudStore<Comment>({
+    storeId: 'comments',
+    tableName: 'comments',
+})
+
+// ============================================
+// Main Audit Store (facade with advanced features)
+// ============================================
 export const useAuditStore = defineStore('audit', () => {
-    const logs = ref<any[]>([])
-    const selectedLog = ref<any>(null)
-    const isLoading = ref(false)
-    const error = ref<string | null>(null)
-    const currentPage = ref(1)
-    const totalPages = ref(1)
-    const totalItems = ref(0)
+    const logStore = useAuditLogStore()
+    const retentionStore = useAuditRetentionPolicyStore()
+    const activityStore = useActivityHistoryStore()
 
+    const {
+        items: logs,
+        loading: isLoading,
+        error,
+        page: currentPage,
+        totalPages,
+        total: totalItems,
+        loadAll: loadLogs,
+        loadById: loadLog,
+    } = logStore
+
+    // ============================================
+    // Getters
+    // ============================================
     const errorLogs = computed(() =>
-        logs.value.filter((l) => l.severity === 'ERROR' || l.severity === 'CRITICAL'),
+        logs?.filter((l) => l.severity === 'Error' || l.severity === 'Critical')
     )
-    const securityLogs = computed(() => logs.value.filter((l) => l.audit_category === 'SECURITY'))
 
-    async function loadLogs(filters?: any): Promise<void> {
-        isLoading.value = true
-        error.value = null
-        try {
-            const response = await auditService.getLogs({ ...filters, page: currentPage.value } as any)
-            logs.value = response.data || []
-            totalPages.value = response.totalPages || 1
-            totalItems.value = response.total || 0
-        } catch (err: any) {
-            error.value = err.message
-        } finally {
-            isLoading.value = false
-        }
-    }
+    const securityLogs = computed(() =>
+        logs?.filter((l) => l.auditCategory === 'Security')
+    )
 
-    async function loadLog(id: string): Promise<void> {
-        isLoading.value = true
+    const dataChangeLogs = computed(() =>
+        logs?.filter((l) => l.auditCategory === 'DataChange')
+    )
+
+    // ============================================
+    // Actions
+    // ============================================
+    async function exportLogs(data: {
+        auditCategory?: string
+        startDate?: Date
+        endDate?: Date
+        format?: string
+    }): Promise<void> {
         try {
-            selectedLog.value = await auditService.getLog(id)
+            await auditService.exportLogs(data)
         } catch (err: any) {
-            error.value = err.message
+            console.error('Failed to export logs:', err)
             throw err
-        } finally {
-            isLoading.value = false
         }
-    }
-
-    async function exportLogs(data: any): Promise<void> {
-        await auditService.exportLogs(data)
     }
 
     return {
+        // Refs
         logs,
-        selectedLog,
         isLoading,
         error,
         currentPage,
         totalPages,
         totalItems,
+
+        // Getters
         errorLogs,
         securityLogs,
+        dataChangeLogs,
+
+        // Actions
         loadLogs,
         loadLog,
         exportLogs,
+
+        // Sub-store access
+        logStore,
+        retentionStore,
+        activityStore,
     }
 })

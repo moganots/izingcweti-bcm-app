@@ -1,48 +1,43 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
-import type { User } from './../../models/entities/user/user.entity'
-import { userService } from './../../services/api/user/UserService'
-import {
-  UserStats,
-  CreateUserRequest,
-  UpdateUserRequest,
-  UserQueryParams,
-  UserRole,
-  BulkImportResult,
-  LockAccountRequest,
-} from './../../models/entities/user/user.entity'
+import type { User } from '../../models/user/user.entity'
+import { UserRole } from '../../models/user/user.entity'
+import { createOfflineCrudStore } from '../.base/offline-crud.store'
+
+export const useUserItemStore = createOfflineCrudStore<User>({
+  storeId: 'users',
+  tableName: 'users',
+})
 
 export const useUserStore = defineStore('user', () => {
-  // ============================================
-  // State
-  // ============================================
-  const users = ref<User[]>([])
-  const selectedUser = ref<User | null>(null)
-  const stats = ref<UserStats | null>(null)
-  const isLoading = ref(false)
+  const userStore = useUserItemStore()
   const isSaving = ref(false)
-  const error = ref<string | null>(null)
-  const currentPage = ref(1)
-  const totalPages = ref(1)
-  const totalItems = ref(0)
-  const itemsPerPage = ref(20)
+
+  const users = userStore.items
 
   // ============================================
   // Getters
   // ============================================
-  const activeUsers = computed(() => users.value.filter((u) => u.isActive))
-  const inactiveUsers = computed(() => users.value.filter((u) => !u.isActive))
-  const trainingCompleted = computed(() => users.value.filter((u) => u.trainingCompletedAt))
-  const trainingPending = computed(() =>
-    users.value.filter((u) => u.isActive && !u.trainingCompletedAt)
+  const activeUsers = computed(() => users?.filter((u) => u.isActive))
+  const inactiveUsers = computed(() => users?.filter((u) => !u.isActive))
+
+  const trainingCompleted = computed(() =>
+    users?.filter((u) => u.trainingCompletedAt)
   )
+
+  const trainingPending = computed(() =>
+    users?.filter((u) => u.isActive && !u.trainingCompletedAt)
+  )
+
   const lockedUsers = computed(() =>
-    users.value.filter((u) => u.isAccountLocked || (u.lockedUntil && new Date(u.lockedUntil) > new Date()))
+    users?.filter(
+      (u) => u.lockedUntil && new Date(u.lockedUntil) > new Date()
+    )
   )
 
   const usersByRole = computed(() => {
     const grouped: Record<string, User[]> = {}
-    users.value.forEach((u) => {
+    users?.forEach((u) => {
       const role = u.role || 'Unknown'
       if (!grouped[role]) grouped[role] = []
       grouped[role].push(u)
@@ -52,7 +47,7 @@ export const useUserStore = defineStore('user', () => {
 
   const usersByOrganisation = computed(() => {
     const grouped: Record<string, User[]> = {}
-    users.value.forEach((u) => {
+    users?.forEach((u) => {
       const orgId = u.organisationId || 'Unknown'
       if (!grouped[orgId]) grouped[orgId] = []
       grouped[orgId].push(u)
@@ -60,429 +55,67 @@ export const useUserStore = defineStore('user', () => {
     return grouped
   })
 
-  const userRoles = computed(() => {
-    return [...new Set(users.value.map((u) => u.role))].filter(Boolean).sort()
-  })
+  const managers = computed(() =>
+    users?.filter((u) => u.directReports && u.directReports.length > 0)
+  )
 
-  const hasUsers = computed(() => users.value.length > 0)
-  const isEmpty = computed(() => users.value.length === 0 && !isLoading.value)
+  const userRoles = computed(() => {
+    return [...new Set(users?.map((u) => u.role))].filter(Boolean)
+  })
 
   // ============================================
   // Actions
   // ============================================
-
-  /**
-   * Load users with optional filters
-   */
-  async function loadUsers(filters?: UserQueryParams): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await userService.getUsers({
-        ...filters,
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      })
-
-      users.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-    } catch (err: any) {
-      console.error('Failed to load users:', err)
-      error.value = err.message || 'Failed to load users'
-    } finally {
-      isLoading.value = false
-    }
+  async function initialize(): Promise<void> {
+    await userStore.initialize()
   }
 
-  /**
-   * Load a single user by ID
-   */
-  async function loadUser(id: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      selectedUser.value = await userService.getUser(id)
-    } catch (err: any) {
-      console.error('Failed to load user:', err)
-      error.value = err.message || 'Failed to load user'
-      throw err
-    } finally {
-      isLoading.value = false
-    }
+  async function activateUser(id: string): Promise<User | null> {
+    return userStore.update(id, { isActive: true } as Partial<User>)
   }
 
-  /**
-   * Load user statistics
-   */
-  async function loadStats(organisationId?: string): Promise<void> {
-    try {
-      stats.value = await userService.getStats(organisationId)
-    } catch (err: any) {
-      console.error('Failed to load user stats:', err)
-    }
+  async function deactivateUser(id: string): Promise<User | null> {
+    return userStore.update(id, { isActive: false } as Partial<User>)
   }
 
-  /**
-   * Create a new user
-   */
-  async function createUser(data: CreateUserRequest): Promise<User> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const created = await userService.createUser(data)
-      users.value.unshift(created)
-      return created
-    } catch (err: any) {
-      console.error('Failed to create user:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to create user'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
+  async function lockUserAccount(
+    id: string,
+    lockedUntil: Date,
+    reason: string
+  ): Promise<User | null> {
+    return userStore.update(id, {
+      lockedUntil,
+      lockedAt: new Date(),
+      lockReason: reason,
+    } as Partial<User>)
   }
 
-  /**
-   * Update a user
-   */
-  async function updateUser(id: string, data: UpdateUserRequest): Promise<User> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await userService.updateUser(id, data)
-      updateLocalUser(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to update user:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to update user'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
+  async function unlockUserAccount(id: string): Promise<User | null> {
+    return userStore.update(id, {
+      lockedUntil: undefined,
+      lockedAt: undefined,
+      lockReason: undefined,
+      failedLoginAttempts: 0,
+    } as unknown as Partial<User>)
   }
 
-  /**
-   * Delete a user
-   */
-  async function deleteUser(id: string): Promise<void> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      await userService.deleteUser(id)
-      users.value = users.value.filter((u) => u.uuid !== id)
-      if (selectedUser.value?.uuid === id) {
-        selectedUser.value = null
-      }
-    } catch (err: any) {
-      console.error('Failed to delete user:', err)
-      error.value = err.response?.data?.message || err.message || 'Failed to delete user'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
+  async function updateTrainingStatus(id: string, completed: boolean): Promise<User | null> {
+    return userStore.update(id, {
+      trainingCompletedAt: completed ? new Date() : undefined,
+    } as Partial<User>)
   }
 
-  /**
-   * Deactivate a user
-   */
-  async function deactivateUser(id: string): Promise<User> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await userService.deactivateUser(id)
-      updateLocalUser(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to deactivate user:', err)
-      error.value = err.message || 'Failed to deactivate user'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Activate a user
-   */
-  async function activateUser(id: string): Promise<User> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await userService.activateUser(id)
-      updateLocalUser(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to activate user:', err)
-      error.value = err.message || 'Failed to activate user'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Lock a user account
-   */
-  async function lockUserAccount(id: string, data: LockAccountRequest): Promise<void> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      await userService.lockUserAccount(id, data)
-      await loadUser(id)
-    } catch (err: any) {
-      console.error('Failed to lock user account:', err)
-      error.value = err.message || 'Failed to lock user account'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Unlock a user account
-   */
-  async function unlockUserAccount(id: string): Promise<void> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      await userService.unlockUserAccount(id)
-      await loadUser(id)
-    } catch (err: any) {
-      console.error('Failed to unlock user account:', err)
-      error.value = err.message || 'Failed to unlock user account'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Update user training status
-   */
-  async function updateTrainingStatus(id: string, completed: boolean): Promise<User> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const updated = await userService.updateTrainingStatus(id, completed)
-      updateLocalUser(id, updated)
-      return updated
-    } catch (err: any) {
-      console.error('Failed to update training:', err)
-      error.value = err.message || 'Failed to update training'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Search users
-   */
-  async function searchUsers(query: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await userService.searchUsers(query, {
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      })
-      users.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-    } catch (err: any) {
-      error.value = err.message || 'Failed to search users'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * Load users by role
-   */
-  async function loadUsersByRole(role: UserRole): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await userService.getUsersByRole(role, {
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      })
-      users.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load users by role'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * Load active users
-   */
-  async function loadActiveUsers(): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await userService.getActiveUsers({
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      })
-      users.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load active users'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * Load users by organisation
-   */
-  async function loadUsersByOrganisation(organisationId: string): Promise<void> {
-    isLoading.value = true
-    error.value = null
-
-    try {
-      const response = await userService.getUsersByOrganisation(organisationId, {
-        page: currentPage.value,
-        limit: itemsPerPage.value,
-      })
-      users.value = response.data || []
-      totalPages.value = response.totalPages || 1
-      totalItems.value = response.total || 0
-    } catch (err: any) {
-      error.value = err.message || 'Failed to load users by organisation'
-    } finally {
-      isLoading.value = false
-    }
-  }
-
-  /**
-   * Export users
-   */
-  async function exportUsers(params?: {
-    organisationId?: string
-    role?: UserRole
-    format?: 'csv' | 'json'
-  }): Promise<void> {
-    try {
-      await userService.exportUsers(params)
-    } catch (err: any) {
-      console.error('Failed to export users:', err)
-      error.value = err.message || 'Failed to export users'
-      throw err
-    }
-  }
-
-  /**
-   * Bulk import users
-   */
-  async function bulkImportUsers(
-    usersData: CreateUserRequest[]
-  ): Promise<BulkImportResult> {
-    isSaving.value = true
-    error.value = null
-
-    try {
-      const result = await userService.bulkImportUsers(usersData)
-      await loadUsers()
-      return result
-    } catch (err: any) {
-      error.value = err.message || 'Failed to import users'
-      throw err
-    } finally {
-      isSaving.value = false
-    }
-  }
-
-  /**
-   * Set current page and reload
-   */
-  async function setPage(page: number): Promise<void> {
-    currentPage.value = page
-    await loadUsers()
-  }
-
-  /**
-   * Set items per page
-   */
-  function setItemsPerPage(limit: number): void {
-    itemsPerPage.value = limit
-    currentPage.value = 1
-  }
-
-  /**
-   * Clear selected user
-   */
-  function clearSelection(): void {
-    selectedUser.value = null
-  }
-
-  /**
-   * Clear all user data
-   */
-  function clearAll(): void {
-    users.value = []
-    selectedUser.value = null
-    stats.value = null
-    error.value = null
-    currentPage.value = 1
-    totalPages.value = 1
-    totalItems.value = 0
-  }
-
-  /**
-   * Reset error state
-   */
-  function resetError(): void {
-    error.value = null
-  }
-
-  // ============================================
-  // Private Helpers
-  // ============================================
-
-  /**
-   * Update a user in the local list and selected user
-   */
-  function updateLocalUser(id: string, updated: User): void {
-    const index = users.value.findIndex((u) => u.uuid === id)
-    if (index !== -1) {
-      users.value[index] = updated
-    }
-    if (selectedUser.value?.uuid === id) {
-      selectedUser.value = updated
-    }
+  async function changeUserRole(id: string, role: UserRole): Promise<User | null> {
+    return userStore.update(id, { role } as Partial<User>)
   }
 
   return {
     // State
     users,
-    selectedUser,
-    stats,
-    isLoading,
+    selectedUser: userStore.selected,
+    isLoading: userStore.loading,
     isSaving,
-    error,
-    currentPage,
-    totalPages,
-    totalItems,
-    itemsPerPage,
+    error: userStore.error,
 
     // Getters
     activeUsers,
@@ -492,32 +125,19 @@ export const useUserStore = defineStore('user', () => {
     lockedUsers,
     usersByRole,
     usersByOrganisation,
+    managers,
     userRoles,
-    hasUsers,
-    isEmpty,
 
     // Actions
-    loadUsers,
-    loadUser,
-    loadStats,
-    createUser,
-    updateUser,
-    deleteUser,
-    deactivateUser,
+    initialize,
     activateUser,
+    deactivateUser,
     lockUserAccount,
     unlockUserAccount,
     updateTrainingStatus,
-    searchUsers,
-    loadUsersByRole,
-    loadActiveUsers,
-    loadUsersByOrganisation,
-    exportUsers,
-    bulkImportUsers,
-    setPage,
-    setItemsPerPage,
-    clearSelection,
-    clearAll,
-    resetError,
+    changeUserRole,
+
+    // Sub-store
+    userStore,
   }
 })

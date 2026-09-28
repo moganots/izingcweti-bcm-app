@@ -140,7 +140,7 @@ import {
   IncidentReportForm,
   IncidentResolutionForm,
 } from '../../components/incident'
-import { IncidentSeverity } from 'src/models/entities'
+import { IncidentSeverity } from 'src/models'
 
 const $q = useQuasar()
 const incidentStore = useIncidentStore()

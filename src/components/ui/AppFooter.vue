@@ -816,7 +816,7 @@ watch(
   { immediate: true }
 )
 
-watch(menuDialogOpen, (isOpen) => {
+watch(menuDialogOpen, (isOpen:any ) => {
   if (!isOpen) {
     updateSelectedTab()
   }

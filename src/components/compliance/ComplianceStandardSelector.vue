@@ -33,7 +33,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue'
-import { ComplianceStandard } from './../../models/entities/compliance/compliance.entity'
+import { ComplianceStandard } from '../../models/compliance/compliance.entity'
 
 const props = withDefaults(
     defineProps<{

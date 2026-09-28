@@ -1,9 +1,3 @@
-export enum SyncStatus {
-  PENDING = 'PENDING',
-  SYNCED = 'SYNCED',
-  CONFLICT = 'CONFLICT',
-}
-
 export enum OperationType {
   CREATE = 'CREATE',
   UPDATE = 'UPDATE',

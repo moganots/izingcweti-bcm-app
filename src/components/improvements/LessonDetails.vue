@@ -137,7 +137,7 @@
 </template>
 
 <script setup lang="ts">
-import type { Lesson } from 'src/models/entities/improvements/lesson.entity'
+import type { Lesson } from 'src/models/improvements/lesson.entity'
 import {
     getLessonStatusLabel,
     getLessonStatusColor,
@@ -149,7 +149,7 @@ import {
     LessonPriority,
     LessonCategory,
     LessonSource,
-} from 'src/models/entities/improvements/lesson.entity'
+} from 'src/models/improvements/lesson.entity'
 import { formatDate, formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

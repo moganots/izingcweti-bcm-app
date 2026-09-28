@@ -80,7 +80,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GovernanceHealth } from 'src/models/entities/governance/governance.entity'
+import type { GovernanceHealth } from 'src/models/governance/governance.entity'
 
 // ============================================
 // Props

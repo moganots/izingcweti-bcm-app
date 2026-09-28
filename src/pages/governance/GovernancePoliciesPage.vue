@@ -113,7 +113,7 @@ import { useGovernance } from 'src/composables/useGovernance'
 import { PageHeader } from 'src/components/.common'
 import { PolicyList, PolicyForm, PolicyDetails } from 'src/components/governance'
 import { ConfirmDialog } from 'src/components/.common'
-import type { GovernancePolicy, PolicyQueryParams } from 'src/models/entities/governance/governance.entity'
+import type { GovernancePolicy, PolicyQueryParams } from 'src/models/governance/governance.entity'
 
 // ============================================
 // Composables

@@ -34,7 +34,7 @@ import {
   type BCPQueryParams,
   type RecoveryStrategyQueryParams,
   type ExerciseTestQueryParams,
-} from './../../../models/entities/bcm/bcm.entity'
+} from '../../../models/bcm/bcm.entity'
 import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**

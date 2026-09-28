@@ -56,7 +56,7 @@ export type {
     ComplianceExportRequest,
     ComplianceVerificationResult,
     ComplianceReport,
-} from './../../models/entities/compliance/compliance.entity'
+} from '../../models/compliance/compliance.entity.ts'
 
 // ============================================================
 //  Constants Exports
@@ -83,7 +83,7 @@ export {
     calculateComplianceRate,
     formatComplianceStandard,
     getDaysUntilAudit,
-} from './../../models/entities/compliance/compliance.entity'
+} from '../../models/compliance/compliance.entity.ts'
 
 // ============================================================
 //  Default Export (for Vue Plugin)

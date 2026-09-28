@@ -20,8 +20,9 @@ import {
   type DocumentQueryParams,
   type DocumentVerificationResult,
   type DocumentUploadProgress,
-} from './../../../models/entities/document/document.entity'
+} from './../../../models/document/document.entity'
 import { PaginatedResponse } from './../../../shared/types/common.types'
+import { formatISO } from './../../../utils/date.utils'
 
 /**
  * Document Service - Aligned with Backend DTOs (camelCase)
@@ -58,21 +59,58 @@ export class DocumentService extends BaseService {
   }
 
   /**
-   * Create/Upload document - POST /documents/upload
+   * Create/Upload document
+   * POST /document/upload
+   *
+   * @param file - File to upload
+   * @param metadata - Document metadata (title, type, access level, tags, etc.)
+   * @param organisationId - Organisation this document belongs to
+   * @param onProgress - Optional progress callback
    */
-  async createDocument(data: CreateDocumentRequest & { file: File }): Promise<Document> {
+  async createDocument(
+    file: File,
+    metadata: Partial<Document>,
+    organisationId: string,
+    onProgress?: (progress: DocumentUploadProgress) => void
+  ): Promise<Document> {
     const formData = new FormData()
-    formData.append('title', data.title)
-    if (data.description) formData.append('description', data.description)
-    formData.append('documentType', data.documentType)
-    formData.append('accessLevel', data.accessLevel || AccessLevel.INTERNAL)
-    formData.append('file', data.file)
-    formData.append('organisationId', data.organisationId)
-    if (data.tags) formData.append('tags', JSON.stringify(data.tags))
-    if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata))
-    if (data.expiresAt) formData.append('expiresAt', data.expiresAt as string)
 
-    const response = await this.upload<Document>(API_ENDPOINTS.DOCUMENTS.UPLOAD, formData)
+    // Required fields
+    formData.append('file', file)
+    formData.append('organisationId', organisationId)
+
+    if (metadata.title) formData.append('title', metadata.title)
+    if (metadata.description) formData.append('description', metadata.description)
+    if (metadata.documentType) formData.append('documentType', metadata.documentType)
+    if (metadata.accessLevel) {
+      formData.append('accessLevel', metadata.accessLevel)
+    } else {
+      formData.append('accessLevel', AccessLevel.INTERNAL)
+    }
+    if (metadata.businessUnitId) {
+      formData.append('businessUnitId', metadata.businessUnitId)
+    }
+    if (metadata.departmentId) {
+      formData.append('departmentId', metadata.departmentId)
+    }
+    if (metadata.tags) formData.append('tags', JSON.stringify(metadata.tags))
+    if (metadata.metadata) {
+      formData.append('metadata', JSON.stringify(metadata.metadata))
+    }
+    if (metadata.expiresAt) {
+      formData.append('expiresAt', String(metadata.expiresAt))
+    }
+
+    const response = await this.upload<Document>(
+      API_ENDPOINTS.DOCUMENTS.UPLOAD,
+      formData,
+      (percent) => {
+        if (onProgress) {
+          onProgress({ loaded: percent, total: 100, percent })
+        }
+      }
+    )
+
     return this.extractData(response)
   }
 

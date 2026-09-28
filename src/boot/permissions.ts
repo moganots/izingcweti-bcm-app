@@ -1,5 +1,5 @@
 import { boot } from 'quasar/wrappers'
-import { UserRole } from './../models/entities'
+import { UserRole } from '../models'
 import { useAuthStore } from './../stores'
 
 /**

@@ -1,22 +1,24 @@
-import type { Transaction } from 'dexie'
+import type { Transaction } from "dexie";
 
 /**
  * Database Migration Interface
- */
-export interface DatabaseMigration {
-  version: number
-  stores: Record<string, string>
-  description?: string
-  upgrade?: (tx: Transaction) => Promise<void>
-}
-
-/**
- * Database Migrations
  *
  * Each migration defines schema changes for a specific version.
  * Migrations are applied sequentially and are additive only.
  *
  * IMPORTANT: Never modify existing migrations - only add new ones.
+ *
+ * Field naming follows the entity conventions (camelCase).
+ */
+export interface DatabaseMigration {
+  version: number;
+  stores: Record<string, string>;
+  description?: string;
+  upgrade?: (tx: Transaction) => Promise<void>;
+}
+
+/**
+ * Database Migrations - Aligned with Frontend Entities
  */
 export const MIGRATIONS: DatabaseMigration[] = [
   // ============================================
@@ -24,185 +26,249 @@ export const MIGRATIONS: DatabaseMigration[] = [
   // ============================================
   {
     version: 1,
-    description: 'Initial database schema with all core tables',
+    description: "Initial database schema with all core tables",
     stores: {
-      // Organisation Structure
-      organisations: 'uuid, name, industry_type, maturity_score, created_at, sync_status',
-      businessUnits: 'uuid, name, organisation_id, criticality_score, created_at, sync_status',
-      departments: 'uuid, name, business_id, created_at, sync_status',
+      // Tenant & Organisation
+      tenants:
+        "uuid, name, domainPrefix, email, status, tier, primaryRegion, [status+tier], deletedAt",
+      tenantAuditLogs:
+        "uuid, tenantId, action, performedBy, createdAt, [tenantId+createdAt], [action+createdAt], deletedAt",
+      organisations:
+        "uuid, tenantId, name, industryType, maturityScore, isActive, [tenantId+name], [tenantId+isActive], deletedAt",
+      businessUnits:
+        "uuid, organisationId, name, criticalityScore, isActive, [organisationId+name], [organisationId+isActive], deletedAt",
+      departments:
+        "uuid, businessUnitId, parentDepartmentId, name, isActive, [businessUnitId+name], [businessUnitId+isActive], deletedAt",
 
-      // Users
-      users: 'uuid, email, organisation_id, role, is_active, created_at, sync_status',
+      // User & Auth
+      users:
+        "uuid, organisationId, departmentId, email, role, isActive, managerId, [organisationId+isActive], [departmentId+isActive], [role+isActive], deletedAt",
+      authTokens:
+        "uuid, organisationId, userId, tokenType, status, expiresAt, [userId+status], [organisationId+status], [token+status], deletedAt",
+      settings:
+        "uuid, userId, organisationId, category, isSystemDefault, deletedAt",
 
-      // BCM Core
-      criticalFunctions: 'uuid, name, department_id, created_at, sync_status',
+      // BCM
+      criticalFunctions:
+        "uuid, organisationId, departmentId, name, recoveryPriority, isActive, [departmentId+name], [organisationId+recoveryPriority], [departmentId+isActive], deletedAt",
       businessImpactAssessments:
-        'uuid, function_id, reputational_impact, assessed_date, created_at, sync_status',
+        "uuid, organisationId, criticalFunctionId, assessedDate, [organisationId+assessedDate], deletedAt",
       businessContinuityPlans:
-        'uuid, function_id, plan_status, version, review_due_date, created_at, sync_status',
+        "uuid, organisationId, criticalFunctionId, planName, planStatus, reviewDueDate, isActive, parentBcpId, [organisationId+planStatus], [organisationId+createdAt], deletedAt",
+      bcpTemplates:
+        "uuid, organisationId, templateName, category, isSystemTemplate, [organisationId+category], deletedAt",
       recoveryStrategies:
-        'uuid, business_continuity_plan_id, recovery_strategy_type, created_at, sync_status',
+        "uuid, organisationId, businessContinuityPlanId, recoveryStrategyType, isPrimary, isActive, [organisationId+recoveryStrategyType], deletedAt",
       exerciseTests:
-        'uuid, business_continuity_plan_id, exercise_test_type, date, passed, created_at, sync_status',
-
-      // Risk & Compliance
-      risks:
-        'uuid, organisation_id, risk_category, impact_severity, inherent_risk_score, residual_risk_score, created_at, sync_status',
-      complianceRecords:
-        'uuid, organisation_id, compliance_standard, compliance_status, next_audit_due, created_at, sync_status',
-
-      // Incidents
+        "uuid, organisationId, businessContinuityPlanId, exerciseTestType, scheduledDate, executedDate, passed, [businessContinuityPlanId+scheduledDate], [organisationId+exerciseTestType], [passed+executedDate], deletedAt",
       incidents:
-        'uuid, organisation_id, incident_severity, declared_at, closed_at, created_at, sync_status',
+        "uuid, organisationId, businessContinuityPlanIdActivated, incidentTitle, incidentSeverity, incidentStatus, escalationLevel, escalationStatus, assignedTo, [organisationId+declaredAt], [organisationId+createdAt], [incidentSeverity+incidentStatus], [escalationStatus+escalatedAt], deletedAt",
+      bcmLifecycleStatuses:
+        "uuid, organisationId, phase, status, [organisationId+phase], deletedAt",
 
-      // Workflows
+      // Risk
+      risks:
+        "uuid, organisationId, title, riskCategory, status, assignedTo, inherentRiskScore, residualRiskScore, [organisationId+status], [organisationId+createdAt], [riskCategory+inherentImpactLevel], [assignedTo+status], deletedAt",
+
+      // Compliance
+      complianceRecords:
+        "uuid, organisationId, complianceStandard, complianceStatus, lastAuditDate, nextAuditDate, [organisationId+complianceStandard], [organisationId+complianceStatus], [organisationId+createdAt], deletedAt",
+
+      // Workflow
       workflows:
-        'uuid, workflow_type, workflow_state, priority, assigned_to, initiated_by, due_date, created_at, sync_status',
-
-      // Notifications
-      notifications:
-        'uuid, recipient_id, notification_type, is_read, status, created_at, sync_status',
-      notificationPreferences: 'uuid, user_id, notification_type',
+        "uuid, organisationId, workflowType, workflowState, priority, initiatedBy, assignedTo, entityId, entityType, [organisationId+workflowState], [organisationId+createdAt], [workflowType+workflowState], [initiatedBy+createdAt], [assignedTo+workflowState], [entityId+entityType], deletedAt",
 
       // Documents
       documents:
-        'uuid, organisation_id, document_type, status, uploaded_by, created_at, sync_status',
+        "uuid, organisationId, businessUnitId, departmentId, title, documentType, status, accessLevel, uploadedBy, [organisationId+documentType], [status+createdAt], [uploadedBy+createdAt], [organisationId+status], deletedAt",
+      documentTemplates:
+        "uuid, organisationId, name, documentType, category, isActive, deletedAt",
+
+      // Notifications
+      notifications:
+        "uuid, organisationId, businessUnitId, departmentId, recipientId, senderId, notificationType, priority, status, entityId, entityType, isRead, [recipientId+createdAt], [status+createdAt], [notificationType+createdAt], [recipientId+status], [organisationId+createdAt], [entityId+entityType], deletedAt",
+      notificationPreferences:
+        "uuid, userId, notificationType, [userId+notificationType], deletedAt",
+      notificationTemplates:
+        "uuid, organisationId, notificationType, isActive, [organisationId+notificationType], [organisationId+isActive], deletedAt",
 
       // Audit
       auditLogs:
-        'uuid, user_id, organisation_id, action, audit_category, entity_type, entity_id, created_at, sync_status',
+        "uuid, organisationId, userId, action, auditCategory, severity, entityType, entityId, isSensitive, createdAt, [entityType+entityId], [userId+action], [organisationId+createdAt], [action+createdAt], [auditCategory+createdAt], [severity+createdAt], deletedAt",
+      auditRetentionPolicies:
+        "uuid, organisationId, auditCategory, isActive, [organisationId+auditCategory], deletedAt",
+      activityHistory:
+        "uuid, entityId, entityType, userId, action, activityType, [entityId+entityType], [userId+createdAt], [action+createdAt], deletedAt",
+      attachments:
+        "uuid, entityId, entityType, uploadedBy, [entityId+entityType], [uploadedBy+createdAt], deletedAt",
+      comments:
+        "uuid, entityId, entityType, userId, parentCommentId, [entityId+entityType], [userId+createdAt], deletedAt",
 
       // Rules
       rules:
-        'uuid, rule_type, rule_trigger, status, entity_type, is_active, created_at, sync_status',
-      ruleExecutionLogs: 'uuid, rule_id, entity_id, executed_at',
+        "uuid, organisationId, name, ruleType, triggerEvent, status, priority, isActive, [organisationId+status], [ruleType+isActive], [priority+createdAt], [triggerEvent+isActive], [organisationId+name], deletedAt",
+      ruleExecutionLogs:
+        "uuid, ruleId, entityId, entityType, success, executedAt, [ruleId+executedAt], [entityId+entityType], [success+executedAt], deletedAt",
+
+      // Cache
+      cache:
+        "key, expiresAt, tags, hitCount, sizeBytes, isCompressed, deletedAt",
+
+      // Feature Toggles
+      featureToggles:
+        "uuid, organisationId, name, toggleType, status, environment, isActive, [name+environment+organisationId], [status+environment], [organisationId+createdAt], [organisationId+status], deletedAt",
+      featureToggleOverrides:
+        "uuid, organisationId, featureToggleId, overriddenBy, [featureToggleId+overriddenBy+organisationId], [featureToggleId+organisationId], [organisationId+overriddenBy], deletedAt",
+      featureToggleAuditLogs:
+        "uuid, featureToggleId, auditedBy, action, [featureToggleId+createdAt], [auditedBy+createdAt], [featureToggleId+action], deletedAt",
 
       // Sync
       pendingChanges:
-        'uuid, entity_type, entity_id, operation_type, priority, created_at, sync_status',
-      syncConflicts: 'uuid, entity_id, entity_type, resolved, detected_at',
-      syncMetadata: 'uuid, key',
+        "uuid, entityType, entityId, operationType, priority, attempts, status, [entityType+entityId], [status+priority], [status+createdAt], deletedAt",
+      syncConflicts:
+        "uuid, entityId, entityType, conflictType, resolved, autoResolvable, detectedAt, [entityId+entityType], [resolved+detectedAt], [autoResolvable+resolved], deletedAt",
+      syncMetadata: "uuid, key, deletedAt",
 
-      // Cache
-      cache: 'key, expiresAt, tags',
+      // Training
+      trainingCourses:
+        "uuid, organisationId, name, level, status, category, isPublished, isMandatory, instructorId, [organisationId+name], [status+level], [isPublished+publishedAt], deletedAt",
+      userCourseProgress:
+        "uuid, userId, courseId, status, lastModuleId, [userId+courseId], [userId+status], [courseId+status], [userId+lastAccessedAt], deletedAt",
+      certifications:
+        "uuid, userId, certificationName, issueDate, expiryDate, isVerified, verifiedBy, [userId+certificationName], [userId+issueDate], deletedAt",
+      attestationDocuments:
+        "uuid, title, attestationVersion, isActive, [title+attestationVersion], deletedAt",
+      userAttestations:
+        "uuid, userId, attestationId, status, dueDate, [userId+attestationId], [userId+status], [attestationId+status], [userId+acknowledgedAt], [dueDate+status], deletedAt",
+
+      // Governance
+      governancePolicies:
+        "uuid, organisationId, departmentId, name, category, status, ownerId, nextReviewDate, [organisationId+name], [organisationId+status], [organisationId+category], deletedAt",
+      maturityAssessments:
+        "uuid, organisationId, departmentId, assessedBy, assessedDate, level, [organisationId+assessedBy], [organisationId+assessedDate], [organisationId+level], [organisationId+departmentId+assessedDate], deletedAt",
+      governanceActivities:
+        "uuid, organisationId, departmentId, userId, action, targetType, targetId, [organisationId+createdAt], [userId+createdAt], [targetType+targetId], [organisationId+action], deletedAt",
+
+      // Improvements
+      lessons:
+        "uuid, organisationId, businessUnitId, departmentId, status, source, priority, category, sourceId, sourceType, identifiedBy, [organisationId+status], [organisationId+source], [organisationId+priority], [organisationId+identifiedBy], [sourceId+sourceType], deletedAt",
+
+      // Dashboard
+      dashboardConfigs:
+        "uuid, organisationId, userId, role, businessUnitId, departmentId, isActive, [organisationId+userId], [organisationId+isActive], deletedAt",
+
+      // Reports
+      reports:
+        "uuid, organisationId, businessUnitId, departmentId, name, reportType, format, status, frequency, createdBy, [reportType+createdAt], [status+createdBy], [organisationId+status], deletedAt",
     },
   },
 
   // ============================================
-  // Version 2: Add indexes for performance
+  // Version 2: Add compound indexes for performance
   // ============================================
   {
     version: 2,
-    description: 'Add performance indexes',
+    description: "Add performance indexes for high-traffic tables",
     stores: {
-      // Add compound indexes for common queries
-      criticalFunctions: 'uuid, name, department_id, created_at, sync_status, *department_created',
+      users:
+        "uuid, organisationId, departmentId, email, role, isActive, managerId, [organisationId+isActive], [departmentId+isActive], [role+isActive], [organisationId+role], deletedAt",
+      documents:
+        "uuid, organisationId, businessUnitId, departmentId, title, documentType, status, accessLevel, uploadedBy, [organisationId+documentType], [status+createdAt], [uploadedBy+createdAt], [organisationId+status], [documentType+status], deletedAt",
       risks:
-        'uuid, organisation_id, risk_category, impact_severity, inherent_risk_score, residual_risk_score, created_at, sync_status, *organisation_category',
+        "uuid, organisationId, title, riskCategory, status, assignedTo, inherentRiskScore, residualRiskScore, [organisationId+status], [organisationId+createdAt], [riskCategory+inherentImpactLevel], [assignedTo+status], [organisationId+riskCategory], deletedAt",
       incidents:
-        'uuid, organisation_id, incident_severity, declared_at, closed_at, created_at, sync_status, *organisation_severity, *severity_declared',
-      pendingChanges:
-        'uuid, entity_type, entity_id, operation_type, priority, created_at, sync_status, *priority_created',
+        "uuid, organisationId, businessContinuityPlanIdActivated, incidentTitle, incidentSeverity, incidentStatus, escalationLevel, escalationStatus, assignedTo, [organisationId+declaredAt], [organisationId+createdAt], [incidentSeverity+incidentStatus], [escalationStatus+escalatedAt], [organisationId+incidentStatus], deletedAt",
+      workflows:
+        "uuid, organisationId, workflowType, workflowState, priority, initiatedBy, assignedTo, entityId, entityType, [organisationId+workflowState], [organisationId+createdAt], [workflowType+workflowState], [initiatedBy+createdAt], [assignedTo+workflowState], [entityId+entityType], [organisationId+workflowType], deletedAt",
     },
   },
 
   // ============================================
-  // Version 3: Add cache management
+  // Version 3: Add tenant audit log indexes
   // ============================================
   {
     version: 3,
-    description: 'Enhanced cache management',
+    description: "Add tenant audit log indexes",
     stores: {
-      cache: 'key, expiresAt, tags, createdAt',
-    },
-    upgrade: async (tx: Transaction) => {
-      // Migrate existing cache entries to add createdAt
-      const cacheTable = tx.table('cache')
-      const entries = await cacheTable.toArray()
-
-      for (const entry of entries) {
-        if (!entry.createdAt) {
-          await cacheTable.update(entry.key, { createdAt: Date.now() })
-        }
-      }
+      tenantAuditLogs:
+        "uuid, tenantId, action, performedBy, createdAt, [tenantId+createdAt], [action+createdAt], [performedBy+createdAt], [tenantId+action], deletedAt",
     },
   },
 
   // ============================================
-  // Version 4: Add search indexes
+  // Version 4: Add training and certification indexes
   // ============================================
   {
     version: 4,
-    description: 'Add full-text search indexes',
+    description: "Add training and certification indexes",
     stores: {
-      documents:
-        'uuid, organisation_id, document_type, status, uploaded_by, created_at, sync_status, *title_search, *tags_search',
-      workflows:
-        'uuid, workflow_type, workflow_state, priority, assigned_to, initiated_by, due_date, created_at, sync_status, *title_search, *state_priority',
-      notifications:
-        'uuid, recipient_id, notification_type, is_read, status, created_at, sync_status, *recipient_read, *recipient_type',
+      trainingCourses:
+        "uuid, organisationId, name, level, status, category, isPublished, isMandatory, instructorId, [organisationId+name], [status+level], [isPublished+publishedAt], [organisationId+isPublished], deletedAt",
+      userCourseProgress:
+        "uuid, userId, courseId, status, lastModuleId, [userId+courseId], [userId+status], [courseId+status], [userId+lastAccessedAt], [status+completedAt], deletedAt",
+      certifications:
+        "uuid, userId, certificationName, issueDate, expiryDate, isVerified, verifiedBy, [userId+certificationName], [userId+issueDate], [isVerified+expiryDate], deletedAt",
     },
   },
 
   // ============================================
-  // Version 5: Add offline support enhancements
+  // Version 5: Add governance and lesson indexes
   // ============================================
   {
     version: 5,
-    description: 'Enhanced offline support with retry tracking',
+    description: "Add governance and lesson indexes",
     stores: {
-      pendingChanges:
-        'uuid, entity_type, entity_id, operation_type, priority, attempts, created_at, sync_status, *priority_created, *entity_type_status',
-    },
-    upgrade: async (tx: Transaction) => {
-      // Add attempts field to existing pending changes
-      const pendingTable = tx.table('pendingChanges')
-      const changes = await pendingTable.toArray()
-
-      for (const change of changes) {
-        if (change.attempts === undefined) {
-          await pendingTable.update(change.uuid, { attempts: 0 })
-        }
-      }
+      governancePolicies:
+        "uuid, organisationId, departmentId, name, category, status, ownerId, nextReviewDate, [organisationId+name], [organisationId+status], [organisationId+category], [organisationId+nextReviewDate], deletedAt",
+      lessons:
+        "uuid, organisationId, businessUnitId, departmentId, status, source, priority, category, sourceId, sourceType, identifiedBy, [organisationId+status], [organisationId+source], [organisationId+priority], [organisationId+identifiedBy], [sourceId+sourceType], [organisationId+priority+status], deletedAt",
     },
   },
 
   // ============================================
-  // Version 6: Add user preferences
+  // Version 6: Add dashboard and report indexes
   // ============================================
   {
     version: 6,
-    description: 'Add user preferences and settings storage',
+    description: "Add dashboard and report indexes",
     stores: {
-      userPreferences: 'key, userId, value, updatedAt',
-      appSettings: 'key, value',
+      dashboardConfigs:
+        "uuid, organisationId, userId, role, businessUnitId, departmentId, isActive, [organisationId+userId], [organisationId+isActive], [organisationId+role], [userId+isActive], deletedAt",
+      reports:
+        "uuid, organisationId, businessUnitId, departmentId, name, reportType, format, status, frequency, createdBy, [reportType+createdAt], [status+createdBy], [organisationId+status], [organisationId+reportType], [status+frequency], deletedAt",
     },
   },
 
   // ============================================
-  // Version 7: Add audit trail enhancements
+  // Version 7: Add audit activity history and comments indexes
   // ============================================
   {
     version: 7,
-    description: 'Enhanced audit logging with request context',
+    description: "Add activity history and comments indexes",
     stores: {
-      auditLogs:
-        'uuid, user_id, organisation_id, action, audit_category, severity, entity_type, entity_id, ip_address, session_id, created_at, sync_status, *user_action, *entity_changes',
+      activityHistory:
+        "uuid, entityId, entityType, userId, action, activityType, [entityId+entityType], [userId+createdAt], [action+createdAt], [activityType+createdAt], deletedAt",
+      comments:
+        "uuid, entityId, entityType, userId, parentCommentId, [entityId+entityType], [userId+createdAt], [parentCommentId+createdAt], deletedAt",
+      attachments:
+        "uuid, entityId, entityType, uploadedBy, [entityId+entityType], [uploadedBy+createdAt], [entityType+fileType], deletedAt",
     },
   },
 
   // ============================================
-  // Version 8: Add data compression support
+  // Version 8: Add BCM lifecycle and feature toggle audit indexes
   // ============================================
   {
     version: 8,
-    description: 'Add support for compressed storage',
+    description: "Add BCM lifecycle and feature toggle audit indexes",
     stores: {
-      compressedData:
-        'uuid, key, compressedValue, algorithm, originalSize, compressedSize, createdAt',
+      bcmLifecycleStatuses:
+        "uuid, organisationId, phase, status, assignedTo, [organisationId+phase], [phase+status], [organisationId+status], deletedAt",
+      featureToggleAuditLogs:
+        "uuid, featureToggleId, auditedBy, action, [featureToggleId+createdAt], [auditedBy+createdAt], [featureToggleId+action], [action+createdAt], deletedAt",
     },
   },
-]
+];
 
 /**
  * Migration helper functions
@@ -212,35 +278,51 @@ export const MigrationHelpers = {
    * Log migration progress
    */
   logMigration(version: number, description: string): void {
-    console.log(`🔄 Migrating to v${version}: ${description}`)
+    console.log(`🔄 Migrating to v${version}: ${description}`);
   },
 
   /**
    * Check if migration should run
    */
   async shouldRunMigration(db: any, version: number): Promise<boolean> {
-    const currentVersion = db.verno
-    return currentVersion < version
+    const currentVersion = db.verno;
+    return currentVersion < version;
   },
 
   /**
    * Get pending migrations
    */
   getPendingMigrations(currentVersion: number): DatabaseMigration[] {
-    return MIGRATIONS.filter((m) => m.version > currentVersion)
+    return MIGRATIONS.filter((m) => m.version > currentVersion);
   },
 
   /**
    * Get migration by version
    */
   getMigration(version: number): DatabaseMigration | undefined {
-    return MIGRATIONS.find((m) => m.version === version)
+    return MIGRATIONS.find((m) => m.version === version);
   },
 
   /**
    * Get latest migration version
    */
   getLatestVersion(): number {
-    return MIGRATIONS[MIGRATIONS.length - 1]?.version || 1
+    return MIGRATIONS[MIGRATIONS.length - 1]?.version || 1;
   },
-}
+
+  /**
+   * Get total table count from latest migration
+   */
+  getTableCount(): number {
+    const latest = MIGRATIONS[MIGRATIONS.length - 1];
+    return latest ? Object.keys(latest.stores).length : 0;
+  },
+
+  /**
+   * Get all table names from latest migration
+   */
+  getTableNames(): string[] {
+    const latest = MIGRATIONS[MIGRATIONS.length - 1];
+    return latest ? Object.keys(latest.stores) : [];
+  },
+};

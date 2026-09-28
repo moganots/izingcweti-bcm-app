@@ -239,7 +239,7 @@ import RiskCard from '../../components/risk/RiskCard.vue'
 import RiskStatsOverview from '../../components/risk/RiskStatsOverview.vue'
 import RiskMatrix from '../../components/risk/RiskMatrix.vue'
 import RiskAssessmentForm from '../../components/risk/RiskAssessmentForm.vue'
-import { ImpactSeverity, RiskCategory } from 'src/models/entities'
+import { ImpactSeverity, RiskCategory } from 'src/models/index.ts'
 
 const $q = useQuasar()
 const riskStore = useRiskStore()

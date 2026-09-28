@@ -40,7 +40,7 @@ export type {
   LoginCredentials,
   DeviceInfo,
   LoginResponse,
-  MFAVerification,
+  MfaVerification,
   RegistrationData,
   ChangePasswordRequest,
   ForgotPasswordRequest,
@@ -78,11 +78,11 @@ export type {
 
 // BCM Types
 export type {
-  BCMState,
-  BIAFilters,
-  BIASummary,
-  BCPFilters,
-  BCPProgress,
+  BcmState,
+  BiaFilters,
+  BiaSummary,
+  BcpFilters,
+  BcpProgress,
   EmergencyContact,
   TestFilters,
   TestStatistics,
@@ -95,7 +95,7 @@ export type {
   MaturityProgress as BcmMaturityProgress,
   MaturityDomain,
   LifecycleProgress,
-  DashboardKPIs,
+  DashboardKpis,
   DashboardIncident,
   DashboardTest,
   DashboardWorkflow,
@@ -103,8 +103,8 @@ export type {
   RiskTrend,
   IncidentTrend,
   CriticalFunctionQueryParams,
-  BIAQueryParams,
-  BCPQueryParams,
+  BiaQueryParams,
+  BcpQueryParams,
   RecoveryStrategyQueryParams,
   ExerciseTestQueryParams,
   RiskQueryParams,
@@ -119,7 +119,7 @@ export type {
   DashboardQueryParams,
 } from './bcm.types'
 
-export { BCMLifecyclePhase } from './bcm.types'
+export { BcmLifecyclePhase } from './bcm.types'
 
 // Document Types
 export type {
@@ -131,7 +131,7 @@ export type {
 // Dashboard Types
 export type {
   DashboardData,
-  DashboardKPIs as DashboardKPIsType,
+  DashboardKpis as DashboardKpisType,
 } from './dashboard.types'
 
 // Settings Types

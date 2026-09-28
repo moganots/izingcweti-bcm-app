@@ -60,7 +60,7 @@ import { useQuasar } from 'quasar'
 import { useGovernance } from 'src/composables/useGovernance'
 import { PolicyDetails, PolicyForm } from 'src/components/governance'
 import { ConfirmDialog } from 'src/components/.common'
-import { PolicyStatus } from 'src/models/entities/governance/governance.entity'
+import { PolicyStatus } from 'src/models/governance/governance.entity'
 
 // ============================================
 // Composables

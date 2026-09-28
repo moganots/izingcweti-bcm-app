@@ -1,5 +1,5 @@
 import { db } from '../db/Database'
-import { ConflictResolutionStrategy, ConflictType, SyncConflict } from './../../models/entities'
+import { ConflictResolutionStrategy, ConflictType, SyncConflict } from '../../models/entities/sync/sync.entity'
 
 /**
  * Conflict Resolution Result
@@ -16,9 +16,44 @@ export interface ConflictResolution {
 /**
  * Conflict Resolver Service
  * Handles detection and resolution of sync conflicts
+ * 
+ * IMPORTANT: All entity field names use camelCase to match frontend entities.
  */
 export class ConflictResolver {
-  // Use the exported db instance directly
+    private static readonly TABLE_NORMALIZATION: Record<string, string> = {
+    organisation: 'organisations',
+    businessUnit: 'businessUnits',
+    department: 'departments',
+    criticalFunction: 'criticalFunctions',
+    businessImpactAssessment: 'businessImpactAssessments',
+    businessContinuityPlan: 'businessContinuityPlans',
+    bcpTemplate: 'bcpTemplates',
+    recoveryStrategy: 'recoveryStrategies',
+    exerciseTest: 'exerciseTests',
+    incident: 'incidents',
+    risk: 'risks',
+    complianceRecord: 'complianceRecords',
+    governancePolicy: 'governancePolicies',
+    maturityAssessment: 'maturityAssessments',
+    governanceActivity: 'governanceActivities',
+    document: 'documents',
+    workflow: 'workflows',
+    notification: 'notifications',
+    report: 'reports',
+    dashboardConfig: 'dashboardConfigs',
+    auditLog: 'auditLogs',
+    rule: 'rules',
+    featureToggle: 'featureToggles',
+    trainingCourse: 'trainingCourses',
+    certification: 'certifications',
+    attestationDocument: 'attestationDocuments',
+    userAttestation: 'userAttestations',
+    lesson: 'lessons',
+  }
+
+  private normalizeTableName(name: string): string {
+    return ConflictResolver.TABLE_NORMALIZATION[name] ?? name
+  }
 
   // ============================================
   // Conflict Detection
@@ -32,20 +67,22 @@ export class ConflictResolver {
     serverVersion: Record<string, any>
   ): ConflictType | null {
     // Check if both versions modified since last sync
-    if (clientVersion.updated_at && serverVersion.updated_at) {
-      // Compare timestamps to determine if real conflict exists
-      const clientTime = new Date(clientVersion.updated_at).getTime()
-      const serverTime = new Date(serverVersion.updated_at).getTime()
-      
+    if (clientVersion.updatedAt && serverVersion.updatedAt) {
+      const clientTime = new Date(clientVersion.updatedAt).getTime()
+      const serverTime = new Date(serverVersion.updatedAt).getTime()
+      const lastSyncTime = Math.max(
+        clientVersion.lastSyncAt ? new Date(clientVersion.lastSyncAt).getTime() : 0,
+        serverVersion.lastSyncAt ? new Date(serverVersion.lastSyncAt).getTime() : 0
+      )
+
       // If both modified after last sync, it's a conflict
-      if (clientTime > (clientVersion.last_sync_at || 0) && 
-          serverTime > (serverVersion.last_sync_at || 0)) {
+      if (clientTime > lastSyncTime && serverTime > lastSyncTime) {
         return ConflictType.UPDATE_UPDATE
       }
     }
 
     // Check if client deleted but server updated
-    if (clientVersion.deleted_at && !serverVersion.deleted_at) {
+    if (clientVersion.deletedAt && !serverVersion.deletedAt) {
       return ConflictType.DELETE_UPDATE
     }
 
@@ -69,16 +106,16 @@ export class ConflictResolver {
     const differences: Array<{ field: string; clientValue: any; serverValue: any }> = []
     const allFields = new Set([...Object.keys(clientVersion), ...Object.keys(serverVersion)])
 
-    // Exclude metadata fields
+    // Exclude metadata fields (camelCase to match entities)
     const excludeFields = [
       'uuid',
-      'created_at',
-      'created_by',
-      'updated_at',
-      'updated_by',
+      'createdAt',
+      'createdBy',
+      'updatedAt',
+      'updatedBy',
       'version',
-      'sync_status',
-      'last_sync_at',
+      'syncStatus',
+      'lastSyncAt',
     ]
 
     for (const field of allFields) {
@@ -112,7 +149,11 @@ export class ConflictResolver {
     }
   ): Promise<SyncConflict> {
     const conflictRepo = db.getRepository('syncConflicts')
-    const conflict = await conflictRepo?.findById(conflictId)
+    if (!conflictRepo) {
+      throw new Error('syncConflicts table not found')
+    }
+
+    const conflict = (await conflictRepo.findById(conflictId)) as SyncConflict | null
 
     if (!conflict) {
       throw new Error(`Conflict not found: ${conflictId}`)
@@ -126,42 +167,44 @@ export class ConflictResolver {
 
     switch (resolution.strategy) {
       case ConflictResolutionStrategy.LAST_WRITE_WINS:
-        resolvedData = this.resolveLastWriteWins(conflict.client_version, conflict.server_version)
+        resolvedData = this.resolveLastWriteWins(conflict.clientVersion, conflict.serverVersion)
         break
 
       case ConflictResolutionStrategy.DELETE_WINS:
-        resolvedData = this.resolveDeleteWins(conflict.client_version, conflict.server_version)
+        resolvedData = this.resolveDeleteWins(conflict.clientVersion, conflict.serverVersion)
         break
 
       case ConflictResolutionStrategy.USER_MEDIATED:
-        if (!resolution.resolvedData) {
-          throw new Error('Resolved data required for user-mediated resolution')
+        if (!resolution.resolvedData || Object.keys(resolution.resolvedData).length === 0) {
+          throw new Error('Non-empty resolvedData required for user-mediated resolution')
         }
         resolvedData = resolution.resolvedData
         break
 
       case ConflictResolutionStrategy.MERGE:
-        resolvedData = this.resolveMerge(conflict.client_version, conflict.server_version)
+        resolvedData = this.resolveMerge(conflict.clientVersion, conflict.serverVersion)
         break
 
       default:
         throw new Error(`Unknown resolution strategy: ${resolution.strategy}`)
     }
 
-    // Update conflict record
+    // Update conflict record (camelCase fields)
     const now = new Date().toISOString()
-    const updated = await conflictRepo?.update(conflictId, {
+    const updated = await conflictRepo.update(conflictId, {
       resolved: true,
-      resolution_strategy: resolution.strategy,
-      resolved_data: resolvedData,
-      resolved_at: now,
-      updated_at: now,
+      resolutionStrategy: resolution.strategy,
+      resolutionData: resolvedData,
+      resolvedAt: now,
+      resolvedBy: resolution.userId,
+      resolutionNotes: resolution.notes,
+      updatedAt: now,
     })
 
     // Apply resolved data to local database
-    await this.applyResolution(conflict.entity_type, conflict.entity_id, resolvedData)
+    await this.applyResolution(conflict.entityType, conflict.entityId, resolvedData)
 
-    return updated!
+    return updated as SyncConflict
   }
 
   /**
@@ -203,15 +246,15 @@ export class ConflictResolver {
     clientVersion: Record<string, any>,
     serverVersion: Record<string, any>
   ): Record<string, any> {
-    const clientTime = new Date(clientVersion.updated_at || clientVersion.created_at).getTime()
-    const serverTime = new Date(serverVersion.updated_at || serverVersion.created_at).getTime()
+    const clientTime = new Date(clientVersion.updatedAt || clientVersion.createdAt).getTime()
+    const serverTime = new Date(serverVersion.updatedAt || serverVersion.createdAt).getTime()
 
     const resolved = clientTime > serverTime ? { ...clientVersion } : { ...serverVersion }
-    
+
     // Ensure resolved data is marked as synced
-    resolved.sync_status = 'SYNCED'
-    resolved.updated_at = new Date().toISOString()
-    
+    resolved.syncStatus = 'SYNCED'
+    resolved.updatedAt = new Date().toISOString()
+
     return resolved
   }
 
@@ -222,13 +265,13 @@ export class ConflictResolver {
     clientVersion: Record<string, any>,
     serverVersion: Record<string, any>
   ): Record<string, any> {
-    if (clientVersion.deleted_at || serverVersion.deleted_at) {
+    if (clientVersion.deletedAt || serverVersion.deletedAt) {
       return {
         ...serverVersion,
-        deleted_at: clientVersion.deleted_at || serverVersion.deleted_at,
-        deleted_by: clientVersion.deleted_by || serverVersion.deleted_by,
-        sync_status: 'SYNCED',
-        updated_at: new Date().toISOString(),
+        deletedAt: clientVersion.deletedAt || serverVersion.deletedAt,
+        deletedBy: clientVersion.deletedBy || serverVersion.deletedBy,
+        syncStatus: 'SYNCED',
+        updatedAt: new Date().toISOString(),
       }
     }
     return this.resolveLastWriteWins(clientVersion, serverVersion)
@@ -253,8 +296,8 @@ export class ConflictResolver {
       }
     }
 
-    merged.sync_status = 'SYNCED'
-    merged.updated_at = new Date().toISOString()
+    merged.syncStatus = 'SYNCED'
+    merged.updatedAt = new Date().toISOString()
     merged.version = Math.max(clientVersion.version || 0, serverVersion.version || 0) + 1
 
     return merged
@@ -267,32 +310,39 @@ export class ConflictResolver {
   /**
    * Apply resolved data to local database
    */
-  private async applyResolution(
+    private async applyResolution(
     entityType: string,
     entityId: string,
-    resolvedData: Record<string, any>
+    resolvedData: Record<string, any>,
   ): Promise<void> {
+    const tableName = this.normalizeTableName(entityType)
+    const repository = db.getRepository(tableName)
+
+    if (!repository) {
+      console.warn(`[ConflictResolver] Unknown table: ${tableName}`)
+      return
+    }
+
     try {
-      const repository = db.getRepository(entityType)
-
-      if (repository) {
-        const existing = await repository.findById(entityId)
-
-        if (existing) {
-          await repository.update(entityId, {
-            ...resolvedData,
-            sync_status: 'SYNCED',
-          })
-        } else {
-          await repository.create({
-            uuid: entityId,
-            ...resolvedData,
-            sync_status: 'SYNCED',
-          })
-        }
+      const existing = await repository.findById(entityId)
+      if (existing) {
+        await repository.update(entityId, {
+          ...resolvedData,
+          syncStatus: 'SYNCED',
+          updatedAt: new Date().toISOString(),
+        })
+      } else {
+        await repository.create({
+          uuid: entityId,
+          ...resolvedData,
+          syncStatus: 'SYNCED',
+        })
       }
     } catch (error) {
-      console.error(`Failed to apply resolution for ${entityType}/${entityId}:`, error)
+      console.error(
+        `[ConflictResolver] Failed to apply resolution for ${tableName}/${entityId}:`,
+        error,
+      )
       throw error
     }
   }
@@ -322,11 +372,14 @@ export class ConflictResolver {
   /**
    * Get default resolution strategy from settings
    */
-  private getDefaultStrategy(): ConflictResolutionStrategy {
+    private getDefaultStrategy(): ConflictResolutionStrategy {
+    if (typeof localStorage === 'undefined') {
+      return ConflictResolutionStrategy.LAST_WRITE_WINS
+    }
     const saved = localStorage.getItem('bcm_conflict_strategy')
     if (
       saved &&
-      Object.values(ConflictResolutionStrategy).includes(saved as ConflictResolutionStrategy)
+      (Object.values(ConflictResolutionStrategy) as string[]).includes(saved)
     ) {
       return saved as ConflictResolutionStrategy
     }
@@ -347,13 +400,13 @@ export class ConflictResolver {
     if (!conflictRepo) {
       return { total: 0, resolved: 0, unresolved: 0, byType: {}, byStrategy: {} }
     }
-    
-    const all = await conflictRepo.findAll()
+
+    const all = (await conflictRepo.findAll()) as SyncConflict[]
 
     const byType: Record<string, number> = {}
     const byStrategy: Record<string, number> = {}
 
-    all.forEach((c: SyncConflict) => {
+    all.forEach((c) => {
       byType[c.conflictType] = (byType[c.conflictType] || 0) + 1
       if (c.resolutionStrategy) {
         byStrategy[String(c.resolutionStrategy)] =
@@ -363,8 +416,8 @@ export class ConflictResolver {
 
     return {
       total: all.length,
-      resolved: all.filter((c: SyncConflict) => c.resolved).length,
-      unresolved: all.filter((c: SyncConflict) => !c.resolved).length,
+      resolved: all.filter((c) => c.resolved).length,
+      unresolved: all.filter((c) => !c.resolved).length,
       byType,
       byStrategy,
     }

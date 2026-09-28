@@ -23,7 +23,7 @@ import type {
     UpdateAttestationDocumentRequest,
     AcknowledgeAttestationRequest,
     CreateUserAttestationRequest,
-} from '../../../models/entities/training/training.entity'
+} from '../../../models/training/training.entity'
 import type { PaginatedResponse } from '../../../shared/types/common.types'
 
 /**

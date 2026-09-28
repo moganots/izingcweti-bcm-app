@@ -297,6 +297,28 @@ export class SyncService extends BaseService {
     return this.extractData(response);
   }
 
+    /**
+   * Backwards-compatible alias — accepts either `resolutionStrategy` or `strategy`.
+   */
+  async resolveConflictCompat(
+    uuid: string,
+    data: {
+      strategy?: ConflictResolutionStrategy
+      resolutionStrategy?: ConflictResolutionStrategy
+      resolvedData?: Record<string, any>
+      notes?: string
+    },
+  ): Promise<SyncConflict> {
+    return this.resolveConflict(uuid, {
+      resolutionStrategy:
+        data.resolutionStrategy ??
+        data.strategy ??
+        ('' as ConflictResolutionStrategy),
+      resolvedData: data.resolvedData,
+      notes: data.notes,
+    })
+  }
+
   /**
    * Resolve a conflict
    * POST /sync/conflicts/:uuid/resolve

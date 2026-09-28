@@ -34,8 +34,8 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import type { MaturityLevel } from 'src/models/entities/governance/governance.entity'
-import { getMaturityLevelLabel } from 'src/models/entities/governance/governance.entity'
+import type { MaturityLevel } from 'src/models/governance/governance.entity'
+import { getMaturityLevelLabel } from 'src/models/governance/governance.entity'
 
 // ============================================
 // Props

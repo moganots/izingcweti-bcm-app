@@ -46,12 +46,12 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { UserAttestation } from 'src/models/entities/training/training.entity'
+import type { UserAttestation } from 'src/models/training/training.entity'
 import {
     getAttestationStatusLabel,
     getAttestationStatusColor,
     AttestationStatus
-} from 'src/models/entities/training/training.entity'
+} from 'src/models/training/training.entity'
 import { formatDate, formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

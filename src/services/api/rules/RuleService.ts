@@ -104,7 +104,7 @@ export class RuleService extends BaseService {
    * Execute a rule
    * POST /admin/rules/:uuid/execute
    */
-  async executeRule(uuid: string, data: { context?: Record<string, any>; async?: boolean }): Promise<any> {
+  async executeRule(uuid: string, data: { context?: Record<string, any> | undefined; async?: boolean | undefined }): Promise<any> {
     const response = await this.post(API_ENDPOINTS.RULES.EXECUTE(uuid), data)
     return this.extractData(response)
   }

@@ -105,13 +105,13 @@
 </template>
 
 <script setup lang="ts">
-import type { GovernancePolicy, PolicyCategory } from 'src/models/entities/governance/governance.entity'
+import type { GovernancePolicy, PolicyCategory } from 'src/models/governance/governance.entity'
 import {
     getPolicyStatusLabel,
     getPolicyStatusColor,
     getPolicyCategoryLabel,
     PolicyStatus,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import { formatDate, formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

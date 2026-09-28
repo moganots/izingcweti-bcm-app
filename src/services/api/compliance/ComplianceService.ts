@@ -18,7 +18,7 @@ import {
   type ComplianceExportRequest,
   type ComplianceVerificationResult,
   type ComplianceReport,
-} from './../../../models/entities/compliance/compliance.entity';
+} from '../../../models/compliance/compliance.entity';
 import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**

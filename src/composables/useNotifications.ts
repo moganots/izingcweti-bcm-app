@@ -1,476 +1,224 @@
-import { computed, ref, watch, onMounted } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useNotificationStore } from './../stores/notification/notification.store';
-import { useAuth } from './useAuth';
-import type {
-  CreateNotificationRequest,
-  NotificationQueryParams,
-} from './../models/entities/notification/notification.entity';
+import { computed, ref, watch, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useNotificationStore } from '../stores/notification/notification.store'
+import { useAuth } from './useAuth'
 
+/**
+ * Notifications composable
+ * Aligned with useNotificationStore
+ */
 export function useNotifications() {
-  const store = useNotificationStore();
-  const auth = useAuth();
+  const store = useNotificationStore()
+  const auth = useAuth()
 
-  // Auth state
-  const { isAuthenticated, userId, isAdmin, isBCMManager } = auth;
+  const { isAuthenticated, userId, isAdmin, isBCMManager } = auth
 
-  // Store refs
   const {
     notifications,
-    selectedNotification,
     preferences,
     templates,
-    selectedTemplate,
     counts,
-    templateStats,
     isLoading,
     isSaving,
-    error,
-    pagination,
     isPolling,
+    error,
     unreadNotifications,
     unreadCount,
-    readNotifications,
-    archivedNotifications,
     highPriorityUnread,
     notificationsByType,
     activeTemplates,
-    inactiveTemplates,
-  } = storeToRefs(store);
+    readNotifications,
+    archivedNotifications,
+    urgentNotifications,
+    displayCounts,
+    hasUnread,
+    hasUrgent,
+  } = storeToRefs(store)
 
   // ============================================
-  // Composable: useNotificationsList
+  // Notifications List
   // ============================================
-  function useNotificationsList(initialParams?: NotificationQueryParams) {
-    const params = ref<NotificationQueryParams>(initialParams || {});
-    const page = ref(1);
-    const limit = ref(20);
+  function useNotificationsList() {
+    const page = ref(1)
+    const limit = ref(20)
 
-    const canFetch = computed(() => isAuthenticated.value);
+    async function fetchNotifications(): Promise<void> {
+      if (!isAuthenticated.value) return
+      await store.initialize()
+    }
 
-    const fetchNotifications = async () => {
-      if (!canFetch.value) {
-        console.warn('Cannot fetch notifications: User not authenticated');
-        return null;
-      }
+    async function markAsRead(uuid: string) {
+      if (!isAuthenticated.value) return null
+      return store.markAsRead(uuid)
+    }
 
-      const payload = {
-        ...params.value,
-        page: page.value,
-        limit: limit.value,
-      } as NotificationQueryParams & {
-        page: number;
-        limit: number;
-      };
+    async function markAllAsRead() {
+      if (!isAuthenticated.value) return 0
+      return store.markAllAsRead()
+    }
 
-      return store.fetchNotifications(payload);
-    };
+    async function archive(uuid: string) {
+      if (!isAuthenticated.value) return null
+      return store.archiveNotification(uuid)
+    }
 
-    const loadMore = () => {
-      if (pagination.value.currentPage < pagination.value.totalPages) {
-        page.value++;
-        fetchNotifications();
-      }
-    };
+    async function dismiss(uuid: string) {
+      if (!isAuthenticated.value) return null
+      return store.dismissNotification(uuid)
+    }
 
-    const markAsRead = async (uuid: string) => {
-      if (!canFetch.value) {
-        console.warn('Cannot mark as read: User not authenticated');
-        return;
-      }
-      return store.markAsRead(uuid);
-    };
+    async function acknowledge(uuid: string) {
+      if (!isAuthenticated.value) return null
+      return store.acknowledgeNotification(uuid)
+    }
 
-    const markAllAsRead = async () => {
-      if (!canFetch.value) {
-        console.warn('Cannot mark all as read: User not authenticated');
-        return 0;
-      }
-      return store.markAllAsRead();
-    };
-
-    const archive = async (uuid: string) => {
-      if (!canFetch.value) {
-        console.warn('Cannot archive: User not authenticated');
-        return null;
-      }
-      return store.archiveNotification(uuid);
-    };
-
-    const remove = async (uuid: string) => {
-      if (!canFetch.value) {
-        console.warn('Cannot delete: User not authenticated');
-        return;
-      }
-      return store.deleteNotification(uuid);
-    };
-
-    const create = async (data: CreateNotificationRequest) => {
-      if (!canFetch.value) {
-        console.warn('Cannot create: User not authenticated');
-        return null;
-      }
-      return store.createNotification(data);
-    };
-
-    // Auto-fetch on param changes if authenticated
-    watch([params, page, limit], () => {
-      if (canFetch.value) {
-        fetchNotifications();
-      }
-    }, { immediate: false });
-
-    // Auto-fetch on authentication
-    watch(isAuthenticated, (authenticated) => {
-      if (authenticated) {
-        fetchNotifications();
-      }
-    }, { immediate: false });
+    async function remove(uuid: string) {
+      if (!isAuthenticated.value) return false
+      return store.deleteNotification(uuid)
+    }
 
     return {
-      // State
       notifications,
-      selectedNotification,
-      isLoading,
-      error,
-      pagination,
       unreadNotifications,
-      unreadCount,
       readNotifications,
       archivedNotifications,
       highPriorityUnread,
+      urgentNotifications,
       notificationsByType,
-      canFetch,
-
-      // Params
-      params,
+      unreadCount,
+      isLoading,
+      error,
       page,
       limit,
-
-      // Actions
       fetchNotifications,
-      loadMore,
       markAsRead,
       markAllAsRead,
       archive,
+      dismiss,
+      acknowledge,
       remove,
-      create,
-    };
+    }
   }
 
   // ============================================
-  // Composable: useNotificationPreferences
+  // Preferences
   // ============================================
   function useNotificationPreferences() {
-    const canFetch = computed(() => isAuthenticated.value);
-
-    const fetchPreferences = async () => {
-      if (!canFetch.value) {
-        console.warn('Cannot fetch preferences: User not authenticated');
-        return [];
-      }
-      return store.fetchPreferences();
-    };
-
-    const updatePreference = async (data: {
-      notificationType: string;
-      emailEnabled?: boolean;
-      smsEnabled?: boolean;
-      pushEnabled?: boolean;
-      inAppEnabled?: boolean;
-    }) => {
-      if (!canFetch.value) {
-        console.warn('Cannot update preference: User not authenticated');
-        return null;
-      }
-      return store.upsertPreference(data);
-    };
-
-    // Auto-fetch on mount if authenticated
-    const initialized = ref(false);
-    const initialize = async () => {
-      if (!initialized.value && canFetch.value) {
-        await fetchPreferences();
-        initialized.value = true;
-      }
-    };
-
-    // Watch authentication and fetch if needed
-    watch(isAuthenticated, async (authenticated) => {
-      if (authenticated && !initialized.value) {
-        await initialize();
-      }
-    });
+    async function updatePreference(
+      data: Parameters<typeof store.upsertPreference>[0]
+    ) {
+      if (!isAuthenticated.value) return null
+      return store.upsertPreference(data)
+    }
 
     return {
-      // State
       preferences,
       isLoading,
       isSaving,
       error,
-      canFetch,
-
-      // Actions
-      fetchPreferences,
       updatePreference,
-      initialize,
-    };
+      getPreferenceForType: store.getPreferenceForType,
+    }
   }
 
   // ============================================
-  // Composable: useNotificationTemplates (Admin Only)
+  // Templates (admin only)
   // ============================================
-  function useNotificationTemplates(initialParams?: { page?: number; limit?: number }) {
-    const params = ref(initialParams || {});
-    const page = ref(1);
-    const limit = ref(20);
-
-    const canManageTemplates = computed(() => isAdmin.value || isBCMManager.value);
-
-    const fetchTemplates = async () => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot fetch templates: Insufficient permissions');
-        return null;
-      }
-      return store.fetchTemplates({
-        ...params.value,
-        page: page.value,
-        limit: limit.value,
-      });
-    };
-
-    const create = async (data: {
-      notificationType: string;
-      titleTemplate: string;
-      messageTemplate: string;
-      isActive?: boolean;
-    }) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot create template: Insufficient permissions');
-        return null;
-      }
-      return store.createTemplate(data);
-    };
-
-    const update = async (
-      uuid: string,
-      data: Partial<{
-        titleTemplate: string;
-        messageTemplate: string;
-        isActive: boolean;
-      }>
-    ) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot update template: Insufficient permissions');
-        return null;
-      }
-      return store.updateTemplate(uuid, data);
-    };
-
-    const activate = async (uuid: string) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot activate template: Insufficient permissions');
-        return null;
-      }
-      return store.activateTemplate(uuid);
-    };
-
-    const deactivate = async (uuid: string) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot deactivate template: Insufficient permissions');
-        return null;
-      }
-      return store.deactivateTemplate(uuid);
-    };
-
-    const remove = async (uuid: string) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot delete template: Insufficient permissions');
-        return;
-      }
-      return store.deleteTemplate(uuid);
-    };
-
-    const getById = async (uuid: string) => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot get template: Insufficient permissions');
-        return null;
-      }
-      return store.fetchTemplateById(uuid);
-    };
-
-    const getStats = async () => {
-      if (!canManageTemplates.value) {
-        console.warn('Cannot get template stats: Insufficient permissions');
-        return null;
-      }
-      return store.fetchTemplateStats();
-    };
-
-    // Auto-fetch on param changes if authorized
-    watch([params, page, limit], () => {
-      if (canManageTemplates.value) {
-        fetchTemplates();
-      }
-    }, { immediate: false });
+  function useNotificationTemplates() {
+    const canManage = computed(() => isAdmin.value || isBCMManager.value)
 
     return {
-      // State
       templates,
-      selectedTemplate,
-      templateStats,
+      activeTemplates,
       isLoading,
       isSaving,
       error,
-      pagination,
-      activeTemplates,
-      inactiveTemplates,
-      canManageTemplates,
-
-      // Params
-      params,
-      page,
-      limit,
-
-      // Actions
-      fetchTemplates,
-      getById,
-      create,
-      update,
-      activate,
-      deactivate,
-      remove,
-      getStats,
-    };
+      canManage,
+    }
   }
 
   // ============================================
-  // Composable: useNotificationCounts
+  // Counts
   // ============================================
   function useNotificationCounts() {
-    const canFetch = computed(() => isAuthenticated.value);
-
-    const fetchCounts = async () => {
-      if (!canFetch.value) {
-        console.warn('Cannot fetch counts: User not authenticated');
-        return null;
-      }
-      return store.fetchCounts();
-    };
-
-    const fetchUnreadCount = async () => {
-      if (!canFetch.value) {
-        console.warn('Cannot fetch unread count: User not authenticated');
-        return 0;
-      }
-      return store.fetchUnreadCount();
-    };
-
-    // Auto-fetch on mount if authenticated
-    const initialized = ref(false);
-    const initialize = async () => {
-      if (!initialized.value && canFetch.value) {
-        await Promise.all([fetchCounts(), fetchUnreadCount()]);
-        initialized.value = true;
-      }
-    };
-
-    // Watch authentication and fetch if needed
-    watch(isAuthenticated, async (authenticated) => {
-      if (authenticated && !initialized.value) {
-        await initialize();
-      }
-    });
+    async function fetchCounts() {
+      if (!isAuthenticated.value) return null
+      return store.fetchCounts()
+    }
 
     return {
-      // State
       counts,
+      displayCounts,
       unreadCount,
+      hasUnread,
+      hasUrgent,
       isLoading,
       error,
-      canFetch,
-
-      // Actions
       fetchCounts,
-      fetchUnreadCount,
-      initialize,
-    };
+    }
   }
 
   // ============================================
-  // Composable: useNotificationPolling
+  // Polling
   // ============================================
   function useNotificationPolling(intervalMs: number = 30000) {
-    const canPoll = computed(() => isAuthenticated.value);
+    function start() {
+      if (!isAuthenticated.value) return
+      store.startPolling(intervalMs)
+    }
 
-    const start = () => {
-      if (canPoll.value) {
-        store.startPolling(intervalMs);
-      } else {
-        console.warn('Cannot start polling: User not authenticated');
-      }
-    };
+    function stop() {
+      store.stopPolling()
+    }
 
-    const stop = () => {
-      store.stopPolling();
-    };
-
-    const isActive = computed(() => isPolling.value);
-
-    // Auto-start polling when authenticated
-    watch(isAuthenticated, (authenticated) => {
-      if (authenticated) {
-        start();
-      } else {
-        stop();
-      }
-    }, { immediate: false });
+    watch(
+      isAuthenticated,
+      (auth) => {
+        if (auth) start()
+        else stop()
+      },
+      { immediate: false }
+    )
 
     return {
       start,
       stop,
-      isActive,
-      canPoll,
-    };
+      isActive: isPolling,
+      canPoll: isAuthenticated,
+    }
   }
 
   // ============================================
   // Lifecycle
   // ============================================
   onMounted(() => {
-    // Initialize notification counts if authenticated
     if (isAuthenticated.value) {
-      store.fetchCounts();
+      store.fetchCounts().catch(console.error)
     }
-  });
+  })
 
   // ============================================
-  // Utility Functions
+  // Return API
   // ============================================
-  const clearError = () => store.clearError();
-  const resetState = () => store.resetState();
-
   return {
-    // Main store access
     store,
-
-    // Auth state
     isAuthenticated,
     userId,
     isAdmin,
     isBCMManager,
 
-    // Specialized composables
+    // Sub-composables
     useNotificationsList,
     useNotificationPreferences,
     useNotificationTemplates,
     useNotificationCounts,
     useNotificationPolling,
 
-    // Utility
-    clearError,
-    resetState,
-  };
+    // Utilities
+    clearError: store.clearError,
+    reset: store.reset,
+    cleanup: store.cleanup,
+  }
 }
 
-export default useNotifications;
+export default useNotifications

@@ -103,13 +103,13 @@
 </template>
 
 <script setup lang="ts">
-import type { MaturityAssessment } from 'src/models/entities/governance/governance.entity'
+import type { MaturityAssessment } from 'src/models/governance/governance.entity'
 import {
     getMaturityLevelLabel,
     getMaturityLevelColor,
     getMaturityLevelRange,
     MaturityLevel,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import { formatDate, formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

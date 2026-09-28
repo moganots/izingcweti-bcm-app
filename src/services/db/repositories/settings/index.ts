@@ -1,1 +1,0 @@
-export { SettingsRepository } from './SettingsRepository'

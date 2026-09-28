@@ -108,12 +108,12 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
-import type { TrainingCourse, CourseLevel, CourseStatus } from 'src/models/entities/training/training.entity'
+import type { TrainingCourse, CourseLevel, CourseStatus } from 'src/models/training/training.entity'
 import {
     getCourseLevelLabel,
     getCourseLevelColor,
     getCourseStatusLabel,
-} from 'src/models/entities/training/training.entity'
+} from 'src/models/training/training.entity'
 
 // ============================================
 // Props

@@ -116,7 +116,7 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
-import type { Lesson, LessonStatus, LessonPriority, LessonCategory } from 'src/models/entities/improvements/lesson.entity'
+import type { Lesson, LessonStatus, LessonPriority, LessonCategory } from 'src/models/improvements/lesson.entity'
 import {
     getLessonStatusLabel,
     getLessonStatusColor,
@@ -125,7 +125,7 @@ import {
     getLessonPriorityIcon,
     getLessonCategoryLabel,
     getLessonSourceLabel,
-} from 'src/models/entities/improvements/lesson.entity'
+} from 'src/models/improvements/lesson.entity'
 import { formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

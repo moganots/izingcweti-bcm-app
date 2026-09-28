@@ -1,292 +1,98 @@
-import { computed, ref, watch } from 'vue';
-import { storeToRefs } from 'pinia';
-import { useWorkflowStore } from './../stores/workflow/workflow.store';
-import { useAuth } from './useAuth';
-import type {
-    CreateWorkflowDto,
-    UpdateWorkflowDto,
-    WorkflowQueryDto,
-} from './../models/entities/workflow/workflow.entity';
-import { WorkflowState, WorkflowPriority } from './../models/entities/workflow/workflow.entity';
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useWorkflowStore } from '../stores/workflow/workflow.store'
+import { useAuth } from './useAuth'
+import { WorkflowState, WorkflowPriority } from '../models/workflow/workflow.entity'
 
+/**
+ * Workflow composable
+ * Aligned with useWorkflowStore
+ */
 export function useWorkflow() {
-    const store = useWorkflowStore();
-    const auth = useAuth();
+    const store = useWorkflowStore()
+    const auth = useAuth()
 
-    // Auth state
-    const { isAuthenticated, isAdmin, isGlobalAdmin, userId, userOrganisationId } = auth;
+    const { isAuthenticated, isAdmin, userId } = auth
 
-    // Store refs
     const {
         workflows,
         selectedWorkflow,
-        stats,
-        analytics,
         isLoading,
+        isSaving,
         error,
-        pagination,
         pendingWorkflows,
         activeWorkflows,
         overdueWorkflows,
         escalatedWorkflows,
         myAssignedWorkflows,
         myInitiatedWorkflows,
-        workflowsByType,
         workflowsByState,
+        workflowsByType,
         workflowsByPriority,
-        totalWorkflows,
         totalPendingApprovals,
         totalOverdue,
         totalEscalated,
-    } = storeToRefs(store);
+    } = storeToRefs(store)
 
-    // ============================================
-    // Composable: useWorkflowList
-    // ============================================
-    function useWorkflowList(initialParams?: WorkflowQueryDto) {
-        const params = ref<WorkflowQueryDto>(initialParams || {});
-        const page = ref(1);
-        const limit = ref(20);
-
-        const canView = computed(() => isAuthenticated.value);
-
-        const fetchWorkflows = async () => {
-            if (!canView.value) {
-                console.warn('Cannot fetch workflows: User not authenticated');
-                return null;
-            }
-            return store.fetchWorkflows({
-                ...params.value,
-                page: page.value,
-                limit: limit.value,
-            });
-        };
-
-        const create = async (data: CreateWorkflowDto) => {
-            if (!canView.value) {
-                console.warn('Cannot create workflow: User not authenticated');
-                return null;
-            }
-            return store.createWorkflow(data);
-        };
-
-        const update = async (uuid: string, data: UpdateWorkflowDto) => {
-            if (!canView.value) {
-                console.warn('Cannot update workflow: User not authenticated');
-                return null;
-            }
-            return store.updateWorkflow(uuid, data);
-        };
-
-        const remove = async (uuid: string) => {
-            if (!canView.value) {
-                console.warn('Cannot delete workflow: User not authenticated');
-                return;
-            }
-            return store.deleteWorkflow(uuid);
-        };
-
-        const getById = async (uuid: string) => {
-            return store.fetchWorkflowById(uuid);
-        };
-
-        // Auto-fetch on param changes
-        watch([params, page, limit], () => {
-            if (canView.value) {
-                fetchWorkflows();
-            }
-        }, { immediate: false });
-
-        // Auto-fetch on authentication
-        watch(isAuthenticated, (authenticated) => {
-            if (authenticated) {
-                fetchWorkflows();
-            }
-        }, { immediate: false });
+    function useWorkflowList() {
+        const canView = computed(() => isAuthenticated.value)
 
         return {
-            // State
             workflows,
             selectedWorkflow,
             isLoading,
+            isSaving,
             error,
-            pagination,
             pendingWorkflows,
             activeWorkflows,
             overdueWorkflows,
             escalatedWorkflows,
             myAssignedWorkflows,
             myInitiatedWorkflows,
-            workflowsByType,
             workflowsByState,
+            workflowsByType,
             workflowsByPriority,
-            totalWorkflows,
             totalPendingApprovals,
             totalOverdue,
             totalEscalated,
             canView,
-
-            // Params
-            params,
-            page,
-            limit,
-
-            // Actions
-            fetchWorkflows,
-            getById,
-            create,
-            update,
-            remove,
-
-            // Workflow Actions
-            submit: store.submitWorkflow,
-            approve: store.approveWorkflow,
-            reject: store.rejectWorkflow,
-            complete: store.completeWorkflow,
-            addComment: store.addComment,
-            escalate: store.escalateWorkflow,
-            reassign: store.reassignWorkflow,
-            archive: store.archiveWorkflow,
-            cancel: store.cancelWorkflow,
-        };
+        }
     }
 
-    // ============================================
-    // Composable: useWorkflowStats
-    // ============================================
-    function useWorkflowStats() {
-        const canView = computed(() => isAuthenticated.value);
-
-        const fetchStats = async () => {
-            if (!canView.value) {
-                console.warn('Cannot fetch stats: User not authenticated');
-                return null;
-            }
-            return store.fetchStats();
-        };
-
-        const fetchAnalytics = async (organisationId?: string) => {
-            if (!canView.value) {
-                console.warn('Cannot fetch analytics: User not authenticated');
-                return null;
-            }
-            return store.fetchAnalytics(organisationId);
-        };
-
-        // Auto-fetch on mount if authenticated
-        const initialized = ref(false);
-        const initialize = async () => {
-            if (!initialized.value && canView.value) {
-                await Promise.all([fetchStats(), fetchAnalytics()]);
-                initialized.value = true;
-            }
-        };
-
-        watch(isAuthenticated, async (authenticated) => {
-            if (authenticated && !initialized.value) {
-                await initialize();
-            }
-        });
-
-        return {
-            // State
-            stats,
-            analytics,
-            isLoading,
-            error,
-            canView,
-
-            // Actions
-            fetchStats,
-            fetchAnalytics,
-            initialize,
-        };
-    }
-
-    // ============================================
-    // Composable: useMyWorkflows
-    // ============================================
     function useMyWorkflows() {
-        const canView = computed(() => isAuthenticated.value);
-
-        const fetchMyAssigned = async () => {
-            if (!canView.value) {
-                console.warn('Cannot fetch assigned workflows: User not authenticated');
-                return null;
-            }
-            return store.fetchMyAssignedWorkflows();
-        };
-
-        const fetchPendingApprovals = async () => {
-            if (!canView.value) {
-                console.warn('Cannot fetch pending approvals: User not authenticated');
-                return null;
-            }
-            return store.fetchPendingApprovals();
-        };
-
-        // Auto-fetch on mount if authenticated
-        const initialized = ref(false);
-        const initialize = async () => {
-            if (!initialized.value && canView.value) {
-                await Promise.all([fetchMyAssigned(), fetchPendingApprovals()]);
-                initialized.value = true;
-            }
-        };
-
-        watch(isAuthenticated, async (authenticated) => {
-            if (authenticated && !initialized.value) {
-                await initialize();
-            }
-        });
-
         return {
-            // State
             myAssignedWorkflows,
-            pendingWorkflows,
+            myInitiatedWorkflows,
             isLoading,
             error,
-            canView,
-
-            // Actions
-            fetchMyAssigned,
-            fetchPendingApprovals,
-            initialize,
-        };
+        }
     }
-
-    // ============================================
-    // Utility Functions
-    // ============================================
-    const clearError = () => store.clearError();
-    const clearSelection = () => store.clearSelection();
-    const resetState = () => store.resetState();
 
     return {
-        // Main store access
         store,
-
-        // Auth state
         isAuthenticated,
         isAdmin,
-        isGlobalAdmin,
-        organisationId: userOrganisationId,
         userId,
 
-        // Specialized composables
         useWorkflowList,
-        useWorkflowStats,
         useMyWorkflows,
 
-        // Utility
-        clearError,
-        clearSelection,
-        resetState,
+        // Actions
+        initialize: store.initialize,
+        submitWorkflow: store.submitWorkflow,
+        approveWorkflow: store.approveWorkflow,
+        rejectWorkflow: store.rejectWorkflow,
+        completeWorkflow: store.completeWorkflow,
+        addComment: store.addComment,
+        escalateWorkflow: store.escalateWorkflow,
+        reassignWorkflow: store.reassignWorkflow,
+        archiveWorkflow: store.archiveWorkflow,
+        cancelWorkflow: store.cancelWorkflow,
 
         // Helpers
         WorkflowState,
         WorkflowPriority,
-    };
+    }
 }
 
-export default useWorkflow;
+export default useWorkflow

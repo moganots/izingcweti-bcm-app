@@ -89,11 +89,11 @@ import type {
     PolicyCategory,
     CreatePolicyRequest,
     UpdatePolicyRequest,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import {
     getPolicyStatusLabel,
     getPolicyCategoryLabel,
-} from 'src/models/entities/governance/governance.entity'
+} from 'src/models/governance/governance.entity'
 import { formatISO } from 'src/utils/date.utils';
 
 // ============================================

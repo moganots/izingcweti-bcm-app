@@ -22,7 +22,7 @@ import type {
     PolicyQueryParams,
     MaturityQueryParams,
     ActivityQueryParams,
-} from './../../../models/entities/governance/governance.entity'
+} from '../../../models/governance/governance.entity'
 import { PaginatedResponse } from './../../../shared/types/common.types'
 
 /**

@@ -52,4 +52,4 @@ export type {
   RecoveryStrategy,
   BCMLifecycleStatus,
   ExerciseTest,
-} from './../../models/entities/bcm/bcm.entity.ts'
+} from '../../models/bcm/bcm.entity.ts'

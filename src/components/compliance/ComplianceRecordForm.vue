@@ -74,7 +74,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, watch } from 'vue'
-import { ComplianceStandard, ComplianceStatus } from './../../models/entities/compliance/compliance.entity'
+import { ComplianceStandard, ComplianceStatus } from '../../models/compliance/compliance.entity'
 
 const props = withDefaults(
     defineProps<{

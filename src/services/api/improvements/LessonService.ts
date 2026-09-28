@@ -11,7 +11,7 @@ import type {
     CreateLessonRequest,
     UpdateLessonRequest,
     BulkLessonAction,
-} from '../../../models/entities/improvements/lesson.entity'
+} from '../../../models/improvements/lesson.entity'
 import type { PaginatedResponse } from '../../../shared/types/common.types'
 
 /**

@@ -99,13 +99,13 @@
 </template>
 
 <script setup lang="ts">
-import type { TrainingCourse } from 'src/models/entities/training/training.entity'
+import type { TrainingCourse } from 'src/models/training/training.entity'
 import {
     getCourseLevelLabel,
     getCourseStatusLabel,
     CourseLevel,
     CourseStatus
-} from 'src/models/entities/training/training.entity'
+} from 'src/models/training/training.entity'
 
 // ============================================
 // Props

@@ -164,13 +164,13 @@ import { useLesson } from 'src/composables/useLesson'
 import { PageHeader } from 'src/components/.common'
 import { LessonList, LessonForm, LessonDetails } from 'src/components/improvements'
 import { ConfirmDialog } from 'src/components/.common'
-import type { Lesson, LessonFilters, LessonPriority, LessonStatus } from 'src/models/entities/improvements/lesson.entity'
+import type { Lesson, LessonFilters, LessonPriority, LessonStatus } from 'src/models/improvements/lesson.entity'
 import {
     getLessonStatusLabel,
     getLessonStatusColor,
     getLessonPriorityLabel,
     getLessonPriorityColor,
-} from 'src/models/entities/improvements/lesson.entity'
+} from 'src/models/improvements/lesson.entity'
 
 // ============================================
 // Composables

@@ -93,13 +93,13 @@ import type {
     LessonCategory,
     CreateLessonRequest,
     UpdateLessonRequest,
-} from 'src/models/entities/improvements/lesson.entity'
+} from 'src/models/improvements/lesson.entity'
 import {
     getLessonStatusLabel,
     getLessonSourceLabel,
     getLessonPriorityLabel,
     getLessonCategoryLabel,
-} from 'src/models/entities/improvements/lesson.entity'
+} from 'src/models/improvements/lesson.entity'
 
 // ============================================
 // Props

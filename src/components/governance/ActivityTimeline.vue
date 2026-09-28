@@ -42,7 +42,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { GovernanceActivity, ActivityAction } from 'src/models/entities/governance/governance.entity'
+import type { GovernanceActivity, ActivityAction } from 'src/models/governance/governance.entity'
 import { formatTimeAgo } from 'src/utils/date.utils'
 
 // ============================================

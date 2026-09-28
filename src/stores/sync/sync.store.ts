@@ -1,415 +1,763 @@
-import { defineStore } from 'pinia';
-import { ref, computed } from 'vue';
-import { useAuthStore } from './../auth/auth.store';
-import { syncService } from './../../services/sync/SyncService';
+import { defineStore } from 'pinia'
+import { ref, computed, readonly, watch } from 'vue'
+import type {
+  PendingChange,
+  SyncConflict,
+  SyncMetadata,
+} from '../../models/sync/sync.entity'
+import { ConflictResolutionStrategy } from '../../models/sync/sync.entity'
 import type {
   SyncProgress,
-  SyncStatistics,
-  OperationType,
-} from '../../types/sync.types';
-import {
-  SyncConflict,
-  ConflictResolutionStrategy,
-} from 'src/models/entities/sync/sync.entity';
+  SyncResult,
+  SyncStats,
+  NetworkStatus,
+} from '../../types/sync.types'
+import { SyncStatus, ConnectionType } from '../../types/sync.types'
+import { createOfflineCrudStore } from '../.base/offline-crud.store'
+import { SyncEngine } from '../../services/sync/SyncEngine'
+import { NetworkMonitor } from '../../services/sync/NetworkMonitor'
+import { useAuthStore } from '../auth/auth.store'
+import { useSettingsStore } from '../settings/settings.store'
 
+// ============================================
+// Sub-stores for sync entities
+// ============================================
+export const usePendingChangeStore = createOfflineCrudStore<PendingChange>({
+  storeId: 'pending-changes',
+  tableName: 'pendingChanges',
+})
+
+export const useSyncConflictStore = createOfflineCrudStore<SyncConflict>({
+  storeId: 'sync-conflicts',
+  tableName: 'syncConflicts',
+})
+
+export const useSyncMetadataStore = createOfflineCrudStore<SyncMetadata>({
+  storeId: 'sync-metadata',
+  tableName: 'syncMetadata',
+})
+
+// ============================================
+// Sync Store (Main)
+// ============================================
 export const useSyncStore = defineStore('sync', () => {
-  const auth = useAuthStore();
+  // ============================================
+  // Dependencies
+  // ============================================
+  const authStore = useAuthStore()
+  const settingsStore = useSettingsStore()
 
-  type PendingChangeState = Awaited<
-    ReturnType<typeof syncService.getPendingChanges>
-  >[number];
+  const pendingStore = usePendingChangeStore()
+  const conflictStore = useSyncConflictStore()
+  const metadataStore = useSyncMetadataStore()
 
-  type SyncConflictState = Awaited<
-    ReturnType<typeof syncService.getConflicts>
-  >[number];
+  // ============================================
+  // Service instances (lazy loaded)
+  // ============================================
+  let syncEngine: SyncEngine | null = null
+  let networkMonitor: NetworkMonitor | null = null
 
   // ============================================
   // State
   // ============================================
+  const status = ref<SyncStatus>(SyncStatus.IDLE)
+  const isInitialized = ref(false)
+  const isCancelled = ref(false)
 
-  const isSyncing = ref(false);
-  const lastSyncError = ref<string | null>(null);
-  const lastSyncAt = ref<string | null>(null);
-  const syncToken = ref<string | null>(null);
-  const pendingChanges = ref<PendingChangeState[]>([]);
-  const conflicts = ref<SyncConflictState[]>([]);
-  const syncProgress = ref<SyncProgress | null>(null);
-  const isOnline = ref(navigator.onLine);
+  const progress = ref<SyncProgress>({
+    isSyncing: false,
+    current: 0,
+    total: 100,
+    percentage: 0,
+  })
+
+  const lastResult = ref<SyncResult | null>(null)
+  const lastSyncAt = ref<string | null>(null)
+  const syncToken = ref<string | null>(null)
+  const error = ref<string | null>(null)
+
+  // Network state — uses NetworkStatus (single source of truth)
+  const networkStatus = ref<NetworkStatus>({
+    isOnline: typeof navigator !== 'undefined' ? navigator.onLine : true,
+    connectionType: ConnectionType.UNKNOWN,
+    signalStrength: 0,
+    isMetered: false,
+    lastChecked: new Date().toISOString(),
+  })
+
+  // Auto-sync state
+  const autoSyncEnabled = ref(true)
+  const backgroundSyncEnabled = ref(false)
+  let autoSyncTimeout: ReturnType<typeof setTimeout> | null = null
+  let networkListenerCleanup: (() => void) | null = null
 
   // ============================================
-  // Computed
+  // Getters
   // ============================================
+  const isOnline = computed(() => networkStatus.value.isOnline)
+  const isOffline = computed(() => !isOnline.value)
+  const isSyncing = computed(() => status.value === SyncStatus.SYNCING)
+  const isIdle = computed(() => status.value === SyncStatus.IDLE)
+  const hasError = computed(
+    () => status.value === SyncStatus.ERROR || !!error.value
+  )
 
-  const pendingCount = computed(() => pendingChanges.value.length);
-  const hasPendingChanges = computed(() => pendingChanges.value.length > 0);
-  const unresolvedConflictsCount = computed(() =>
-    conflicts.value.filter((c) => !c.resolved).length
-  );
-  const hasConflicts = computed(() => unresolvedConflictsCount.value > 0);
-  const isIdle = computed(() => !isSyncing.value && !lastSyncError.value);
+  const hasPending = computed(() => (pendingStore?.items?.length ?? 0) > 0)
+  const hasConflicts = computed(
+    () => (conflictStore?.items?.filter((c) => !c.resolved).length ?? 0) > 0
+  )
 
-  const statistics = computed<SyncStatistics>(() => ({
+  const pendingCount = computed(() => pendingStore?.items?.length ?? 0)
+  const unresolvedConflictCount = computed(
+    () => conflictStore?.items?.filter((c) => !c.resolved).length ?? 0
+  )
+
+  const isFullySynced = computed(
+    () =>
+      status.value === SyncStatus.SYNCED &&
+      pendingCount.value === 0 &&
+      unresolvedConflictCount.value === 0
+  )
+
+  const needsSync = computed(
+    () => hasPending.value || hasConflicts.value || status.value === SyncStatus.ERROR
+  )
+
+  const canSync = computed(
+    () => isOnline.value && !isSyncing.value && authStore.isAuthenticated
+  )
+
+  const canSyncOnCurrentNetwork = computed(() => {
+    if (!isOnline.value) return false
+    if (!networkStatus.value.isMetered) return true
+    return !settingsStore.syncSettings.syncOnlyOnWifi
+  })
+
+  const stats = computed<SyncStats>(() => ({
     pendingChanges: pendingCount.value,
-    conflicts: conflicts.value.length,
-    unresolvedConflicts: unresolvedConflictsCount.value,
+    conflicts: conflictStore?.items?.length ?? 0,
+    unresolvedConflicts: unresolvedConflictCount.value,
     lastSyncTime: lastSyncAt.value,
     lastSyncToken: syncToken.value,
     isOnline: isOnline.value,
     syncInProgress: isSyncing.value,
-  }));
+  }))
+
+  const syncStatusLabel = computed(() => {
+    if (isSyncing.value) return 'Syncing...'
+    if (isOffline.value) return 'Offline'
+    if (hasConflicts.value) return `${unresolvedConflictCount.value} conflicts`
+    if (hasPending.value) return `${pendingCount.value} pending`
+    if (isFullySynced.value) return 'Up to date'
+    return 'Ready'
+  })
+
+  const syncStatusColor = computed(() => {
+    if (isSyncing.value) return 'blue'
+    if (isOffline.value) return 'grey'
+    if (hasError.value) return 'negative'
+    if (hasConflicts.value) return 'warning'
+    if (hasPending.value) return 'orange'
+    if (isFullySynced.value) return 'positive'
+    return 'grey'
+  })
 
   // ============================================
-  // Actions - Pending Changes
+  // Initialization
   // ============================================
+  async function initialize(): Promise<void> {
+    if (isInitialized.value) return
 
-  async function addPendingChange(params: {
-    entityType: string;
-    entityId: string;
-    operationType: OperationType;
-    data: Record<string, any>;
-    priority?: number;
-  }): Promise<Awaited<ReturnType<typeof syncService.createPendingChange>>> {
-    if (!auth.isAuthenticated) {
-      throw new Error('User must be authenticated to add pending changes');
+    networkMonitor = NetworkMonitor.getInstance()
+    syncEngine = new SyncEngine()
+
+    await networkMonitor.startMonitoring()
+    await syncEngine.initialize()
+
+    await Promise.all([
+      pendingStore.initialize(),
+      conflictStore.initialize(),
+      metadataStore.initialize(),
+    ])
+
+    await loadPersistedState()
+
+    networkListenerCleanup = networkMonitor.addListener((newStatus) => {
+      networkStatus.value = newStatus
+
+      if (newStatus.isOnline) {
+        onNetworkRestored()
+      } else {
+        onNetworkLost()
+      }
+    })
+
+    networkStatus.value = networkMonitor.currentStatus
+    autoSyncEnabled.value = settingsStore.autoSyncEnabled ?? true
+
+    isInitialized.value = true
+
+    if (
+      autoSyncEnabled.value &&
+      settingsStore.syncSettings.syncOnAppStart &&
+      canSync.value
+    ) {
+      await sync().catch(console.error)
     }
-
-    const change: Awaited<
-      ReturnType<typeof syncService.createPendingChange>
-    > = await syncService.createPendingChange(params);
-    await refreshPendingChanges();
-    return change;
   }
 
-  async function addPendingChanges(
-    changes: Array<{
-      entityType: string;
-      entityId: string;
-      operationType: OperationType;
-      data: Record<string, any>;
-      priority?: number;
-    }>
-  ): Promise<Awaited<ReturnType<typeof syncService.bulkCreatePendingChanges>>> {
-    if (!auth.isAuthenticated) {
-      throw new Error('User must be authenticated to add pending changes');
-    }
+  async function loadPersistedState(): Promise<void> {
+    try {
+      const token = await syncEngine!.getSyncToken()
+      if (token) syncToken.value = token
 
-    const results: Awaited<
-      ReturnType<typeof syncService.bulkCreatePendingChanges>
-    > = await syncService.bulkCreatePendingChanges(changes);
-    await refreshPendingChanges();
-    return results;
+      const lastTime = await syncEngine!.getSyncMetadata('last_sync_time')
+      if (lastTime?.value) lastSyncAt.value = lastTime.value
+    } catch (err) {
+      console.warn('Failed to load persisted sync state:', err)
+    }
   }
 
-  async function refreshPendingChanges(): Promise<void> {
-    if (!auth.isAuthenticated) {
-      pendingChanges.value = [];
-      return;
+  // ============================================
+  // Network Event Handlers
+  // ============================================
+  function onNetworkRestored(): void {
+    console.log('🌐 Network restored')
+
+    if (autoSyncTimeout) {
+      clearTimeout(autoSyncTimeout)
+      autoSyncTimeout = null
+    }
+
+    if (
+      autoSyncEnabled.value &&
+      settingsStore.syncSettings.syncOnReconnect &&
+      canSyncOnCurrentNetwork.value
+    ) {
+      autoSyncTimeout = setTimeout(() => {
+        sync().catch(console.error)
+      }, 2000)
+    }
+  }
+
+  function onNetworkLost(): void {
+    console.log('📴 Network lost')
+
+    if (isSyncing.value) {
+      cancelSync()
+    }
+
+    status.value = SyncStatus.OFFLINE
+  }
+
+  // ============================================
+  // Core Sync Actions
+  // ============================================
+  async function sync(): Promise<SyncResult> {
+    if (!syncEngine) await initialize()
+
+    if (!authStore.isAuthenticated) {
+      return buildFailedResult('User not authenticated')
+    }
+
+    if (!isOnline.value) {
+      const result = buildFailedResult('Cannot sync while offline')
+      lastResult.value = result
+      return result
+    }
+
+    if (!canSyncOnCurrentNetwork.value) {
+      const result = buildFailedResult(
+        'Cannot sync on metered connection (WiFi only mode)'
+      )
+      lastResult.value = result
+      return result
+    }
+
+    if (isSyncing.value) {
+      console.warn('Sync already in progress, skipping')
+      return lastResult.value || buildFailedResult('Sync already in progress')
+    }
+
+    isCancelled.value = false
+    status.value = SyncStatus.SYNCING
+    error.value = null
+
+    progress.value = {
+      isSyncing: true,
+      current: 0,
+      total: 100,
+      percentage: 0,
+      startedAt: new Date().toISOString(),
+    }
+
+    const startTime = Date.now()
+    const result: SyncResult = {
+      success: false,
+      pushed: 0,
+      pulled: 0,
+      conflicts: 0,
+      errors: [],
+      durationMs: 0,
+      startedAt: new Date().toISOString(),
     }
 
     try {
-      const changes = await syncService.getPendingChanges();
-      pendingChanges.value = changes;
-    } catch (error) {
-      console.error('Failed to refresh pending changes:', error);
+      // Phase 1: PUSH (25%)
+      if (isCancelled.value) throw new Error('Sync cancelled')
+
+      progress.value.current = 25
+      progress.value.percentage = 25
+      progress.value.currentOperation = 'Pushing local changes...'
+
+      const pushResult = await syncEngine!.pushChanges()
+      result.pushed = pushResult.appliedChanges || 0
+      result.conflicts = pushResult.conflicts?.length || 0
+
+      // Phase 2: PULL (75%)
+      if (isCancelled.value) throw new Error('Sync cancelled')
+
+      progress.value.current = 75
+      progress.value.percentage = 75
+      progress.value.currentOperation = 'Pulling remote changes...'
+
+      const pullResult = await syncEngine!.pullChanges()
+      result.pulled = pullResult.changes?.length || 0
+      result.syncToken = pullResult.syncToken
+
+      if (pullResult.syncToken) {
+        syncToken.value = pullResult.syncToken
+        await syncEngine!.setSyncToken(pullResult.syncToken)
+      }
+
+      // Phase 3: COMPLETE (100%)
+      progress.value.current = 100
+      progress.value.percentage = 100
+      progress.value.currentOperation = 'Complete'
+
+      result.success = pushResult.success !== false
+
+      if (result.conflicts > 0) {
+        status.value = SyncStatus.CONFLICT
+      } else if (result.errors.length > 0) {
+        status.value = SyncStatus.ERROR
+      } else {
+        status.value = SyncStatus.SYNCED
+      }
+
+      lastSyncAt.value = new Date().toISOString()
+      await syncEngine!.updateSyncMetadata('last_sync_time', lastSyncAt.value!)
+    } catch (err: any) {
+      const errMsg = err?.message || 'Unknown sync error'
+      result.errors.push(errMsg)
+      error.value = errMsg
+
+      if (errMsg === 'Sync cancelled') {
+        status.value = SyncStatus.IDLE
+      } else {
+        status.value = SyncStatus.ERROR
+      }
+
+      console.error('Sync failed:', err)
+    } finally {
+      result.durationMs = Date.now() - startTime
+      result.completedAt = new Date().toISOString()
+      lastResult.value = result
+
+      progress.value.isSyncing = false
+      delete progress.value.currentOperation
+
+      await Promise.all([
+        pendingStore.loadAll().catch(console.error),
+        conflictStore.loadAll().catch(console.error),
+      ])
     }
+
+    return result
   }
 
-  async function processPendingChange(uuid: string): Promise<boolean> {
-    const success = await syncService.processPendingChange(uuid);
-    if (success) {
-      await refreshPendingChanges();
+  async function push(): Promise<SyncResult> {
+    if (!syncEngine) await initialize()
+
+    if (!canSync.value) {
+      return buildFailedResult(
+        isOffline.value ? 'Cannot sync while offline' : 'Cannot sync right now'
+      )
     }
-    return success;
-  }
 
-  async function retryFailedChanges(): Promise<number> {
-    const result = await syncService.retryFailedChanges();
-    await refreshPendingChanges();
-    return result.retriedCount;
-  }
+    status.value = SyncStatus.SYNCING
+    const startTime = Date.now()
 
-  async function deletePendingChange(uuid: string): Promise<boolean> {
-    const success = await syncService.deletePendingChange(uuid);
-    if (success) {
-      await refreshPendingChanges();
-    }
-    return success;
-  }
-
-  async function clearPendingChanges(): Promise<void> {
-    const changes = pendingChanges.value;
-    for (const change of changes) {
-      await syncService.deletePendingChange(change.uuid);
-    }
-    await refreshPendingChanges();
-  }
-
-  // ============================================
-  // Actions - Conflicts
-  // ============================================
-
-  async function refreshConflicts(): Promise<void> {
-    if (!auth.isAuthenticated) {
-      conflicts.value = [];
-      return;
+    const result: SyncResult = {
+      success: false,
+      pushed: 0,
+      pulled: 0,
+      conflicts: 0,
+      errors: [],
+      durationMs: 0,
     }
 
     try {
-      const allConflicts = await syncService.getConflicts();
-      conflicts.value = allConflicts;
-    } catch (error) {
-      console.error('Failed to refresh conflicts:', error);
+      const pushResult = await syncEngine!.pushChanges()
+      result.pushed = pushResult.appliedChanges || 0
+      result.conflicts = pushResult.conflicts?.length || 0
+      result.success = pushResult.success !== false
+      status.value = result.conflicts > 0 ? SyncStatus.CONFLICT : SyncStatus.SYNCED
+    } catch (err: any) {
+      result.errors.push(err?.message || 'Push failed')
+      error.value = err?.message || 'Push failed'
+      status.value = SyncStatus.ERROR
+    } finally {
+      result.durationMs = Date.now() - startTime
+      lastResult.value = result
+      await pendingStore.loadAll().catch(console.error)
+      await conflictStore.loadAll().catch(console.error)
     }
+
+    return result
   }
 
+  async function pull(): Promise<SyncResult> {
+    if (!syncEngine) await initialize()
+
+    if (!canSync.value) {
+      return buildFailedResult(
+        isOffline.value ? 'Cannot sync while offline' : 'Cannot sync right now'
+      )
+    }
+
+    status.value = SyncStatus.SYNCING
+    const startTime = Date.now()
+
+    const result: SyncResult = {
+      success: false,
+      pushed: 0,
+      pulled: 0,
+      conflicts: 0,
+      errors: [],
+      durationMs: 0,
+    }
+
+    try {
+      const pullResult = await syncEngine!.pullChanges()
+      result.pulled = pullResult.changes?.length || 0
+      result.syncToken = pullResult.syncToken
+      result.success = true
+
+      if (pullResult.syncToken) {
+        syncToken.value = pullResult.syncToken
+        await syncEngine!.setSyncToken(pullResult.syncToken)
+      }
+
+      lastSyncAt.value = new Date().toISOString()
+      await syncEngine!.updateSyncMetadata('last_sync_time', lastSyncAt.value!)
+
+      status.value = SyncStatus.SYNCED
+    } catch (err: any) {
+      result.errors.push(err?.message || 'Pull failed')
+      error.value = err?.message || 'Pull failed'
+      status.value = SyncStatus.ERROR
+    } finally {
+      result.durationMs = Date.now() - startTime
+      lastResult.value = result
+    }
+
+    return result
+  }
+
+  function cancelSync(): void {
+    if (!isSyncing.value) return
+    isCancelled.value = true
+    console.warn('Sync cancellation requested')
+  }
+
+  // ============================================
+  // Conflict Resolution
+  // ============================================
   async function resolveConflict(
-    uuid: string,
-    data: {
-      resolutionStrategy: ConflictResolutionStrategy;
-      resolvedData?: Record<string, any>;
-      notes?: string;
+    conflictId: string,
+    strategy: ConflictResolutionStrategy,
+    resolvedData?: Record<string, any>
+  ): Promise<void> {
+    if (!syncEngine) await initialize()
+
+    try {
+      // Build the resolution payload — only include resolvedData if defined
+      const payload: {
+        strategy: ConflictResolutionStrategy
+        userId: string
+        resolvedData?: Record<string, any>
+      } = {
+        strategy,
+        userId: authStore.userId,
+      }
+      if (resolvedData !== undefined) {
+        payload.resolvedData = resolvedData
+      }
+
+      await syncEngine!.resolveConflict(conflictId, payload as any)
+      await conflictStore.loadAll()
+    } catch (err: any) {
+      error.value = err?.message || 'Failed to resolve conflict'
+      throw err
     }
-  ): Promise<SyncConflict> {
-    const resolved = await syncService.resolveConflict(uuid, data);
-    await refreshConflicts();
-    return resolved;
   }
 
   async function bulkResolveConflicts(
     conflictIds: string[],
-    resolutionStrategy: ConflictResolutionStrategy,
+    strategy: ConflictResolutionStrategy,
     resolvedData?: Record<string, any>
   ): Promise<{ updated: number; failed: number; errors: string[] }> {
-    const result = await syncService.bulkResolveConflicts(
-      conflictIds,
-      resolutionStrategy,
-      resolvedData
-    );
-    await refreshConflicts();
-    return result;
-  }
+    if (!syncEngine) await initialize()
 
-  async function deleteConflict(uuid: string): Promise<boolean> {
-    const success = await syncService.deleteConflict(uuid);
-    if (success) {
-      await refreshConflicts();
+    const result = {
+      updated: 0,
+      failed: 0,
+      errors: [] as string[],
     }
-    return success;
+
+    for (const conflictId of conflictIds) {
+      try {
+        const payload: {
+          strategy: ConflictResolutionStrategy
+          userId: string
+          resolvedData?: Record<string, any>
+        } = {
+          strategy,
+          userId: authStore.userId,
+        }
+        if (resolvedData !== undefined) {
+          payload.resolvedData = resolvedData
+        }
+
+        await syncEngine!.resolveConflict(conflictId, payload as any)
+        result.updated++
+      } catch (err: any) {
+        result.failed++
+        result.errors.push(err?.message || `Failed to resolve ${conflictId}`)
+      }
+    }
+
+    await conflictStore.loadAll()
+    return result
   }
 
   // ============================================
-  // Actions - Sync Operations
+  // Retry & Cleanup
   // ============================================
+  async function retryFailed(): Promise<number> {
+    if (!syncEngine) await initialize()
+    const count = await syncEngine!.retryFailedSyncs()
+    await pendingStore.loadAll()
+    return count
+  }
 
-  async function fullSync(): Promise<{
-    success: boolean;
-    conflicts: SyncConflict[];
-    changesApplied: number;
-  }> {
-    if (!auth.isAuthenticated) {
-      throw new Error('User must be authenticated to sync');
-    }
+  async function clearPending(): Promise<void> {
+    if (!syncEngine) await initialize()
+    await syncEngine!.clearAllPendingChanges()
+    await pendingStore.loadAll()
+  }
 
-    if (!isOnline.value) {
-      throw new Error('Cannot sync while offline');
-    }
+  async function syncWithRetry(
+    maxAttempts: number = 3,
+    baseDelayMs: number = 1000
+  ): Promise<SyncResult> {
+    let lastResult_: SyncResult | null = null
 
-    if (isSyncing.value) {
-      throw new Error('Sync already in progress');
-    }
-
-    isSyncing.value = true;
-    lastSyncError.value = null;
-
-    try {
-      await refreshPendingChanges();
-
-      const pullResult = await syncService.pullChanges(syncToken.value);
-      syncToken.value = pullResult.syncToken;
-      lastSyncAt.value = new Date().toISOString();
-
-      const pushResult = await syncService.pushChanges({
-        changes: pendingChanges.value,
-        lastSyncToken: syncToken.value ?? '',
-      });
-
-      if (pushResult.syncToken) {
-        syncToken.value = pushResult.syncToken;
-        await syncService.updateLastSyncToken(syncToken.value!);
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      if (attempt > 0) {
+        const delay = baseDelayMs * Math.pow(2, attempt - 1)
+        console.log(
+          `Retrying sync in ${delay}ms (attempt ${attempt + 1}/${maxAttempts})`
+        )
+        await new Promise((resolve) => setTimeout(resolve, delay))
       }
 
-      if (pushResult.conflicts && pushResult.conflicts.length > 0) {
-        conflicts.value = pushResult.conflicts;
-        return {
-          success: false,
-          conflicts: pushResult.conflicts,
-          changesApplied: pushResult.appliedChanges,
-        };
+      const result = await sync()
+      if (result.success) return result
+
+      lastResult_ = result
+
+      if (!isOnline.value) break
+    }
+
+    return lastResult_ || lastResult.value || buildFailedResult('Sync failed after retries')
+  }
+
+  // ============================================
+  // Background Sync
+  // ============================================
+  function enableBackgroundSync(intervalMinutes: number = 15): void {
+    backgroundSyncEnabled.value = true
+    settingsStore
+      .updateSync({
+        autoSyncEnabled: true,
+        syncIntervalMinutes: intervalMinutes,
+      })
+      .catch(console.error)
+  }
+
+  function disableBackgroundSync(): void {
+    backgroundSyncEnabled.value = false
+    settingsStore.updateSync({ autoSyncEnabled: false }).catch(console.error)
+  }
+
+  // ============================================
+  // Settings Watchers
+  // ============================================
+  watch(
+    () => settingsStore.autoSyncEnabled,
+    (enabled) => {
+      autoSyncEnabled.value = enabled
+    }
+  )
+
+  watch(
+    () => authStore.isAuthenticated,
+    (isAuth) => {
+      if (isAuth && isInitialized.value) {
+        if (settingsStore.syncSettings.syncOnAppStart && canSync.value) {
+          sync().catch(console.error)
+        }
+      } else if (!isAuth) {
+        reset()
       }
-
-      await refreshPendingChanges();
-      await refreshConflicts();
-
-      return {
-        success: true,
-        conflicts: [],
-        changesApplied: pushResult.appliedChanges,
-      };
-    } catch (error: any) {
-      lastSyncError.value = error.message || 'Sync failed';
-      return {
-        success: false,
-        conflicts: conflicts.value,
-        changesApplied: 0,
-      };
-    } finally {
-      isSyncing.value = false;
     }
-  }
-
-  async function pullChanges() {
-    if (!auth.isAuthenticated) {
-      throw new Error('User must be authenticated to pull changes');
-    }
-
-    const result = await syncService.pullChanges(syncToken.value);
-    if (result.syncToken) {
-      syncToken.value = result.syncToken;
-      lastSyncAt.value = new Date().toISOString();
-      await syncService.updateLastSyncToken(syncToken.value!);
-    }
-    await refreshPendingChanges();
-    await refreshConflicts();
-    return result;
-  }
-
-  async function pushChanges() {
-    if (!auth.isAuthenticated) {
-      throw new Error('User must be authenticated to push changes');
-    }
-
-    await refreshPendingChanges();
-
-    if (pendingChanges.value.length === 0) {
-      return {
-        success: true,
-        appliedChanges: 0,
-        conflicts: [],
-        syncToken: syncToken.value || '',
-      };
-    }
-
-    const result = await syncService.pushChanges({
-      changes: pendingChanges.value,
-      lastSyncToken: syncToken.value || '',
-    });
-
-    if (result.syncToken) {
-      syncToken.value = result.syncToken;
-      await syncService.updateLastSyncToken(syncToken.value!);
-    }
-
-    if (result.conflicts && result.conflicts.length > 0) {
-      conflicts.value = result.conflicts;
-    }
-
-    await refreshPendingChanges();
-    await refreshConflicts();
-    return result;
-  }
-
-  async function getSyncProgress(): Promise<SyncProgress> {
-    const progress = await syncService.getSyncProgress();
-    syncProgress.value = progress;
-    return progress;
-  }
-
-  async function getSyncToken(): Promise<string | null> {
-    const token = await syncService.getLastSyncToken();
-    if (token) {
-      syncToken.value = token;
-    }
-    return token;
-  }
-
-  async function updateSyncToken(token: string): Promise<void> {
-    await syncService.updateLastSyncToken(token);
-    syncToken.value = token;
-  }
+  )
 
   // ============================================
-  // Actions - Initialization
+  // Utilities
   // ============================================
-
-  async function initialize(): Promise<void> {
-    if (!auth.isAuthenticated) {
-      return;
+  function buildFailedResult(message: string): SyncResult {
+    return {
+      success: false,
+      pushed: 0,
+      pulled: 0,
+      conflicts: 0,
+      errors: [message],
+      durationMs: 0,
     }
+  }
 
-    try {
-      await getSyncToken();
-      await refreshPendingChanges();
-      await refreshConflicts();
-      await getSyncProgress();
-    } catch (error) {
-      console.error('Failed to initialize sync:', error);
+  function clearError(): void {
+    error.value = null
+    if (status.value === SyncStatus.ERROR) {
+      status.value = SyncStatus.IDLE
     }
   }
 
   function reset(): void {
-    isSyncing.value = false;
-    lastSyncError.value = null;
-    lastSyncAt.value = null;
-    syncToken.value = null;
-    pendingChanges.value = [];
-    conflicts.value = [];
-    syncProgress.value = null;
+    status.value = SyncStatus.IDLE
+    progress.value = {
+      isSyncing: false,
+      current: 0,
+      total: 100,
+      percentage: 0,
+    }
+    lastResult.value = null
+    lastSyncAt.value = null
+    syncToken.value = null
+    error.value = null
+    isCancelled.value = false
+
+    if (autoSyncTimeout) {
+      clearTimeout(autoSyncTimeout)
+      autoSyncTimeout = null
+    }
+  }
+
+  function cleanup(): void {
+    if (networkListenerCleanup) {
+      networkListenerCleanup()
+      networkListenerCleanup = null
+    }
+
+    if (autoSyncTimeout) {
+      clearTimeout(autoSyncTimeout)
+      autoSyncTimeout = null
+    }
+
+    if (networkMonitor) {
+      networkMonitor.stopMonitoring()
+    }
+
+    reset()
+    isInitialized.value = false
   }
 
   // ============================================
-  // Return
+  // Expose
   // ============================================
-
   return {
     // State
-    isSyncing,
-    lastSyncError,
-    lastSyncAt,
-    syncToken,
-    pendingChanges,
-    conflicts,
-    syncProgress,
+    status: readonly(status),
+    progress: readonly(progress),
+    lastResult: readonly(lastResult),
+    lastSyncAt: readonly(lastSyncAt),
+    syncToken: readonly(syncToken),
+    error: readonly(error),
+    networkStatus: readonly(networkStatus),
+    isInitialized: readonly(isInitialized),
+    autoSyncEnabled: readonly(autoSyncEnabled),
+    backgroundSyncEnabled: readonly(backgroundSyncEnabled),
+
+    // Sub-store access
+    pendingChanges: pendingStore.items,
+    conflicts: conflictStore.items,
+    syncMetadata: metadataStore.items,
+
+    // Getters
     isOnline,
-
-    // Computed
-    pendingCount,
-    hasPendingChanges,
-    unresolvedConflictsCount,
-    hasConflicts,
+    isOffline,
+    isSyncing,
     isIdle,
-    statistics,
+    hasError,
+    hasPending,
+    hasConflicts,
+    pendingCount,
+    unresolvedConflictCount,
+    isFullySynced,
+    needsSync,
+    canSync,
+    canSyncOnCurrentNetwork,
+    stats,
+    syncStatusLabel,
+    syncStatusColor,
 
-    // Actions
-    addPendingChange,
-    addPendingChanges,
-    refreshPendingChanges,
-    processPendingChange,
-    retryFailedChanges,
-    deletePendingChange,
-    clearPendingChanges,
-    refreshConflicts,
+    // Initialization
+    initialize,
+    loadPersistedState,
+
+    // Core Actions
+    sync,
+    push,
+    pull,
+    cancelSync,
+    syncWithRetry,
+
+    // Conflict Resolution
     resolveConflict,
     bulkResolveConflicts,
-    deleteConflict,
-    fullSync,
-    pullChanges,
-    pushChanges,
-    getSyncProgress,
-    getSyncToken,
-    updateSyncToken,
-    initialize,
-    reset,
-  };
-});
 
-export default useSyncStore;
+    // Retry & Cleanup
+    retryFailed,
+    clearPending,
+
+    // Background Sync
+    enableBackgroundSync,
+    disableBackgroundSync,
+
+    // Utilities
+    clearError,
+    reset,
+    cleanup,
+
+    // Sub-stores (for direct access if needed)
+    pendingStore,
+    conflictStore,
+    metadataStore,
+  }
+})
+
+// Default export for convenience
+export default useSyncStore

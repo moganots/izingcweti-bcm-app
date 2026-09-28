@@ -1,5 +1,3 @@
-// src/components/quick-actions/types.ts
-
 export interface QuickAction {
   id: string
   label: string

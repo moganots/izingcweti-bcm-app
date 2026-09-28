@@ -1,43 +1,120 @@
 import { Network } from '@capacitor/network'
 import { BaseService } from '../BaseService'
-import { ConnectionType, getConnectionType, CONNECTION_TYPE_LABELS } from './../../types'
-import type { NetworkStatus, ConnectionQuality } from './../../types'
-import type { NetworkInfo } from './../../models/entities'
-import { useUiStore } from './../../stores/ui/ui.store'
-import { API_ENDPOINTS } from 'src/core/constants/api.constants'
-import { ApiResponse } from 'src/shared/types/common.types'
+import {
+  ConnectionType,
+  getConnectionType,
+  CONNECTION_TYPE_LABELS,
+  NetworkStatus,
+  NetworkInfo,
+} from '../../types/sync.types'
+import { API_ENDPOINTS, STORAGE_KEYS } from '../../core/constants/api.constants'
+import type { ApiResponse } from '../../shared/types/common.types'
 
-// Health check response interface
+// ============================================
+// Response Types
+// ============================================
+
 interface HealthCheckResponse extends ApiResponse {
   database?: string
+  uptime?: number
+  environment?: string
+  apiVersion?: string
 }
 
-// Ping response interface
-interface PingResponse extends ApiResponse {}
+interface PingResponse extends ApiResponse {
+  uptime?: number
+}
+
+export interface ConnectionQuality {
+  type: ConnectionType
+  strength: number
+  latency: number
+  bandwidth: number
+  reliable: boolean
+  quality: 'excellent' | 'good' | 'fair' | 'poor' | 'none'
+}
+
+export type NetworkStatusListener = (status: NetworkStatus) => void
+
+// ============================================
+// Constants
+// ============================================
+
+/** How often we poll the server health endpoint (ms). */
+const HEALTH_CHECK_INTERVAL_MS = 60_000
+
+/** TTL for the cached connection-quality result (ms). */
+const QUALITY_CACHE_TTL_MS = 2_000
+
+/** Timeout for individual ping/health HTTP calls (ms). */
+const CONNECTIVITY_TIMEOUT_MS = 5_000
+
+/** Debounce window for rapid online/offline toggles (ms). */
+const STATUS_DEBOUNCE_MS = 250
+
+/** Thresholds (ms) for classifying latency into a quality bucket. */
+const LATENCY_EXCELLENT_MS = 100
+const LATENCY_GOOD_MS = 300
+const LATENCY_FAIR_MS = 1_000
+
+// ============================================
+// NetworkMonitor
+// ============================================
 
 /**
  * Network Monitor Service
- * Extends BaseService to leverage API capabilities
- * Monitors network connectivity and connection quality
+ *
+ * Monitors device network connectivity and connection quality.
+ * - Uses `@capacitor/network` on native platforms.
+ * - Falls back to `window.online`/`offline` events on the web.
+ * - Periodically probes the backend via `/ping`.
+ *
+ * Backend contract:
+ *  - `GET ${API_BASE_URL}/ping`   → used for connectivity probe
+ *  - `GET ${API_BASE_URL}/health` → used for deep health probe
+ *
+ * NOTE: This service does **not** depend on any UI store — the
+ *       `network.store.ts` subscribes to `addListener()`.
  */
 export class NetworkMonitor extends BaseService {
-  private listeners: Set<(status: NetworkStatus) => void> = new Set()
+  // ---- Singleton ----
+  private static instance: NetworkMonitor | null = null
+
+  // ---- Listeners ----
+  private listeners: Set<NetworkStatusListener> = new Set()
+
+  // ---- State ----
   private _isOnline: boolean = true
   private _connectionType: ConnectionType = ConnectionType.UNKNOWN
   private _signalStrength: number = 0
+
+  // ---- Lifecycle ----
   private _isMonitoring: boolean = false
   private _checkInterval: ReturnType<typeof setInterval> | null = null
-  private _capacitorListener: any = null
+  private _capacitorListener: { remove: () => void } | null = null
+  private _boundOnlineHandler: (() => void) | null = null
+  private _boundOfflineHandler: (() => void) | null = null
 
-  private static instance: NetworkMonitor | null = null
+  // ---- Debounce / cache ----
+  private _pendingStatusChange: ReturnType<typeof setTimeout> | null = null
+  private _qualityCache: { value: ConnectionQuality; expiresAt: number } | null = null
+
+  // ============================================
+  // Constructor
+  // ============================================
 
   private constructor() {
     super()
+
+    // Seed initial online state from the browser when available (SSR-safe).
+    if (typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean') {
+      this._isOnline = navigator.onLine
+      this._connectionType = this._isOnline
+        ? ConnectionType.UNKNOWN
+        : ConnectionType.NONE
+    }
   }
 
-  /**
-   * Get singleton instance of NetworkMonitor
-   */
   static getInstance(): NetworkMonitor {
     if (!NetworkMonitor.instance) {
       NetworkMonitor.instance = new NetworkMonitor()
@@ -75,64 +152,98 @@ export class NetworkMonitor extends BaseService {
       connectionType: this._connectionType,
       signalStrength: this._signalStrength,
       isMetered: this.isMeteredConnection(),
-      lastChecked: new Date().toISOString(),
+      lastChecked: this.nowIso(),
     }
   }
 
   /**
-   * Get network status as NetworkInfo (for SyncEngine compatibility)
+   * Full network snapshot including latency + quality, used by SyncEngine.
+   * Result is cached for `QUALITY_CACHE_TTL_MS` to avoid hammering the server.
    */
-  getNetworkStatus(): NetworkInfo {
+  async getNetworkStatus(): Promise<NetworkInfo> {
+    const quality = await this.checkConnectionQuality()
     return {
       isOnline: this._isOnline,
       connectionType: this._connectionType,
-      lastChecked: new Date().toISOString(),
+      signalStrength: this._signalStrength,
+      isMetered: this.isMeteredConnection(),
+      latency: quality.latency,
+      quality: quality.quality,
+      lastChecked: this.nowIso(),
     }
   }
 
   // ============================================
-  // Monitoring
+  // Monitoring Lifecycle
   // ============================================
 
-  /**
-   * Start monitoring network status
-   */
   async startMonitoring(): Promise<void> {
     if (this._isMonitoring) return
 
     try {
-      const initialStatus = await Network.getStatus()
-      this.updateStatus(initialStatus.connected, getConnectionType(initialStatus.connectionType))
-
-      this._capacitorListener = await Network.addListener('networkStatusChange', (status) => {
-        this.updateStatus(status.connected, getConnectionType(status.connectionType))
-      })
-
-      if (typeof window !== 'undefined') {
-        window.addEventListener('online', () => this.updateStatus(true, ConnectionType.UNKNOWN))
-        window.addEventListener('offline', () => this.updateStatus(false, ConnectionType.NONE))
+      // 1. Read initial status from Capacitor (native) — falls back gracefully.
+      try {
+        const initialStatus = await Network.getStatus()
+        this.updateStatus(
+          initialStatus.connected,
+          getConnectionType(initialStatus.connectionType),
+        )
+      } catch {
+        // Native plugin unavailable (web) — rely on browser events below.
       }
 
-      // Check health every 60 seconds (matches app.ts health check interval)
+      // 2. Subscribe to Capacitor network-status changes.
+      try {
+        this._capacitorListener = await Network.addListener(
+          'networkStatusChange',
+          (status) => {
+            this.updateStatus(
+              status.connected,
+              getConnectionType(status.connectionType),
+            )
+          },
+        )
+      } catch {
+        this._capacitorListener = null
+      }
+
+      // 3. Subscribe to browser online/offline events.
+      if (typeof window !== 'undefined') {
+        this._boundOnlineHandler = () =>
+          this.updateStatus(true, ConnectionType.UNKNOWN)
+        this._boundOfflineHandler = () =>
+          this.updateStatus(false, ConnectionType.NONE)
+        window.addEventListener('online', this._boundOnlineHandler)
+        window.addEventListener('offline', this._boundOfflineHandler)
+      }
+
+      // 4. Periodic server-side health check.
       this._checkInterval = setInterval(() => {
-        this.performHealthCheck()
-      }, 60000)
+        this.performHealthCheck().catch(() => {
+          /* already handled internally */
+        })
+      }, HEALTH_CHECK_INTERVAL_MS)
 
       this._isMonitoring = true
-      console.log(`✓ Network monitoring started (${this.connectionTypeLabel})`)
+      console.log(
+        `✓ Network monitoring started (${this.connectionTypeLabel})`,
+      )
     } catch (error) {
+      // Roll back partial state on failure.
       console.error('Failed to start network monitoring:', error)
+      this.stopMonitoring()
       this._isOnline = true
       this._connectionType = ConnectionType.UNKNOWN
     }
   }
 
-  /**
-   * Stop monitoring network status
-   */
   stopMonitoring(): void {
     if (this._capacitorListener) {
-      this._capacitorListener.remove()
+      try {
+        this._capacitorListener.remove()
+      } catch {
+        /* noop */
+      }
       this._capacitorListener = null
     }
 
@@ -141,13 +252,41 @@ export class NetworkMonitor extends BaseService {
       this._checkInterval = null
     }
 
+    if (this._pendingStatusChange) {
+      clearTimeout(this._pendingStatusChange)
+      this._pendingStatusChange = null
+    }
+
     if (typeof window !== 'undefined') {
-      window.removeEventListener('online', () => this.updateStatus(true, ConnectionType.UNKNOWN))
-      window.removeEventListener('offline', () => this.updateStatus(false, ConnectionType.NONE))
+      if (this._boundOnlineHandler) {
+        window.removeEventListener('online', this._boundOnlineHandler)
+        this._boundOnlineHandler = null
+      }
+      if (this._boundOfflineHandler) {
+        window.removeEventListener('offline', this._boundOfflineHandler)
+        this._boundOfflineHandler = null
+      }
     }
 
     this._isMonitoring = false
     console.log('✓ Network monitoring stopped')
+  }
+
+  /**
+   * Reset internal state — primarily for tests / hot-reload.
+   */
+  reset(): void {
+    this.stopMonitoring()
+    this.listeners.clear()
+    this._qualityCache = null
+    this._signalStrength = 0
+    this._isOnline =
+      typeof navigator !== 'undefined' && typeof navigator.onLine === 'boolean'
+        ? navigator.onLine
+        : true
+    this._connectionType = this._isOnline
+      ? ConnectionType.UNKNOWN
+      : ConnectionType.NONE
   }
 
   // ============================================
@@ -155,32 +294,52 @@ export class NetworkMonitor extends BaseService {
   // ============================================
 
   /**
-   * Update network status and notify listeners
+   * Debounced status update. Prevents thrashing when the OS emits
+   * rapid online/offline/online sequences during network transitions.
    */
   private updateStatus(connected: boolean, connectionType: ConnectionType): void {
+    if (this._pendingStatusChange) {
+      clearTimeout(this._pendingStatusChange)
+    }
+
+    this._pendingStatusChange = setTimeout(() => {
+      this._pendingStatusChange = null
+      this.applyStatus(connected, connectionType)
+    }, STATUS_DEBOUNCE_MS)
+  }
+
+  private applyStatus(connected: boolean, connectionType: ConnectionType): void {
     const previousOnline = this._isOnline
     const previousType = this._connectionType
 
     this._isOnline = connected
     this._connectionType = connected ? connectionType : ConnectionType.NONE
 
+    // Invalidate quality cache on any status change.
+    this._qualityCache = null
+
     const status: NetworkStatus = {
-      isOnline: connected,
+      isOnline: this._isOnline,
       connectionType: this._connectionType,
       signalStrength: this._signalStrength,
       isMetered: this.isMeteredConnection(),
-      lastChecked: new Date().toISOString(),
+      lastChecked: this.nowIso(),
     }
 
-    // Update UI store
-    const uiStore = useUiStore()
-    if (connected) {
-      uiStore.setOnline(connectionType)
-    } else {
-      uiStore.setOffline()
-    }
+    this.notifyListeners(status)
 
-    // Notify listeners
+    if (previousOnline !== connected) {
+      console.log(
+        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${CONNECTION_TYPE_LABELS[this._connectionType]})`,
+      )
+    } else if (previousType !== this._connectionType) {
+      console.log(
+        `🔀 Connection type changed: ${CONNECTION_TYPE_LABELS[previousType]} → ${CONNECTION_TYPE_LABELS[this._connectionType]}`,
+      )
+    }
+  }
+
+  private notifyListeners(status: NetworkStatus): void {
     this.listeners.forEach((listener) => {
       try {
         listener(status)
@@ -188,28 +347,12 @@ export class NetworkMonitor extends BaseService {
         console.error('Network status listener error:', error)
       }
     })
-
-    // Log changes
-    if (previousOnline !== connected) {
-      console.log(
-        `🌐 Network: ${connected ? 'Online' : 'Offline'} (${
-          CONNECTION_TYPE_LABELS[connectionType]
-        })`
-      )
-    } else if (previousType !== connectionType) {
-      console.log(
-        `🔀 Connection type changed: ${CONNECTION_TYPE_LABELS[previousType]} → ${CONNECTION_TYPE_LABELS[connectionType]}`
-      )
-    }
   }
 
   // ============================================
-  // Connection Checks
+  // Connection Classification
   // ============================================
 
-  /**
-   * Check if current connection is metered (cellular)
-   */
   isMeteredConnection(): boolean {
     switch (this._connectionType) {
       case ConnectionType.CELLULAR:
@@ -217,16 +360,11 @@ export class NetworkMonitor extends BaseService {
       case ConnectionType.WIFI:
       case ConnectionType.ETHERNET:
         return false
-      case ConnectionType.NONE:
-      case ConnectionType.UNKNOWN:
       default:
         return false
     }
   }
 
-  /**
-   * Check if connection has high bandwidth
-   */
   isHighBandwidth(): boolean {
     return (
       this._connectionType === ConnectionType.WIFI ||
@@ -235,56 +373,68 @@ export class NetworkMonitor extends BaseService {
   }
 
   /**
-   * Check connection quality by measuring latency
+   * Probe the server to determine latency and classify connection quality.
+   * Result is cached for a short TTL to avoid repeated round-trips.
    */
   async checkConnectionQuality(): Promise<ConnectionQuality> {
+    // Serve from cache if fresh.
+    if (
+      this._qualityCache &&
+      Date.now() < this._qualityCache.expiresAt
+    ) {
+      return this._qualityCache.value
+    }
+
+    const none = this.noneQuality()
+
     if (!this._isOnline || this._connectionType === ConnectionType.NONE) {
-      return {
-        type: ConnectionType.NONE,
-        strength: 0,
-        latency: 0,
-        bandwidth: 0,
-        reliable: false,
-        quality: 'none',
+      this._qualityCache = {
+        value: none,
+        expiresAt: Date.now() + QUALITY_CACHE_TTL_MS,
       }
+      return none
     }
 
     try {
       const startTime = Date.now()
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      clearTimeout(timeoutId)
+      const reachable = await this.checkServerConnectivity()
       const latency = Date.now() - startTime
 
-      let quality: 'excellent' | 'good' | 'fair' | 'poor'
-      if (latency < 100) quality = 'excellent'
-      else if (latency < 300) quality = 'good'
-      else if (latency < 1000) quality = 'fair'
-      else quality = 'poor'
+      if (!reachable) {
+        this._qualityCache = {
+          value: none,
+          expiresAt: Date.now() + QUALITY_CACHE_TTL_MS,
+        }
+        return none
+      }
 
-      return {
+      const quality = this.classifyLatency(latency)
+
+      const result: ConnectionQuality = {
         type: this._connectionType,
         strength: this._signalStrength,
         latency,
-        bandwidth: 0, // Would need actual measurement
+        bandwidth: 0,
         reliable: quality !== 'poor',
         quality,
       }
-    } catch {
-      return {
-        type: this._connectionType,
-        strength: 0,
-        latency: 0,
-        bandwidth: 0,
-        reliable: false,
-        quality: 'none',
+
+      this._qualityCache = {
+        value: result,
+        expiresAt: Date.now() + QUALITY_CACHE_TTL_MS,
       }
+      return result
+    } catch {
+      this._qualityCache = {
+        value: none,
+        expiresAt: Date.now() + QUALITY_CACHE_TTL_MS,
+      }
+      return none
     }
   }
 
   /**
-   * Check if it's safe to perform sync operations
+   * Determine whether it is currently safe to run a sync operation.
    */
   async isSyncSafe(): Promise<boolean> {
     if (!this._isOnline) return false
@@ -303,10 +453,42 @@ export class NetworkMonitor extends BaseService {
   }
 
   /**
-   * Check if metered sync is allowed by user preference
+   * Resolves as soon as the device is online (or the timeout elapses).
+   * Useful for queue processors that must wait for connectivity.
    */
-  private isMeteredSyncAllowed(): boolean {
-    return localStorage.getItem('bcm_metered_sync') === 'true'
+  waitForOnline(timeoutMs: number = 30_000): Promise<boolean> {
+    if (this._isOnline) return Promise.resolve(true)
+
+    return new Promise<boolean>((resolve) => {
+      let settled = false
+
+      const cleanup = () => {
+        if (unsubscribe) unsubscribe()
+        if (timer) clearTimeout(timer)
+      }
+
+      const unsubscribe = this.addListener((status) => {
+        if (status.isOnline && !settled) {
+          settled = true
+          cleanup()
+          resolve(true)
+        }
+      })
+
+      const timer = setTimeout(() => {
+        if (settled) return
+        settled = true
+        cleanup()
+        resolve(false)
+      }, timeoutMs)
+    })
+  }
+
+  /**
+   * Set the signal strength (0–100) reported by native plugins.
+   */
+  setSignalStrength(strength: number): void {
+    this._signalStrength = Math.max(0, Math.min(100, strength))
   }
 
   // ============================================
@@ -314,243 +496,158 @@ export class NetworkMonitor extends BaseService {
   // ============================================
 
   /**
-   * Add network status change listener
-   * @returns Unsubscribe function
+   * Subscribe to network-status changes.
+   * Returns an unsubscribe function; the current status is delivered
+   * asynchronously on subscribe so callers immediately see state.
    */
-  addListener(listener: (status: NetworkStatus) => void): () => void {
+  addListener(listener: NetworkStatusListener): () => void {
     this.listeners.add(listener)
+
+    // Push current status to the new listener on the next tick.
+    queueMicrotask(() => {
+      if (!this.listeners.has(listener)) return
+      try {
+        listener(this.currentStatus)
+      } catch (error) {
+        console.error('Network status listener error (initial):', error)
+      }
+    })
+
     return () => {
       this.listeners.delete(listener)
     }
   }
 
-  /**
-   * Remove all listeners
-   */
   removeAllListeners(): void {
     this.listeners.clear()
   }
 
   // ============================================
-  // API Integration Methods (using BaseService)
+  // API Integration
   // ============================================
 
   /**
-   * Check server connectivity via ping endpoint
-   * Uses /api/ping for lightweight connectivity check
+   * Lightweight reachability probe.
+   *
+   * Uses `GET ${API_BASE_URL}/ping`. If the backend does not expose `/ping`
+   * at the base URL root, this will gracefully return `false`.
+   *
+   * NOTE: `PING` and `HEALTH` in `API_ENDPOINTS.API` are **root-relative**
+   * paths (i.e., they resolve to `${API_BASE_URL}/ping`), NOT
+   * `${API_BASE_URL}/api/v1/ping`, because the backend mounts them at the
+   * application root. `BaseService.buildUrl()` handles this via the
+   * `endpoint.startsWith('http')` guard.
    */
   async checkServerConnectivity(): Promise<boolean> {
     try {
-      const response = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
-      const isValid = response && response?.success
-
-      if (isValid) {
-        console.debug('✓ Server connectivity verified')
-      }
-      return isValid || false
-    } catch (error) {
-      console.debug('Server connectivity check failed:', error)
+      const response = await this.get<PingResponse>(
+        API_ENDPOINTS.API.PING,
+        undefined,
+        { timeout: CONNECTIVITY_TIMEOUT_MS },
+      )
+      // Some backends return a 200 with `success: false`, others with
+      // `success: true`. Treat any successful HTTP response as reachable.
+      return response?.success !== false
+    } catch {
       return false
     }
   }
 
   /**
-   * Get detailed server health information
-   * Uses /api/health for comprehensive health check including database status
+   * Deep health check — returns the server's health payload or `null`.
    */
   async getServerHealth(): Promise<HealthCheckResponse | null> {
     try {
-      return (await this.get<HealthCheckResponse>(API_ENDPOINTS.API.HEALTH)) || {}
-    } catch (error) {
-      console.error('Server health check failed:', error)
+      return (
+        (await this.get<HealthCheckResponse>(
+          API_ENDPOINTS.API.HEALTH,
+          undefined,
+          { timeout: CONNECTIVITY_TIMEOUT_MS },
+        )) || null
+      )
+    } catch {
       return null
     }
   }
 
   /**
-   * Get detailed server ping information
-   * Uses /api/ping for comprehensive ping check including database status
-   */
-  async getServerPing(): Promise<HealthCheckResponse | null> {
-    try {
-      return (await this.get<HealthCheckResponse>(API_ENDPOINTS.API.PING)) || {}
-    } catch (error) {
-      console.error('Server health check failed:', error)
-      return null
-    }
-  }
-
-  /**
-   * Check if server database is healthy
+   * Returns `true` if the backend reports its database is healthy.
    */
   async isDatabaseHealthy(): Promise<boolean> {
     try {
       const health = await this.getServerHealth()
-      return health?.database === 'connected' || health?.status === 'healthy'
+      if (!health) return false
+      return (
+        health.database === 'connected' ||
+        (health as any).status === 'healthy' ||
+        health.success === true
+      )
     } catch {
       return false
     }
   }
 
-  /**
-   * Get server uptime information
-   */
-  async getServerUptime(): Promise<number | null> {
-    try {
-      const ping = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
-      return ping?.uptime || null
-    } catch {
-      return null
-    }
-  }
-
-  /**
-   * Perform comprehensive health check
-   * Checks both network connectivity and server health
-   */
-  async performFullHealthCheck(): Promise<{
-    isOnline: boolean
-    serverReachable: boolean
-    databaseHealthy: boolean
-    latency: number
-    serverStatus: HealthCheckResponse | null
-    timestamp: string
-  }> {
-    const startTime = Date.now()
-
-    const serverReachable = await this.checkServerConnectivity()
-    const databaseHealthy = await this.isDatabaseHealthy()
-    const serverStatus = await this.getServerHealth()
-
-    const latency = Date.now() - startTime
-
-    return {
-      isOnline: this._isOnline,
-      serverReachable:
-        serverReachable ||
-        ['ok', 'success', 'healthy', 'up', 'running'].includes(serverStatus?.status!),
-      databaseHealthy,
-      latency,
-      serverStatus,
-      timestamp: new Date().toISOString(),
-    }
-  }
-
-  /**
-   * Get detailed network diagnostics
-   */
-  async getNetworkDiagnostics(): Promise<{
-    isOnline: boolean
-    connectionType: string
-    latency: number
-    serverReachable: boolean
-    databaseHealthy: boolean
-    signalStrength: number
-    isMetered: boolean
-    isHighBandwidth: boolean
-    serverVersion?: string
-    serverEnvironment?: string
-    serverUptime?: number
-    timestamp: string
-  }> {
-    const quality = await this.checkConnectionQuality()
-    const health = await this.performFullHealthCheck()
-
-    return {
-      isOnline: this._isOnline,
-      connectionType: CONNECTION_TYPE_LABELS[this._connectionType],
-      latency: quality.latency,
-      serverReachable: health.serverReachable,
-      databaseHealthy: health.databaseHealthy,
-      signalStrength: this._signalStrength,
-      isMetered: this.isMeteredConnection(),
-      isHighBandwidth: this.isHighBandwidth(),
-      serverVersion: health.serverStatus?.apiVersion,
-      serverEnvironment: health.serverStatus?.environment,
-      serverUptime: health.serverStatus?.uptime!,
-      timestamp: new Date().toISOString(),
-    } as any
-  }
-
-  /**
-   * Wait for stable connection
-   * @param timeoutMs Maximum wait time in milliseconds
-   */
-  async waitForStableConnection(timeoutMs: number = 30000): Promise<boolean> {
-    const startTime = Date.now()
-    let stableChecks = 0
-
-    while (Date.now() - startTime < timeoutMs) {
-      if (!this._isOnline) {
-        await this.delay(1000)
-        continue
-      }
-
-      const quality = await this.checkConnectionQuality()
-      if (quality.quality === 'good' || quality.quality === 'excellent') {
-        stableChecks++
-        if (stableChecks >= 2) {
-          return true
-        }
-      } else {
-        stableChecks = 0
-      }
-
-      await this.delay(2000)
-    }
-
-    return false
-  }
-
-  /**
-   * Delay helper
-   */
-  private delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms))
-  }
-
   // ============================================
-  // Health Check
+  // Private Helpers
   // ============================================
 
-  /**
-   * Perform health check to verify connectivity
-   * Uses /api/ping for lightweight check and updates status accordingly
-   */
   private async performHealthCheck(): Promise<void> {
     try {
-      const controller = new AbortController()
-      const timeoutId = setTimeout(() => controller.abort(), 5000)
-
-      // Use ping endpoint for lightweight check
       const isServerReachable = await this.checkServerConnectivity()
 
-      clearTimeout(timeoutId)
-
       if (isServerReachable && !this._isOnline) {
-        // Server is reachable but we thought we were offline - update status
-        this.updateStatus(true, this._connectionType)
+        // Recovered — preserve last-known connection type if we had one.
+        const restoredType =
+          this._connectionType === ConnectionType.NONE
+            ? ConnectionType.UNKNOWN
+            : this._connectionType
+        this.updateStatus(true, restoredType)
       } else if (!isServerReachable && this._isOnline) {
-        // Server is not reachable but we thought we were online
-        // Check if it's a network error or server error
-        try {
-          const pingResult = await this.get<PingResponse>(API_ENDPOINTS.API.PING)
-          if (!pingResult) {
-            this.updateStatus(false, ConnectionType.NONE)
-          }
-        } catch (error) {
-          // Network error - go offline
-          this.updateStatus(false, ConnectionType.NONE)
-        }
+        // Server unreachable — degrade to NONE.
+        this.updateStatus(false, ConnectionType.NONE)
       }
     } catch {
-      // Only mark offline on actual network errors
       if (this._isOnline) {
         this.updateStatus(false, ConnectionType.NONE)
       }
     }
   }
+
+  private classifyLatency(latency: number): ConnectionQuality['quality'] {
+    if (latency < LATENCY_EXCELLENT_MS) return 'excellent'
+    if (latency < LATENCY_GOOD_MS) return 'good'
+    if (latency < LATENCY_FAIR_MS) return 'fair'
+    return 'poor'
+  }
+
+  private noneQuality(): ConnectionQuality {
+    return {
+      type: ConnectionType.NONE,
+      strength: 0,
+      latency: 0,
+      bandwidth: 0,
+      reliable: false,
+      quality: 'none',
+    }
+  }
+
+  /**
+   * Returns `true` if metered sync is allowed by user settings.
+   * SSR-safe.
+   */
+  private isMeteredSyncAllowed(): boolean {
+    if (typeof localStorage === 'undefined') return false
+    return localStorage.getItem(STORAGE_KEYS.OFFLINE_QUEUE + '_metered_sync') === 'true'
+      || localStorage.getItem('bcm_metered_sync') === 'true'
+  }
+
+  private nowIso(): string {
+    return new Date().toISOString()
+  }
 }
 
-// Export singleton instance
+// ============================================
+// Singleton Export
+// ============================================
+
 export const networkMonitor = NetworkMonitor.getInstance()
