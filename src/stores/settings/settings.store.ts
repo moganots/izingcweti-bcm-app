@@ -23,7 +23,7 @@ import {
 } from '../../models/settings/settings.entity'
 
 export const useSettingsItemStore = createOfflineCrudStore<Settings>({
-  storeId: 'settings',
+  storeId: 'settings-items',
   tableName: 'settings',
 })
 
@@ -98,9 +98,9 @@ export const useSettingsStore = defineStore('settings', () => {
   // ============================================
   async function initialize(): Promise<void> {
     if (isInitialized.value) return
-    await settingsStore.initialize()
 
-    // Create settings if not exist
+    await settingsStore.initialize()
+    // Create settings if they do not exist
     if (!settings.value && authStore.userId) {
       await settingsStore.create({
         userId: authStore.userId,

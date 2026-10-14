@@ -140,10 +140,6 @@ import { computed } from 'vue'
 import { formatDate } from '../../utils/date.utils'
 import IncidentSeverityBadge from './IncidentSeverityBadge.vue'
 import IncidentStatusBadge from './IncidentStatusBadge.vue'
-import {
-    getEscalationLevelLabel,
-    getEscalationLevelColor,
-} from './../../models/entities/incident/incident.entity'
 
 const props = defineProps<{
     incident?: any
@@ -161,11 +157,23 @@ const isClosed = computed(() => {
 })
 
 function formatEscalationLevel(level: string): string {
-    return getEscalationLevelLabel(level)
+    if (!level) return 'None'
+    return level.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
 function getEscalationColor(level: string): string {
-    return getEscalationLevelColor(level)
+    switch (level) {
+        case 'CRITICAL':
+            return 'red'
+        case 'HIGH':
+            return 'orange'
+        case 'MEDIUM':
+            return 'warning'
+        case 'LOW':
+            return 'blue'
+        default:
+            return 'grey'
+    }
 }
 
 function getEscalationHistory(incident: any): any[] {

@@ -51,11 +51,7 @@
 
 <script setup lang="ts">
 import { reactive, computed } from 'vue'
-import {
-    EscalationLevel,
-    getEscalationLevelLabel,
-    getEscalationLevelColor,
-} from './../../models/entities/incident/incident.entity'
+import { EscalationLevel } from './../../models/bcm/bcm.entity'
 
 const props = withDefaults(
     defineProps<{
@@ -104,11 +100,22 @@ const escalationOptions = Object.values(EscalationLevel).map((value) => ({
 const requiredRule = (val: any) => !!val || 'This field is required'
 
 function formatEscalationLevel(level: string): string {
-    return getEscalationLevelLabel(level)
+    return level.replace(/_/g, ' ').toLowerCase().replace(/\b\w/g, (char) => char.toUpperCase())
 }
 
 function getEscalationColor(level: string): string {
-    return getEscalationLevelColor(level)
+    switch (level) {
+        case EscalationLevel.CRITICAL:
+            return 'red'
+        case EscalationLevel.HIGH:
+            return 'orange'
+        case EscalationLevel.MEDIUM:
+            return 'warning'
+        case EscalationLevel.LOW:
+            return 'blue'
+        default:
+            return 'grey'
+    }
 }
 
 function handleSubmit(): void {

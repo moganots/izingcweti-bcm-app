@@ -76,14 +76,27 @@ export function useAuth(options: UseAuthOptions = {}) {
     return authStore.hasPermission(permission)
   }
 
+  function canManageBCM(): boolean {
+    return authStore.hasPermission('bcm_manager')
+  }
+
   // ============================================
   // Domain Permission Shortcuts
   // ============================================
-  const canManageBCM = computed(() => authStore.hasPermission('bcm_manager'))
-  const canManageRisks = computed(() => authStore.hasPermission('risk_owner'))
+  function canManageRisks(): boolean {
+    return authStore.hasPermission('risk_owner')
+  }
+  function canManageIncidents(): boolean {
+    return authStore.hasPermission('bcm_manager')
+  }
   const canApprove = computed(() => authStore.hasPermission('approver'))
   const canAudit = computed(() => authStore.hasPermission('auditor'))
-  const canManageUsers = computed(() => authStore.hasPermission('admin'))
+  function canViewAuditLogs(): boolean {
+    return authStore.hasPermission('auditor')
+  }
+  function canManageUsers(): boolean {
+    return authStore.hasPermission('admin')
+  }
 
   // ============================================
   // Actions
@@ -221,8 +234,10 @@ export function useAuth(options: UseAuthOptions = {}) {
     hasPermission,
     canManageBCM,
     canManageRisks,
+    canManageIncidents,
     canApprove,
     canAudit,
+    canViewAuditLogs,
     canManageUsers,
 
     // Actions

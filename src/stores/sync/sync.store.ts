@@ -208,8 +208,10 @@ export const useSyncStore = defineStore('sync', () => {
 
   async function loadPersistedState(): Promise<void> {
     try {
-      const token = await syncEngine!.getSyncToken()
-      if (token) syncToken.value = token
+      if (authStore.isAuthenticated) {
+        const token = await syncEngine!.getSyncToken()
+        if (token) syncToken.value = token
+      }
 
       const lastTime = await syncEngine!.getSyncMetadata('last_sync_time')
       if (lastTime?.value) lastSyncAt.value = lastTime.value

@@ -93,8 +93,8 @@ apiClient.interceptors.request.use(
     const store = await getAuthStore()
 
     // Add auth token if available and not skipped
-    if (!config.skipAuth && store.tokens?.access_token) {
-      config.headers.Authorization = `Bearer ${store.tokens.access_token}`
+    if (!config.skipAuth && store.tokens?.accessToken) {
+      config.headers.Authorization = `Bearer ${store.tokens.accessToken}`
     }
 
     // Add organisation ID header
@@ -165,9 +165,9 @@ apiClient.interceptors.response.use(
         await store.refreshToken()
 
         // Retry the original request with new token
-        if (store.tokens?.access_token) {
+        if (store.tokens?.accessToken) {
           processQueue()
-          originalRequest.headers.Authorization = `Bearer ${store.tokens.access_token}`
+          originalRequest.headers.Authorization = `Bearer ${store.tokens.accessToken}`
           return apiClient(originalRequest)
         }
       } catch (refreshError) {

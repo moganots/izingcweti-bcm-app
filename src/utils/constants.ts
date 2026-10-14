@@ -104,7 +104,7 @@ export const BCM = {
 // Storage Keys
 // ============================================
 export const STORAGE_KEYS = {
-  AUTH_TOKEN: 'access_token',
+  AUTH_TOKEN: 'auth_token',
   REFRESH_TOKEN: 'refresh_token',
   EXPIRES_IN: 'expires_in',
   USER_DATA: 'user_data',

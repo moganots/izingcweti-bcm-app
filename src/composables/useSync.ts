@@ -32,6 +32,7 @@ export function useSync(options: UseSyncOptions = {}) {
         progress,
         stats,
         lastResult,
+        lastSyncAt,
         error,
         isOnline,
         isSyncing,
@@ -140,6 +141,7 @@ export function useSync(options: UseSyncOptions = {}) {
         progress,
         stats,
         lastResult,
+        lastSyncAt,
         error,
 
         // Getters
@@ -147,6 +149,7 @@ export function useSync(options: UseSyncOptions = {}) {
         isSyncing,
         isIdle,
         hasPending,
+        hasPendingChanges: hasPending,
         hasConflicts,
         isFullySynced,
         pendingCount,

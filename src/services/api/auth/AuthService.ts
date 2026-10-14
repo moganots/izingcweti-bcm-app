@@ -161,8 +161,7 @@ export class AuthService extends BaseService {
       }
     } catch (error) {
       console.error('Token refresh failed:', error)
-      this.clearAuthTokens()
-      return null
+      throw error
     }
   }
 

@@ -313,10 +313,16 @@ export class OfflineCrudService {
     data: Record<string, any>
     priority: SyncPriority
   }): Promise<void> {
+    // Settings are currently local-only; the backend has no Settings endpoint.
+    if (operation.entityType === 'settings') {
+      return
+    }
+
     if (!this.syncEngine) {
       console.warn('[OfflineCrudService] SyncEngine not set — change queued locally only')
       return
     }
+
     await this.syncEngine.addPendingChange({
       entityType: operation.entityType,
       entityId: operation.entityId,

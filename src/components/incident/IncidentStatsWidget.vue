@@ -73,7 +73,7 @@ import { formatTimeAgo } from '../../utils/date.utils'
 import {
     getIncidentStatusLabel,
     getIncidentStatusColor,
-} from './../../models/entities/incident/incident.entity'
+} from './../../models/bcm/bcm.entity'
 
 Chart.register(...registerables)
 

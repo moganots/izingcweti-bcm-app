@@ -1,5 +1,5 @@
 import { db } from '../db/Database'
-import { ConflictResolutionStrategy, ConflictType, SyncConflict } from '../../models/entities/sync/sync.entity'
+import { ConflictResolutionStrategy, ConflictType, SyncConflict } from '../../models/sync/sync.entity'
 
 /**
  * Conflict Resolution Result

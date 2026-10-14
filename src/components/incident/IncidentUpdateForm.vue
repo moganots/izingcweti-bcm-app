@@ -89,7 +89,7 @@ import {
   IncidentSeverity,
   getIncidentStatusLabel,
   getIncidentSeverityLabel,
-} from './../../models/entities/incident/incident.entity'
+} from './../../models/bcm/bcm.entity'
 
 const props = withDefaults(
   defineProps<{

@@ -30,42 +30,6 @@ export { default as IncidentStatsCards } from './IncidentStatsCards.vue'
 export { default as IncidentTimeline } from './IncidentTimeline.vue'
 
 // ============================================================
-//  Composables
-//  Export shared incident composable
-// ============================================================
-
-export { useIncident } from './../../composables/useIncident'
-
-// ============================================================
-//  Type Exports
-//  Export shared types/interfaces for incident components
-//  Aligned with incident.entity.ts
-// ============================================================
-
-export type {
-  // Core Incident Entity
-  Incident,
-  ImpactAnalysis,
-  
-  // History & Updates
-  EscalationHistoryEntry,
-  IncidentUpdate,
-  
-  // Stats
-  IncidentStats,
-  
-  // Request/Response DTOs
-  CreateIncidentRequest,
-  UpdateIncidentRequest,
-  CloseIncidentRequest,
-  EscalateIncidentRequest,
-  AssignIncidentRequest,
-  AcknowledgeIncidentRequest,
-  AddIncidentUpdateRequest,
-  IncidentQueryParams,
-} from './../../models/entities/incident/incident.entity'
-
-// ============================================================
 //  Constants Exports
 //  Export shared constants for incident
 //  Aligned with incident.entity.ts
@@ -84,7 +48,7 @@ export {
   getEscalationLevelLabel,
   getEscalationLevelColor,
   calculateResolutionTime,
-} from './../../models/entities/incident/incident.entity'
+} from './../../models/bcm/bcm.entity'
 
 // ============================================================
 //  Default Export (for Vue Plugin)

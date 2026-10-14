@@ -85,6 +85,8 @@ yarn-error.log*
 
 # Lock files
 yarn.lock
-package-lock.json
 /src-capacitor/yarn.lock
 /src-capacitor/package-lock.json
+
+*.backup
+*.bak

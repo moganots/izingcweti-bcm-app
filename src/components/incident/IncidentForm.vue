@@ -63,9 +63,8 @@ import { reactive, computed, watch } from 'vue'
 import {
     IncidentSeverity,
     getIncidentSeverityLabel,
-    getIncidentSeverityIcon,
     getIncidentSeverityColor,
-} from './../../models/entities/incident/incident.entity'
+} from './../../models/bcm/bcm.entity'
 
 const props = withDefaults(
     defineProps<{
