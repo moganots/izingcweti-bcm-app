@@ -329,7 +329,19 @@ export class SyncEngine {
 
     this.syncInProgress = true
     try {
-      const pendingChanges = await this.getPendingChanges()
+      const allPendingChanges = await this.getPendingChanges()
+
+      const pendingChanges = allPendingChanges.filter(
+        (change) => String(change.entityType).toLowerCase() !== 'settings',
+      )
+
+      const skippedSettings = allPendingChanges.length - pendingChanges.length
+
+      if (skippedSettings > 0) {
+        console.warn(
+          `[SyncEngine] Skipped ${skippedSettings} local-only settings change(s)`,
+        )
+      }
 
       if (pendingChanges.length === 0) {
         return {
